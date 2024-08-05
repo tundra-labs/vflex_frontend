@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Werewolf Test</title>
+    <script src="werewolf_comms.js"></script>
+    <script src="werewolf_comms_leds.js"></script>
+    <script src="werewolf_util.js"></script>
+    <script src="werewolf_connect.js"></script>
+    <script src="werewolf_app_image.js"></script>
+    <script src="serial.js"></script>
+    <script src="bootload_app.js"></script>
+    <link rel="stylesheet" href="vflex.css">
+  </head>
+  <body>
+    <script type="text/javascript">
+      function toggle(b){b.value=(b.value=="enabled")?"disabled":"enabled";}
+    </script>
+    <div class="main-content">
+      <h1>Werewolf Sink Bootloader</h1>
+      <div class="container">
+        <div><input id="connectButton" class="lines" type="button" value="manual connect"/></div>
+        <input id="flash_led_conf" class="lines" type="button" value="Confirmation Blink"/>
+        <input id="flash_led_error" class="lines" type="button" value="Error Blink"/>
+        <div> <input id="load_all" class="lines" type="button" value="load all values from flash"/></div>
+        <div>voltage (mv): <input id="voltage" class="command-line" placeholder="asdfasdf" /> </div>
+        <!--<div>current limit (mA): <input id="current" class="command-line" placeholder="asdfasdf" /> </div>-->
+        <div>uuid: <input id="uuid" class="command-line" placeholder="asdfasdf" /> </div>
+        <div>serial number: <input id="serial_num" class="command-line" placeholder="asdfasdf" /> </div>
+        <div>hardware/product id <input id="hw_id" class="command-line" placeholder="asdfasdf" /> </div>
+        <div>firmware id <input id="fw_id" class="command-line" placeholder="asdfasdf" /> </div>
+        <div>Date of manufacture (DDMMMYY) <input id="mfg_date" class="command-line" placeholder="asdfasdf" /> </div>
+        <div><input id="store_all" class="lines" type="button" value="store all text values to flash"/></div>
+        <!--<div><input id="bootload_prom" class="lines" type="button" value="bootloader program"/></div>-->
+        <!--<div><input id="bootload_erase" class="lines" type="button" value="bootloader erase"/></div>-->
+        <!--<div><input id="bootload_verify" class="lines" type="button" value="bootloader verify"/></div>-->
+        <!--<div><input id="bootload_end" class="lines" type="button" value="bootloader end"/></div>-->
+        <div><input id="jump_to_bootloader" class="lines" type="button" value="jump to bootloader mode"/></div>
+        <div>Enable Bootloader:<input type="button" id="bootload_enable" value="enabled" style="color:blue" onclick="toggle(this);"></div>
+        <input type="file" id="bootloader_image" />
+        <pre id="bootloader_image"></pre>
+        <span id="boot_message"> bootloader idle </span>
+      </div>
+    </div>
+  </body>
+</html>
