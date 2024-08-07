@@ -85,9 +85,9 @@
       werewolf_manual_connect();
     });
 
-    window.onload = function() {
-      setInterval(werewolf_attempt_connect, 200);
-    }
+    //window.onload = function() {
+    //  setInterval(werewolf_attempt_connect, 200);
+    //}
   });
 
 })();
