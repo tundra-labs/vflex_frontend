@@ -171,12 +171,12 @@ function getVoltage (port, x) {
   return true;
 }
 
-function setVoltage (port, radioArray) {
+function setVoltage (port, setting_mv) {
   var array = new Uint8Array(4);
   array[0] = 4; // msg len
   array[1] = command_list.CMD_VOLTAGE | 0x80;
 
-  let setting_mv = radioArray.value;
+  //let setting_mv = radioArray.value;
   let setting_mv_msb = (setting_mv >> 8)&0xFF;
   let setting_mv_lsb = setting_mv & 0xFF;
   array[2] = setting_mv_msb;
@@ -221,7 +221,7 @@ function commit_flash(port) {
 
 let bootloader_packet_queue = []; // todo: this could be a generic packet queue for connect function
 function bootload_prom_function(port, data_object){ // data is of type "object" which is definitely a real type
-  boot_message.textContent = "bootload in progress";
+  //boot_message.textContent = "bootload in progress";
   var data = new Uint8Array(data_object); // completely necessary step javascript is great
   let code_len = data.byteLength; // todo: from file. todo: note this expects multiples of 256
   let bootloader_preamble_len = 4; // Cmd, Len, Rev[2]; // todo: modify away rev, i believe it's redundant as we store a fw revision elsewhere

@@ -22,6 +22,7 @@ function connect() {
             case command_list.CMD_VOLTAGE:
               let mv = data.getUint8(2) <<8 | (data.getUint8(3));
               if(calibration_values.voltage) {
+                console.log("received:" ,mv);
                 calibration_values.voltage.value = mv;
               }
               break;
@@ -46,7 +47,6 @@ function connect() {
               }
               break;
             case command_list.CMD_FWID:
-              console.log("fwid:",data);
               var string = new TextDecoder().decode(data).slice(preamble_len);
               if(calibration_values.fw_id) {
                 calibration_values.fw_id.value = string;
@@ -141,19 +141,29 @@ function connect() {
         };
 
 
-        setTimeout(() => {get_ww_string(port, command_list.CMD_FWID); }, 50);
         if (calibration_values.bootload_enable) {
           if (calibration_values.bootload_enable.value == "enabled" && connected) {
             console.log(calibration_values.bootload_enable.value); 
             console.log("boot load enable");
             boot_message.textContent = "bootloader connecting...";
             setTimeout(() => { bootload_cancel_app_timeout(port); }, 100);
-          }  
+          }  else {
+            setTimeout(() => {get_ww_string(port, command_list.CMD_FWID); }, 100);
+            setTimeout(() => { get_ww_string(port, command_list.CMD_WW_SERIAL); }, 400);
+            setTimeout(() => {get_ww_string(port, command_list.CMD_HWID);}, 700);
+            //setTimeout(() => {get_ww_string(port, command_list.CMD_FWID); }, 600);
+            //setTimeout(() => { get_ww_string(port, command_list.CMD_MFG_DATE); }, 800);
+            setTimeout(() => { getVoltage(port); }, 1000);
+            //setTimeout(() => { get_ww_string(port, command_list.CMD_CHIP_UUID); }, 0);
+          }
+
+
         }
 
       }, error => {
         console.log(error);
       });
+      connected = true;
     } // \connect function
 
     function new_device_callback(result) {
