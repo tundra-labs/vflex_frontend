@@ -94,7 +94,8 @@ function connect() {
                 if (bootloader_packet_queue.length == 0) {
                   boot_message.textContent = "bootloader verify succesful!";
                   setTimeout(() => {boot_message.textContent = "exiting bootloader!";}, 200);
-                  setTimeout(() => { jump_to_app(port);}, 200);
+                  setTimeout(() => {ledBlink (port, 5, confBlink); }, 100);
+                  setTimeout(() => {jump_to_app(port);}, 4000);
 
                 }
                 // validated packet
