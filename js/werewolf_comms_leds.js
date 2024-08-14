@@ -9,10 +9,10 @@ const color = Object.freeze ({
 
 // ConfirmationBlink Array
 let confBlink = [
-  { color: color.OFF, timeMS: 100 },
-  { color: color.GREEN, timeMS: 100 },
-  { color: color.OFF, timeMS: 100 },
-  { color: color.GREEN, timeMS: 100 }
+  { color: color.OFF, timeMS: 400 },
+  { color: color.GREEN, timeMS: 400 },
+  { color: color.OFF, timeMS: 400 },
+  { color: color.GREEN, timeMS: 400 }
 ];
 
 // errorBlink Array
@@ -25,7 +25,7 @@ let errorBlink = [
 
 
 // LED Blink Helper Function
-function ledBlink (n_cycles, ledArr) {
+function ledBlink (port, n_cycles, ledArr) {
     // * [10, 2, 5(cycles), 2(sequence len), 1(green), 0x03, 0x08, 3(off), 0x03, 0x08]
   let flashArrayLength = (4 + (ledArr.length * 3));
 
