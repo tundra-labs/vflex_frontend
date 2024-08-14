@@ -85,10 +85,10 @@
       margin-bottom: 20px;
   }
   
-  #controls {
+  /*#controls {
     text-align: center;
     display: none;
-  }
+  }*/
   
   #connectButton {
     background-color: #04D3BC; /* Green */
@@ -115,4 +115,3 @@
     align-items: center;
     justify-content: center;
   }
-  
