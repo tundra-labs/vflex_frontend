@@ -23,6 +23,14 @@ let errorBlink = [
   { color: color.RED, timeMS: 2000 }
 ];
 
+let bootloaderBlink = [
+  { color: color.OFF, timeMS: 100 },
+  { color: color.BLUE, timeMS: 100 },
+  { color: color.OFF, timeMS: 100 },
+  { color: color.BLUE, timeMS: 100 }
+];
+
+
 
 // LED Blink Helper Function
 function ledBlink (port, n_cycles, ledArr) {

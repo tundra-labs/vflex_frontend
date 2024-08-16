@@ -246,7 +246,9 @@ function bootload_prom_function(port, data_object){ // data is of type "object" 
 
   }
   let first_packet = bootloader_packet_queue.shift();
-  port.send(first_packet);
+
+  ledBlink(port, 100, bootloaderBlink);
+  setTimeout(() => { port.send(first_packet); }, 200);
 }
 
 function jump_to_app(port) {
