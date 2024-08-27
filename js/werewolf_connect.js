@@ -4,6 +4,7 @@ let bootloader_mode = 0; // todo: from html
 
 var calibration_values = {}; // assigned at import level to user defined html fields. messages populated iff they're defined.
 
+let pdo_log_byte_queue = []; // todo: this could be a generic packet queue for connect function
 function connect() {
       let boot_message = document.getElementById("boot_message");
       port.connect().then(() => {
@@ -19,6 +20,18 @@ function connect() {
           let next_packet;
           let response;
           switch(command_code) {
+            case command_list.CMD_PDO_LOG:
+              if (data.byteLength == 6) {
+                pdo_log_byte_queue.push(data.getUint8(2)); 
+                pdo_log_byte_queue.push(data.getUint8(3)); 
+                pdo_log_byte_queue.push(data.getUint8(4)); 
+                pdo_log_byte_queue.push(data.getUint8(5)); 
+                get_pdo_log(port);
+              } else {
+                console.log(pdo_log_byte_queue);
+                pdo_log_byte_queue = [];
+              }
+              break;
             case command_list.CMD_VOLTAGE:
               let mv = data.getUint8(2) <<8 | (data.getUint8(3));
               if(calibration_values.voltage) {
