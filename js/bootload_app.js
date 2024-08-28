@@ -9,7 +9,7 @@
     let flash_led_conf = document.getElementById("flash_led_conf");
     let flash_led_error = document.getElementById("flash_led_error");
 
-    let get_pdo_log_button = document.getElementById("get_pdo_log");
+    //let get_pdo_log_button = document.getElementById("get_pdo_log");
     let clear_pdo_log_button = document.getElementById("clear_pdo_log");
     let bootload_enable = document.getElementById("bootload_enable");
     let boot_message = document.getElementById("boot_message");
@@ -51,10 +51,10 @@
     });
 
 
-    get_pdo_log_button.addEventListener('click', function(e) {
-      get_pdo_log(port);
-        console.log("get pdo log");
-    });
+    //get_pdo_log_button.addEventListener('click', function(e) {
+    //  get_pdo_log(port);
+    //    console.log("get pdo log");
+    //});
 
 
     set_voltage.addEventListener('click', function(e) {
