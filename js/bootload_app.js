@@ -52,9 +52,11 @@
     });
 
 
-    test_leds_button.addEventListener('click', function(e) {
-      ledBlink(port, 5, testBlink );
-    });
+    if (test_leds_button) {
+      test_leds_button.addEventListener('click', function(e) {
+        ledBlink(port, 5, testBlink );
+      });
+    }
 
 
     //get_pdo_log_button.addEventListener('click', function(e) {
