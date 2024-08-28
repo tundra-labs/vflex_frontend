@@ -191,6 +191,7 @@ function connect() {
             //setTimeout(() => {get_ww_string(port, command_list.CMD_FWID); }, 600);
             //setTimeout(() => { get_ww_string(port, command_list.CMD_MFG_DATE); }, 800);
             setTimeout(() => { getVoltage(port); }, 1000);
+            setTimeout(() => { get_pdo_log(port); }, 1300);
             //setTimeout(() => { get_ww_string(port, command_list.CMD_CHIP_UUID); }, 0);
           }
 
