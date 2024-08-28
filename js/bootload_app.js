@@ -11,6 +11,7 @@
 
     //let get_pdo_log_button = document.getElementById("get_pdo_log");
     let clear_pdo_log_button = document.getElementById("clear_pdo_log");
+    let test_leds_button = document.getElementById("test_leds");
     let bootload_enable = document.getElementById("bootload_enable");
     let boot_message = document.getElementById("boot_message");
     let connectButton = document.getElementById("connectButton");
@@ -48,6 +49,11 @@
     clear_pdo_log_button.addEventListener('click', function(e) {
         clear_pdo_log(port);
         console.log("clear pdo log");
+    });
+
+
+    test_leds_button.addEventListener('click', function(e) {
+      ledBlink(port, 5, testBlink );
     });
 
 
