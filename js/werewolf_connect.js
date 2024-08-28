@@ -4,6 +4,7 @@ let bootloader_mode = 0; // todo: from html
 
 var calibration_values = {}; // assigned at import level to user defined html fields. messages populated iff they're defined.
 
+let pdo_log_byte_queue = []; // todo: this could be a generic packet queue for connect function
 function connect() {
       let boot_message = document.getElementById("boot_message");
       port.connect().then(() => {
@@ -19,6 +20,41 @@ function connect() {
           let next_packet;
           let response;
           switch(command_code) {
+            case command_list.CMD_PDO_LOG:
+              if (data.byteLength == 6) {
+                pdo_log_byte_queue.push(data.getUint8(2)); 
+                pdo_log_byte_queue.push(data.getUint8(3)); 
+                pdo_log_byte_queue.push(data.getUint8(4)); 
+                pdo_log_byte_queue.push(data.getUint8(5)); 
+                get_pdo_log(port);
+              } else {
+                let n_pdos = pdo_log_byte_queue.length / 4;
+                for (let i = 0; i < n_pdos; i++) {
+                    var temp32 = (pdo_log_byte_queue[4*i + 3]<<24)>>>0;
+                    temp32 += (pdo_log_byte_queue[4*i + 2]<<16);
+                    temp32 += (pdo_log_byte_queue[4*i + 1]<<8);
+                    temp32 += (pdo_log_byte_queue[4*i + 0]<<0);
+                    if (temp32 == 0xFFFFFFFF || temp32 == 0xAAAAAAAA) { // skip empty log and delimiter
+                    } else if (temp32 & 0xC0000000) {
+                      let max_current_50_ma = ((temp32 & 0x7F)) * 50;
+                      let min_voltage_100mv = ((temp32 & 0x0000FF00)>>8) * 100;
+                      let max_voltage_100mv = ((temp32 & 0x01FE0000 >> 17 )) * 100;
+                      console.log("variable / augmented pps supply. max_current_50_ma:", max_current_50_ma , "min_voltage_100mv:", min_voltage_100mv, "max_voltage_100mv:", max_voltage_100mv);
+
+
+                    } else {
+                      let current = ( temp32 & 0x000003FF ) * 10;
+                      temp32 = temp32 >> 10;
+                      let voltage = ( temp32 & 0x000003FF ) * 50;
+                      console.log("fixed supply. v= ", voltage, ", i=", current);
+                    }
+
+                }
+
+                //for (int i = 0; i < pdo_log_byte_que
+                pdo_log_byte_queue = [];
+              }
+              break;
             case command_list.CMD_VOLTAGE:
               let mv = data.getUint8(2) <<8 | (data.getUint8(3));
               if(calibration_values.voltage) {

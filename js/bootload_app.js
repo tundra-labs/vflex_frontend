@@ -9,6 +9,8 @@
     let flash_led_conf = document.getElementById("flash_led_conf");
     let flash_led_error = document.getElementById("flash_led_error");
 
+    let get_pdo_log_button = document.getElementById("get_pdo_log");
+    let clear_pdo_log_button = document.getElementById("clear_pdo_log");
     let bootload_enable = document.getElementById("bootload_enable");
     let boot_message = document.getElementById("boot_message");
     let connectButton = document.getElementById("connectButton");
@@ -41,6 +43,19 @@
     bootload_prom.addEventListener('click', function(e) {
       bootload_prom_function(port, app_bin_data["data"]);
     });
+
+    
+    clear_pdo_log_button.addEventListener('click', function(e) {
+        clear_pdo_log(port);
+        console.log("clear pdo log");
+    });
+
+
+    get_pdo_log_button.addEventListener('click', function(e) {
+      get_pdo_log(port);
+        console.log("get pdo log");
+    });
+
 
     set_voltage.addEventListener('click', function(e) {
       let i = voltageSelect.selectedIndex;
@@ -99,12 +114,12 @@
  
     //});
 
-    //bootloader_image.addEventListener('click', () => {
-    //  bootloader_image.value = null;
-    //});
-    //bootloader_image.addEventListener('change', function(e) {
-    //  readSingleFile(e);
-    //}, false);
+    bootloader_image.addEventListener('click', () => {
+      bootloader_image.value = null;
+    });
+    bootloader_image.addEventListener('change', function(e) {
+      readSingleFile(e);
+    }, false);
  
     //flash_led_conf.addEventListener('click', () => {
     //  console.log("blink");
