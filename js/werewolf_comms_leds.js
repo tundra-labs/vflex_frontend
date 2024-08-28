@@ -4,6 +4,10 @@ const color = Object.freeze ({
   RED: 1,
   GREEN: 2,
   BLUE: 3,
+  WHITE: 4,
+  YELLOW: 5,
+  MAGENTA: 6,
+  CYAN: 7
 });
 
 
@@ -28,6 +32,17 @@ let bootloaderBlink = [
   { color: color.BLUE, timeMS: 100 },
   { color: color.OFF, timeMS: 100 },
   { color: color.BLUE, timeMS: 100 }
+];
+
+let testBlink = [
+  { color: color.OFF, timeMS: 500 },
+  { color: color.RED, timeMS: 500 },
+  { color: color.GREEN, timeMS: 500 },
+  { color: color.BLUE, timeMS: 500 },
+  { color: color.WHITE, timeMS: 500 },
+  { color: color.YELLOW, timeMS: 500 },
+  { color: color.MAGENTA, timeMS: 500 },
+  { color: color.CYAN, timeMS: 500 }
 ];
 
 
