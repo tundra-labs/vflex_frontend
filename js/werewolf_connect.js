@@ -86,6 +86,12 @@ function connect() {
               var string = new TextDecoder().decode(data).slice(preamble_len);
               if(calibration_values.fw_id) {
                 calibration_values.fw_id.value = string;
+                if (string.match("APP*")) {
+                  setTimeout(() => {
+                    get_pdo_log(port);
+                    console.log("APP connected, load pdo log:");
+                  }, 100);
+                }
               }
               break;
             case command_list.CMD_MFG_DATE:
@@ -191,7 +197,7 @@ function connect() {
             //setTimeout(() => {get_ww_string(port, command_list.CMD_FWID); }, 600);
             //setTimeout(() => { get_ww_string(port, command_list.CMD_MFG_DATE); }, 800);
             setTimeout(() => { getVoltage(port); }, 1000);
-            setTimeout(() => { get_pdo_log(port); }, 1300);
+            //setTimeout(() => { get_pdo_log(port); }, 1300);
             //setTimeout(() => { get_ww_string(port, command_list.CMD_CHIP_UUID); }, 0);
           }
 
