@@ -78,7 +78,7 @@
       if(connected) {
         console.log("setting voltage to", setting_mv);
         setVoltage(port, setting_mv);
-        //setTimeout(() => { getVoltage(port); }, 200);
+        setTimeout(() => { ledBlink(port, 5, confBlink); }, 200);
       } else {
         console.log("disconnected from device");
       }
