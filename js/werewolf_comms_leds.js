@@ -13,10 +13,10 @@ const color = Object.freeze ({
 
 // ConfirmationBlink Array
 let confBlink = [
-  { color: color.OFF, timeMS: 400 },
-  { color: color.GREEN, timeMS: 400 },
-  { color: color.OFF, timeMS: 400 },
-  { color: color.GREEN, timeMS: 400 }
+  { color: color.OFF, timeMS: 100 },
+  { color: color.GREEN, timeMS: 100 },
+  { color: color.OFF, timeMS: 100 },
+  { color: color.GREEN, timeMS: 100 }
 ];
 
 // errorBlink Array
