@@ -35,14 +35,14 @@ function connect() {
                     temp32 += (pdo_log_byte_queue[4*i + 1]<<8);
                     temp32 += (pdo_log_byte_queue[4*i + 0]<<0);
                     if (temp32 == 0xFFFFFFFF || temp32 == 0xAAAAAAAA) { // skip empty log and delimiter
-                    } else if (temp32 & 0xC0000000) {
+                    } else if (temp32 & 0xC0000000) { // variable pdo
                       let max_current_50_ma = ((temp32 & 0x7F)) * 50;
                       let min_voltage_100mv = ((temp32 & 0x0000FF00)>>8) * 100;
-                      let max_voltage_100mv = ((temp32 & 0x01FE0000 >> 17 )) * 100;
+                      let max_voltage_100mv = ((temp32 & 0x01FE0000)>>17) * 100;
                       console.log("variable / augmented pps supply. max_current_50_ma:", max_current_50_ma , "min_voltage_100mv:", min_voltage_100mv, "max_voltage_100mv:", max_voltage_100mv);
 
 
-                    } else {
+                    } else { // fixed pdo
                       let current = ( temp32 & 0x000003FF ) * 10;
                       temp32 = temp32 >> 10;
                       let voltage = ( temp32 & 0x000003FF ) * 50;
