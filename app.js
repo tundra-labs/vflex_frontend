@@ -40,12 +40,14 @@
         window.addEventListener('connectedChange', function(event) {
             const isConnected = event.detail;
             if (isConnected) {
+                console.log('connected is true');
                 connectButton.textContent = 'Disconnect';
                 controls.style.display = 'block';
                 ppsInput.style.display = 'none';
                 advancedSettingsLink.style.display = 'block';
                 ppsCheck();
             } else {
+                console.log('Connected is false');
                 connectButton.textContent = 'Connect';
                 advancedSettingsLink.textContent = 'Trouble Connecting?';
                 controls.style.display = 'none';

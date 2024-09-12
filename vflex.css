@@ -137,4 +137,8 @@
     display: block;
     text-align: center;
   }
+
+  #voltage_pps {
+    margin: 0 auto;
+  }
   

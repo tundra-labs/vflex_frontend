@@ -217,6 +217,7 @@ function connect() {
         console.log(error);
       });
       connected = true;
+      setConnected(true);
     } // \connect function
 
     function new_device_callback(result) {
