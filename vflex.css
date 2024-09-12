@@ -22,7 +22,7 @@
     margin-bottom: 20px;
   }
   
-  button, select, input[type="text"] {
+  button, select, input[type="text"], #voltage_pps {
     margin: 10px;
     padding: 10px 20px;
     font-size: 16px;
@@ -61,20 +61,22 @@
     display: none;
   }
   
-  #voltage_select {
+  #voltage_select, #voltage_pps {
     width: 100%;
     max-width: 200px;
+    text-align: center;
   }
   
-  #program_button {
-    background-color: #9696A8; /* Blue */
+  #set_voltage {
+    background-color: #000B14; /* Blue */
     color: white;
     border: none;
     width: 200px;
   }
   
-  #program_button:hover {
-    background-color: #000B14;
+  #set_voltage:hover {
+    background-color: #9696A8;
+    
   }
   
   #status {
@@ -85,6 +87,13 @@
       margin-bottom: 20px;
   }
   
+  #advanced_settings_link{
+    display: none;
+  }
+  #advanced_settings{
+    display: none;
+  }
+
   #controls {
     text-align: center;
     display: none;
@@ -115,4 +124,13 @@
     align-items: center;
     justify-content: center;
   }
+
+  .command-line {
+    display: none;
+  }
+
+  #pps_message {
+    display: none;
+  }
+  
   
