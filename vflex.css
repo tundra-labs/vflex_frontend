@@ -100,7 +100,7 @@
   }
   
   #connectButton {
-    background-color: #04D3BC; /* Green */
+    background-color: #04D3BC !important; /* Green */
     color: white;
     border: none;
     width: 200px;
