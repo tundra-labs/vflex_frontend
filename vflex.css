@@ -87,7 +87,6 @@
       margin-bottom: 20px;
   }
   
-<<<<<<< HEAD
   #advanced_settings_link{
     display: none;
   }
@@ -96,9 +95,6 @@
   }
 
   #controls {
-=======
-  /*#controls {
->>>>>>> db6fa503f930e3bb309e5232c8180563583124d7
     text-align: center;
     display: none;
   }*/
@@ -128,7 +124,6 @@
     align-items: center;
     justify-content: center;
   }
-<<<<<<< HEAD
 
   .command-line {
     display: none;
@@ -139,5 +134,3 @@
   }
   
   
-=======
->>>>>>> db6fa503f930e3bb309e5232c8180563583124d7
