@@ -4,6 +4,10 @@ const color = Object.freeze ({
   RED: 1,
   GREEN: 2,
   BLUE: 3,
+  WHITE: 4,
+  YELLOW: 5,
+  MAGENTA: 6,
+  CYAN: 7
 });
 
 
@@ -23,9 +27,28 @@ let errorBlink = [
   { color: color.RED, timeMS: 2000 }
 ];
 
+let bootloaderBlink = [
+  { color: color.OFF, timeMS: 100 },
+  { color: color.BLUE, timeMS: 100 },
+  { color: color.OFF, timeMS: 100 },
+  { color: color.BLUE, timeMS: 100 }
+];
+
+let testBlink = [
+  { color: color.OFF, timeMS: 500 },
+  { color: color.RED, timeMS: 500 },
+  { color: color.GREEN, timeMS: 500 },
+  { color: color.BLUE, timeMS: 500 },
+  { color: color.WHITE, timeMS: 500 },
+  { color: color.YELLOW, timeMS: 500 },
+  { color: color.MAGENTA, timeMS: 500 },
+  { color: color.CYAN, timeMS: 500 }
+];
+
+
 
 // LED Blink Helper Function
-function ledBlink (n_cycles, ledArr) {
+function ledBlink (port, n_cycles, ledArr) {
     // * [10, 2, 5(cycles), 2(sequence len), 1(green), 0x03, 0x08, 3(off), 0x03, 0x08]
   let flashArrayLength = (4 + (ledArr.length * 3));
 

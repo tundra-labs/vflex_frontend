@@ -9,6 +9,9 @@
     let flash_led_conf = document.getElementById("flash_led_conf");
     let flash_led_error = document.getElementById("flash_led_error");
 
+    //let get_pdo_log_button = document.getElementById("get_pdo_log");
+    let clear_pdo_log_button = document.getElementById("clear_pdo_log");
+    let test_leds_button = document.getElementById("test_leds");
     let bootload_enable = document.getElementById("bootload_enable");
     let boot_message = document.getElementById("boot_message");
     let connectButton = document.getElementById("connectButton");
@@ -42,6 +45,26 @@
       bootload_prom_function(port, app_bin_data["data"]);
     });
 
+    
+    clear_pdo_log_button.addEventListener('click', function(e) {
+        clear_pdo_log(port);
+        console.log("clear pdo log");
+    });
+
+
+    if (test_leds_button) {
+      test_leds_button.addEventListener('click', function(e) {
+        ledBlink(port, 5, testBlink );
+      });
+    }
+
+
+    //get_pdo_log_button.addEventListener('click', function(e) {
+    //  get_pdo_log(port);
+    //    console.log("get pdo log");
+    //});
+
+
     set_voltage.addEventListener('click', function(e) {
       let i = voltageSelect.selectedIndex;
       let option = voltageSelect.options[i];
@@ -55,7 +78,7 @@
       if(connected) {
         console.log("setting voltage to", setting_mv);
         setVoltage(port, setting_mv);
-        //setTimeout(() => { getVoltage(port); }, 200);
+        setTimeout(() => { ledBlink(port, 5, confBlink); }, 200);
       } else {
         console.log("disconnected from device");
       }
@@ -99,12 +122,12 @@
  
     //});
 
-    //bootloader_image.addEventListener('click', () => {
-    //  bootloader_image.value = null;
-    //});
-    //bootloader_image.addEventListener('change', function(e) {
-    //  readSingleFile(e);
-    //}, false);
+    bootloader_image.addEventListener('click', () => {
+      bootloader_image.value = null;
+    });
+    bootloader_image.addEventListener('change', function(e) {
+      readSingleFile(e);
+    }, false);
  
     //flash_led_conf.addEventListener('click', () => {
     //  console.log("blink");

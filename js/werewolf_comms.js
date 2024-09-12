@@ -77,7 +77,8 @@ const command_list = Object.freeze ({
   CMD_JUMP_TO_BOOTLOAD: 14,
   CMD_BOOTLOAD_VERIFY: 15,
   CMD_BOOTLOAD_END: 16,
-  CMD_BOOTLOAD_CANCEL_APP_TIMEOUT: 17
+  CMD_BOOTLOAD_CANCEL_APP_TIMEOUT: 17,
+  CMD_PDO_LOG: 18
 });
 
 // Expected string sizes (in bytes) for string set commands
@@ -246,8 +247,53 @@ function bootload_prom_function(port, data_object){ // data is of type "object" 
 
   }
   let first_packet = bootloader_packet_queue.shift();
-  port.send(first_packet);
+
+  ledBlink(port, 100, bootloaderBlink);
+  setTimeout(() => { port.send(first_packet); }, 200);
 }
+
+function clear_pdo_log(port){ // data is of type "object" which is definitely a real type
+  //boot_message.textContent = "bootload in progress";
+  //var data = new Uint8Array(data_object); // completely necessary step javascript is great
+  //let code_len = data.byteLength; // todo: from file. todo: note this expects multiples of 256
+  let bootloader_preamble_len = 2; // Cmd, Len, Rev[2]; // todo: modify away rev, i believe it's redundant as we store a fw revision elsewhere
+  let max_packet_len = 64; // usb packet limit
+  //let max_packet_code_len = max_packet_len - bootloader_preamble_len; // max code size sent in one packet
+  var output_arr = new Uint8Array(2);
+  output_arr[0] = 2;
+  output_arr[1] = command_list.CMD_PDO_LOG | 0x80; // set write bit for clear
+  //let index = 0;
+  //let packet_count = 0;
+  //while(index < code_len) {
+  //  let remaining = code_len - index;
+  //  let packet_code_len = Math.min(remaining, max_packet_code_len);
+  //  let packet_len = packet_code_len + bootloader_preamble_len;
+  //  var boot_arr = new Uint8Array(packet_len);
+  //  boot_arr[0] = packet_len;
+  //  boot_arr[1] = command_list.CMD_BOOTLOAD_PROM;
+  //
+  //  for (let i  = 0; i < packet_code_len; i++){
+
+  //    boot_arr[i + bootloader_preamble_len] = data[index++]
+  //  }
+  //  bootloader_packet_queue.push(boot_arr);
+  //  packet_count++
+
+  //}
+  //let first_packet = bootloader_packet_queue.shift();
+
+  port.send(output_arr);
+}
+function get_pdo_log(port) {
+  let bootloader_preamble_len = 2; // Cmd, Len, Rev[2]; // todo: modify away rev, i believe it's redundant as we store a fw revision elsewhere
+  let max_packet_len = 64; // usb packet limit
+  var output_arr = new Uint8Array(2);
+  output_arr[0] = 2;
+  output_arr[1] = command_list.CMD_PDO_LOG; 
+
+  port.send(output_arr);
+}
+
 
 function jump_to_app(port) {
     var arr = new Uint8Array(2);
