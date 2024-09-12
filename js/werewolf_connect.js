@@ -5,6 +5,13 @@ let bootloader_mode = 0; // todo: from html
 var calibration_values = {}; // assigned at import level to user defined html fields. messages populated iff they're defined.
 
 let pdo_log_byte_queue = []; // todo: this could be a generic packet queue for connect function
+
+function setConnected(newValue){
+  connected = newValue;
+  const event = new CustomEvent('connectedChange', { detail: connected });
+  window.dispatchEvent(event);
+}
+
 function connect() {
       let boot_message = document.getElementById("boot_message");
       port.connect().then(() => {
@@ -176,6 +183,8 @@ function connect() {
         port.onReceiveError = error => {
           boot_message.textContent = "bootload idle";
           console.log("disconnect");
+          connected = false;
+          setConnected(false);
           port.disconnect();
           port = null;
 
@@ -223,6 +232,7 @@ function connect() {
           port = ports[0];
           connect(port);
           connected = true;
+          setConnected(true);
           //setTimeout(() => { bootload_cancel_app_timeout(port); }, 50);
           //todo: this is auto program feature, disable for now
           //if(app_bin_data) {
@@ -264,6 +274,7 @@ function connect() {
               port = ports[0];
               connect(port,);
               connected = true;
+              setConnected(true);
             }
           });
         }, null);
