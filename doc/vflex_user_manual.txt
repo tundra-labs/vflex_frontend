@@ -1,0 +1,12 @@
+# LED Signals
+
+Vflex Application LED indication:
+  * Powered on, unitialized: White
+  * Voltage negotiated / Ready: Green
+  * Error negotiation voltage: Red
+
+vflex Debug LED indication:
+  * Device connected to PC in webusb mode: Blue
+  * Device connected to PC in bootloader mode: Blue (slow blink)
+  * Device firmware update in progress: Blue (fast blink)
+  * Device firmware update successful: Green (fast blink)
