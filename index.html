@@ -35,14 +35,109 @@
           <option value="pps">Custom</option>
         </select>
         
-        <input id="voltage_pps" placeholder="" inputmode="numeric"/>
+        <div id="ppsInput">
+          <input id="voltage_pps" placeholder="" inputmode="numeric" maxlength="5" style="text-align: center;">
+          <span class="right-text">Volts</span>
+
+          <script>
+
+            const inputField = document.getElementById('voltage_pps');
+
+            inputField.addEventListener('input', function () {
+              // Remove anything that's not a digit, decimal point, or comma
+              let value = inputField.value.replace(/[^0-9.,]/g, '');
+
+              // Check if the user has already entered a decimal point or comma
+              let hasDecimalOrComma = value.includes('.') || value.includes(',');
+
+              if (!hasDecimalOrComma) {
+                // No decimal or comma added by the user, format automatically
+                value = value.replace(/\D/g, ''); // Remove non-numeric characters
+                console.log(value.length);
+
+                if (value.length > 5) {
+                  value = value.slice(0, 5); // Enforce 4 digits maximum before formatting
+                }
+
+                if (value.length === 3) {
+                  // Format as x.xx
+                  value = value[0] + '.' + value.slice(1);
+                } else if (value.length === 5) {
+                  // Format as xx.xx
+                  value = value.slice(0, 2) + '.' + value.slice(2);
+                }
+              } else {
+                // Allow user to input the decimal point (.) or comma (,)
+                // Normalize the comma to a period for consistency
+                value = value.replace(',', '.');
+
+                if (value.length > 5) {
+                  value = value.slice(0, 5); // Enforce 4 digits maximum before formatting
+                }
+                console.log(value.length);
+
+                // Ensure only one decimal point is present
+                let parts = value.split('.');
+                if (parts.length > 2) {
+                  // If there are multiple decimals, retain only the first one
+                  value = parts[0] + '.' + parts[1];
+                }
+
+                if (value.length === 5) {
+                  // Format as xx.xx
+                  if(value[1] === '.'){
+                    value = value.slice(0, 1) + value.slice(2,3) + '.' + value.slice(3);
+                  }
+                }    
+              }
+              
+              let fValue = parseFloat(value);
+
+              switch(true) {
+                case (value.length === 4 && value[3] != '5' && value[3] != '0' && value[2] != '.'):
+                  pps_message.textContent = 'Number must be in 50mV increments!';
+                  document.getElementById('set_voltage').disabled = true;
+                  set_voltage.style.backgroundColor = 'gray';
+                  break; 
+                case (value.length === 5 && value[4] != '5' && value[4] != '0'):
+                  pps_message.textContent = 'Number must be in 50mV increments!';
+                  document.getElementById('set_voltage').disabled = true;
+                  set_voltage.style.backgroundColor = 'gray';
+                  break;
+                case(fValue < 3.35):
+                  pps_message.textContent = 'Number must be 3.35 Volts or Greater';
+                  document.getElementById('set_voltage').disabled = true;
+                  set_voltage.style.backgroundColor = 'gray';
+                  break;
+                case(fValue > 48):
+                  document.getElementById('set_voltage').disabled = true;
+                  set_voltage.style.backgroundColor = 'gray';
+                  pps_message.textContent = 'Number must be 48V or fewer';
+                  break;
+                default:
+                  pps_message.textContent = '';
+                  set_voltage.style.display = 'block';
+                  set_voltage.style.visibility = 'visible';
+                  set_voltage.style.backgroundColor = '#000B14';
+                  document.getElementById('set_voltage').disabled = false;
+                  
+
+              }
+
+              inputField.value = value;
+            });
+
+          </script>
+
+        </div>
+        
         
         <button id="set_voltage" class="lines">Program</button>
         
       </div>
+      <div id="pps_message">Programmable in 50mV increments</div>
+      <div id="voltageStatus"></div>
       
-      <div id="status"></div>
-      <div id="pps_message">pps (programmable power supply) voltage setting (programmable in 50mV increments)</div>
 
       <div><a id="advanced_settings_link" href="javascript:void(0);">Having Trouble Connecting?</a></div>
       <div id="advanced_settings">

@@ -3,9 +3,8 @@
   
     document.addEventListener('DOMContentLoaded', event => {
         const connectButton = document.querySelector("#connectButton");
-        const statusDisplay = document.querySelector('#status');
+        const statusDisplay = document.querySelector('#voltageStatus');
         const controls = document.querySelector("#controls"); // Assuming this contains the voltage select and program button
-        const ppsInput = document.querySelector("#voltage_pps");
         const voltageSelect = document.querySelector("#voltage_select");
         const commandLine = document.querySelector("#command_line");
         const getVoltageButton = document.querySelector("#getVoltage");
@@ -13,7 +12,9 @@
         const advancedSettingsLink = document.querySelector("#advanced_settings_link");
         const recoveryBtn = document.querySelector("#jump_to_bootloader");
         const ppsMessage = document.querySelector("#pps_message");
-        let ppsMessageContent = "pps (programmable power supply) voltage setting (programmable in 50mV increments)"
+        const customInput = document.getElementById('#voltage_pps');
+
+        let ppsMessageContent = "Programmable in 50mV increments. Not all voltage ranges are supported, please check your power supply."
 
         let jump_to_bootloader_elem = document.getElementById("jump_to_bootloader");
 
@@ -109,7 +110,10 @@
             let v_select = option.value;
             let setting_mv = 5000;
             if(v_select == "pps") {
-              setting_mv = voltage_pps.value;
+              
+              let floatValue = (parseFloat(voltage_pps.value)*1000);
+              setting_mv = floatValue.toFixed(0);
+              console.log(setting_mv);
             } else {
               setting_mv = v_select;
             }
@@ -133,15 +137,12 @@
             }, false);
 
         function validVoltage(v_value) {
-            // Check if the value is within the range 0-100000
-            const inRange = v_value >= 0 && v_value <= 100000;
+            // Check if the value is within the range 0-48000
+            const inRange = v_value >= 0 && v_value <= 48000;
             // Check if the value is divisible by 50
             const isDivisible = v_value % 50 === 0;
             // Return true if both conditions are met
             return inRange && isDivisible;
         }
-        
-        
-
     });
   })();

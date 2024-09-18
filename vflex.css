@@ -22,7 +22,7 @@
     margin-bottom: 20px;
   }
   
-  button, select, input[type="text"], #voltage_pps {
+  button, select, input[type="text"] {
     margin: 10px;
     padding: 10px 20px;
     font-size: 16px;
@@ -61,9 +61,9 @@
     display: none;
   }
   
-  #voltage_select, #voltage_pps {
+  #voltage_select {
     width: 100%;
-    max-width: 200px;
+    max-width: 400px;
     text-align: center;
   }
   
@@ -71,7 +71,7 @@
     background-color: #000B14; /* Blue */
     color: white;
     border: none;
-    width: 200px;
+    width: 400px;
   }
   
   #set_voltage:hover {
@@ -79,7 +79,7 @@
     
   }
   
-  #status {
+  #voltageStatus {
       font-size: 15px;
       font-family: "Roboto", sans-serif;
       font-weight: 600;
@@ -103,7 +103,7 @@
     background-color: #04D3BC !important; /* Green */
     color: white;
     border: none;
-    width: 200px;
+    width: 400px;
     padding: 10px;
     margin: 5px;
     cursor: pointer;
@@ -131,6 +131,9 @@
 
   #pps_message {
     display: none;
+    width: 400px;
+    height: 75px;
+    color: red;
   }
   
   .main-content{
@@ -138,7 +141,48 @@
     text-align: center;
   }
 
-  #voltage_pps {
+  /* #voltage_pps {
     margin: 0 auto;
+  } */
+  
+  /* #ppsInput {
+    display: flex;
+    align-items: center;
+    gap: 5px; 
+    margin: 0 auto;
+  }
+  
+  #ppsInput select, #decimal {
+    display: inline-block;
+  } */
+  
+  #ppsBody {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0; /* Remove default body margin */
+  }
+  
+  #ppsInput {
+    position: relative;
+    display: inline-block;
+  }
+
+  input {
+    border: none;
+    border-bottom: 2px solid black;
+    outline: none;
+    font-size: 48px;
+    width: 400px;
+  }
+
+  .right-text {
+    position: absolute;
+    right: 0px;   /* Distance from the right edge of the container */
+    top: 50%;
+    transform: translateY(-50%);  /* Vertically center the text */
+    pointer-events: none;  /* Make sure the text doesn't interfere with input clicks */
+    color: #000B14;
+    font-size: 48px;
   }
   
