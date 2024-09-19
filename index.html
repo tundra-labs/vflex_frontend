@@ -121,6 +121,10 @@
                   break;
                 case(value >= '3.35' && value <= '4.95' || value > '16.00' && value <= '48.00'):
                   pps_message.innerHTML = 'May be outside of normal operation <a href="https://app.werewolf.com/pps-info">(learn more)</a>';
+                  set_voltage.style.display = 'block';
+                  set_voltage.style.visibility = 'visible';
+                  set_voltage.style.backgroundColor = '#000B14';
+                  document.getElementById('set_voltage').disabled = false;
                   break;
                 default:
                   pps_message.textContent = '';
