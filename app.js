@@ -14,7 +14,7 @@
         const ppsMessage = document.querySelector("#pps_message");
         const customInput = document.getElementById('#voltage_pps');
 
-        let ppsMessageContent = "Programmable in 50mV increments. Not all voltage ranges are supported, please check your power supply."
+        let ppsMessageContent = "Programmable in 0.05V increments. <br><br>Not all voltage ranges are supported, please check your power supply.<br>"
 
         let jump_to_bootloader_elem = document.getElementById("jump_to_bootloader");
 
@@ -93,14 +93,14 @@
             if (selectedValue === 'pps') {
                 ppsInput.style.display = 'block';
                 ppsMessage.style.display = 'block';
-                ppsMessage.textContent = ppsMessageContent;
+                ppsMessage.innerHTML = ppsMessageContent;
             } else {
                 ppsInput.style.display = 'none';
                 ppsMessage.style.display = 'none';
                 setTimeout(() => {
                     statusDisplay.textContent = "Programmed to " + (calibration_values.voltage.value / 1000) + "V";
                     console.log(calibration_values.bootload_enable.value);
-                }, 1200);
+                }, 2000);
             }
         }
 

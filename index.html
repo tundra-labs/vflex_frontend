@@ -105,24 +105,22 @@
 
               switch(true) {
                 case (value.length === 4 && value[3] != '5' && value[3] != '0' && value[2] != '.'):
-                  pps_message.textContent = 'Number must be in 50mV increments!';
+                  pps_message.textContent = 'Must be in 0.05 Volt increments!';
                   document.getElementById('set_voltage').disabled = true;
                   set_voltage.style.backgroundColor = 'gray';
                   break; 
                 case (value.length === 5 && value[4] != '5' && value[4] != '0'):
-                  pps_message.textContent = 'Number must be in 50mV increments!';
+                  pps_message.textContent = 'Must be in 0.05 Volt increments!';
                   document.getElementById('set_voltage').disabled = true;
                   set_voltage.style.backgroundColor = 'gray';
                   break;
-                case(fValue < 3.35):
-                  pps_message.textContent = 'Number must be 3.35 Volts or Greater';
+                case(fValue < 3.35 || fValue > 48):
+                  pps_message.textContent = 'Must be between 3.35 Volts and 48.00 Volts';
                   document.getElementById('set_voltage').disabled = true;
                   set_voltage.style.backgroundColor = 'gray';
                   break;
-                case(fValue > 48):
-                  document.getElementById('set_voltage').disabled = true;
-                  set_voltage.style.backgroundColor = 'gray';
-                  pps_message.textContent = 'Number must be 48V or fewer';
+                case(value >= '3.35' && value <= '4.95' || value > '16.00' && value <= '48.00'):
+                  pps_message.innerHTML = 'May be outside of normal operation <a href="https://app.werewolf.com/pps-info">(learn more)</a>';
                   break;
                 default:
                   pps_message.textContent = '';
@@ -130,8 +128,6 @@
                   set_voltage.style.visibility = 'visible';
                   set_voltage.style.backgroundColor = '#000B14';
                   document.getElementById('set_voltage').disabled = false;
-                  
-
               }
 
               inputField.value = value;
