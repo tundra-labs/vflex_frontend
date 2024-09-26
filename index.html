@@ -53,7 +53,6 @@
               if (!hasDecimalOrComma) {
                 // No decimal or comma added by the user, format automatically
                 value = value.replace(/\D/g, ''); // Remove non-numeric characters
-                console.log(value.length);
 
                 if (value.length > 5) {
                   value = value.slice(0, 5); // Enforce 4 digits maximum before formatting
@@ -84,7 +83,6 @@
                 if (value.length > 5) {
                   value = value.slice(0, 5); // Enforce 4 digits maximum before formatting
                 }
-                console.log(value.length);
 
                 // Ensure only one decimal point is present
                 let parts = value.split('.');
@@ -147,27 +145,39 @@
       </div>
       <div id="pps_message">Programmable in 50mV increments</div>
       <div id="voltageStatus"></div>
-      
-
-      <div><a id="advanced_settings_link" href="javascript:void(0);">Having Trouble Connecting?</a></div>
+    
+    
+    <span id="fw_version"></span>
+    <p id="troubleConnectingLink">Trouble Connecting?</p>
+    <div id="popupBox" class="popup">
+      <div class="popup-content">
+          <span id="closePopupBtn" class="close-btn">&times;</span> <!-- Close button -->
+          <p id="recovery_msg">Unplug vFlex Device<br> Then Click Next</p>
+          <button id="nextBtn">Next</button>
+          <div class="progress-bar-container">
+            <div id="progressBar" class="progress-bar"></div>
+          </div>
+      </div>
+    </div>
+    <div class="command-line">firmware id <input id="fw_id" class="command-line" placeholder="" /> </div>
       <div id="advanced_settings">
         <div class="command-line">Active vFlex setting:<input id="programmed_voltage" value=""/></div>
-        <!--<div>current limit (mA): <input id="current" class="command-line" placeholder="asdfasdf" /> </div>-->
-        <!--<div>uuid: <input id="uuid" class="command-line" placeholder="" /> </div>-->
+        <div>current limit (mA): <input id="current" class="command-line" placeholder="asdfasdf" /> </div>
+        <div>uuid: <input id="uuid" class="command-line" placeholder="" /> </div>
         <div class="command-line">serial number: <input id="serial_num" class="command-line" placeholder="" value ="1"/> </div>
         <div class="command-line">hardware/product id <input id="hw_id" class="command-line" placeholder="" /> </div>
-        <div class="command-line">firmware id <input id="fw_id" class="command-line" placeholder="" /> </div>
+
         <div class="command-line">Date of manufacture (DDMMMYY) <input id="mfg_date" class="command-line" placeholder="" /> </div>
-        <div><input id="jump_to_bootloader" class="lines" type="button" value="recovery mode"/></div>
-        <!--<input id="flash_led_conf" class="lines" type="button" value="Confirmation Blink"/>-->
-        <!--<input id="flash_led_error" class="lines" type="button" value="Error Blink"/>-->
-        <!--<div> <input id="load_all" class="lines" type="button" value="load all values from flash"/></div>-->
-        <!--<div>voltage (mv): <input id="voltage_fixed" class="command-line" placeholder="asdfasdf" /> </div>-->
-        <!--<div><input id="store_all" class="lines" type="button" value="store all text values to flash"/></div>-->
+        <div><button id="jump_to_bootloader" class="lines" type="button" value="recovery mode">Recovery Mode</button></div> 
+        <!-- <input id="flash_led_conf" class="lines" type="button" value="Confirmation Blink"/>
+        <input id="flash_led_error" class="lines" type="button" value="Error Blink"/>
+        <div> <input id="load_all" class="lines" type="button" value="load all values from flash"/></div>
+        <div>voltage (mv): <input id="voltage_fixed" class="command-line" placeholder="asdfasdf" /> </div>
+        <div><input id="store_all" class="lines" type="button" value="store all text values to flash"/></div> -->
         <div ><input id="bootload_prom" class="lines" type="button" value="bootloader program"/></div>
-        <!--<div><input id="bootload_erase" class="lines" type="button" value="bootloader erase"/></div>-->
-        <!--<div><input id="bootload_verify" class="lines" type="button" value="bootloader verify"/></div>-->
-        <!--<div><input id="bootload_end" class="lines" type="button" value="bootloader end"/></div>-->
+        <!-- <div><input id="bootload_erase" class="lines" type="button" value="bootloader erase"/></div>
+        <div><input id="bootload_verify" class="lines" type="button" value="bootloader verify"/></div>
+        <div><input id="bootload_end" class="lines" type="button" value="bootloader end"/></div> -->
         <div class="command-line" >Enable Bootloader:<input type="button" id="bootload_enable" value="disabled" style="color:blue" onclick="toggle(this);"></div>
         <input class="command-line" type="file" id="bootloader_image" />
         <pre class="command-line" id="bootloader_image"></pre>
