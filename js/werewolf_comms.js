@@ -60,25 +60,28 @@
 // i.e. a voltage setting will return the same length packet with the same payload, setting a string will return the same packet with that string
 // todo: on event of incorrect flash write, return an error code or the packet with invalid setting?
 const command_list = Object.freeze ({
-  CMD_VOLTAGE: 0,
-  CMD_CURRENT_LIMIT: 1, // optional current limit for pd negotiation
-  CMD_WW_SERIAL: 2, // unique device serial number
-  CMD_CHIP_UUID: 3, // ch32x035 chip uuid
-  CMD_HWID: 4, // werewolf product code
-  CMD_FWID: 5, // major.minor.patch
-  CMD_MFG_DATE: 6, // DDMMMYYYY
-  CMD_FLASH_LED_SEQUENCE_ADVANCED: 7, // write only, read returns confirm sequence received (todo: alternate return when sequence done)
-  CMD_FLASH_LED: 8, // simplified flash led sequence. write only, returns confirm sequence received
-  CMD_LOAD_CAL_SCRATCHPAD: 9, // load flash memory into ram calibration scratch pad
-  CMD_COMMIT_CAL_SCRATCHPAD: 10, // commit scratchpad to flash
-  OK: 11,
-  ERROR: 12,
-  CMD_BOOTLOAD_PROM: 13,
-  CMD_JUMP_TO_BOOTLOAD: 14,
-  CMD_BOOTLOAD_VERIFY: 15,
-  CMD_BOOTLOAD_END: 16,
-  CMD_BOOTLOAD_CANCEL_APP_TIMEOUT: 17,
-  CMD_PDO_LOG: 18
+  CMD_BOOTLOAD_PROM: 0,
+  CMD_JUMP_TO_BOOTLOAD: 1,
+  CMD_BOOTLOAD_VERIFY: 2,
+  CMD_BOOTLOAD_END: 3,
+  CMD_BOOTLOAD_CANCEL_APP_TIMEOUT: 4,
+  CMD_BOOTLOAD_RESERVED_0: 5
+  CMD_BOOTLOAD_RESERVED_1: 6
+  CMD_BOOTLOAD_RESERVED_2: 7
+  OK: 8,
+  ERROR: 9,
+  CMD_VOLTAGE: 10,
+  CMD_CURRENT_LIMIT: 11, // optional current limit for pd negotiation
+  CMD_WW_SERIAL: 12, // unique device serial number
+  CMD_CHIP_UUID: 13, // ch32x035 chip uuid
+  CMD_HWID: 14, // werewolf product code
+  CMD_FWID: 15, // major.minor.patch
+  CMD_MFG_DATE: 16, // DDMMMYYYY
+  CMD_FLASH_LED_SEQUENCE_ADVANCED: 17, // write only, read returns confirm sequence received (todo: alternate return when sequence done)
+  CMD_FLASH_LED: 18, // simplified flash led sequence. write only, returns confirm sequence received
+  CMD_LOAD_CAL_SCRATCHPAD: 19, // load flash memory into ram calibration scratch pad
+  CMD_COMMIT_CAL_SCRATCHPAD: 20, // commit scratchpad to flash
+  CMD_PDO_LOG: 21
 });
 
 // Expected string sizes (in bytes) for string set commands
