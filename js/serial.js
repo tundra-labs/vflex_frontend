@@ -13,6 +13,7 @@ var serial = {};
     const filters = [
       { 'vendorId': 0xcafe }, // TinyUSB
       { 'vendorId': 0x239a }, // Adafruit
+      { 'vendorId': 0x37bf }, // tundra
       { 'vendorId': 0x2e8a }, // Raspberry Pi
       { 'vendorId': 0x303a }, // Espressif
       { 'vendorId': 0x2341 }, // Arduino
