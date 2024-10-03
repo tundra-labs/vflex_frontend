@@ -23,6 +23,8 @@
     let current = document.getElementById("current");
     let set_voltage = document.getElementById("set_voltage");
     let bootload_prom = document.getElementById("bootload_prom");
+    let disable_leds_operation = document.getElementById("disable_leds_operation");
+    let enable_leds_operation = document.getElementById("enable_leds_operation");
 
     let uuid = document.getElementById("uuid");
     let serial_num = document.getElementById("serial_num");
@@ -44,6 +46,18 @@
     bootload_prom.addEventListener('click', function(e) {
       bootload_prom_function(port, app_bin_data["data"]);
     });
+
+
+    disable_leds_operation.addEventListener('click', function(e) {
+				disable_leds_operation_fn(port, 1);
+        console.log("disabling leds during operation (after timeout)");
+    });
+
+    enable_leds_operation.addEventListener('click', function(e) {
+				disable_leds_operation_fn(port, 0);
+        console.log("re-enabling (to default setting) leds during operation");
+    });
+
 
     
     clear_pdo_log_button.addEventListener('click', function(e) {

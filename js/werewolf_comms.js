@@ -81,7 +81,8 @@ const command_list = Object.freeze ({
   CMD_FLASH_LED: 18, // simplified flash led sequence. write only, returns confirm sequence received
   CMD_LOAD_CAL_SCRATCHPAD: 19, // load flash memory into ram calibration scratch pad
   CMD_COMMIT_CAL_SCRATCHPAD: 20, // commit scratchpad to flash
-  CMD_PDO_LOG: 21
+  CMD_PDO_LOG: 21,
+	CMD_DISABLE_LED_DURING_OPERATION: 22
 });
 
 // Expected string sizes (in bytes) for string set commands
@@ -254,6 +255,17 @@ function bootload_prom_function(port, data_object){ // data is of type "object" 
   ledBlink(port, 100, bootloaderBlink);
   setTimeout(() => { port.send(first_packet); }, 200);
 }
+
+
+function disable_leds_operation_fn(port, disable){ // data is of type "object" which is definitely a real type
+  let bootloader_preamble_len = 2; // Cmd, Len, Rev[2]; // todo: modify away rev, i believe it's redundant as we store a fw revision elsewhere
+  var output_arr = new Uint8Array(3);
+  output_arr[0] = 3;
+  output_arr[1] = command_list.CMD_DISABLE_LED_DURING_OPERATION; // set write bit for clear
+  output_arr[2] = disable;
+  port.send(output_arr);
+}
+
 
 function clear_pdo_log(port){ // data is of type "object" which is definitely a real type
   //boot_message.textContent = "bootload in progress";
