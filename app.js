@@ -167,7 +167,7 @@
                 recovery_msg.innerHTML = 'Plug Device Back In<br><br>Scanning for Devices...';
                 navigator.usb.addEventListener('connect', async (event) => {
                 
-                    if (event.device.vendorId === 9114 && i === 0) {
+                    if (event.device.vendorId === 14271 && i === 0) {
                         recovery_msg.textContent = "Device Found";
                         i++;
                         
@@ -202,7 +202,7 @@
                 setInterval(werewolf_attempt_connect, 200);
                 navigator.usb.addEventListener('connect', async (event) => {
                 
-                    if (event.device.vendorId === 9114 && i === 0) {
+                    if (event.device.vendorId === 14271 && i === 0) {
                         recovery_msg.textContent = "Device Found...";
                         i++;
                         
