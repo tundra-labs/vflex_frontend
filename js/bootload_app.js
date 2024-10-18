@@ -23,7 +23,7 @@
     let current = document.getElementById("current");
     let set_voltage = document.getElementById("set_voltage");
     let bootload_prom = document.getElementById("bootload_prom");
-    let disable_leds_operation = document.getElementById("disable_leds_operation");
+    let toggle_disabled_leds_operatiion = document.getElementById("toggle_disabled_leds_operatiion");
     let enable_leds_operation = document.getElementById("enable_leds_operation");
 
     let uuid = document.getElementById("uuid");
@@ -48,18 +48,19 @@
     });
 
 
-    disable_leds_operation.addEventListener('click', function(e) {
-				disable_leds_operation_fn(port, 1);
-        console.log("disabling leds during operation (after timeout)");
+    toggle_disabled_leds_operatiion.addEventListener('click', function(e) {
+      disable_leds_operation_fn(port, 1, 0); // read current status, set in werewolf_connect rx handler
+      setTimeout(() => {
+        console.log(calibration_values.led_disable_during_operation);
+        let toggled = calibration_values.led_disable_during_operation == 0 ? 1 : 0;
+        disable_leds_operation_fn(port, toggled, 1); // write
+      }, 200);
     });
 
     enable_leds_operation.addEventListener('click', function(e) {
-				disable_leds_operation_fn(port, 0);
-        console.log("re-enabling (to default setting) leds during operation");
+				disable_leds_operation_fn(port, 0, 1);
     });
 
-
-    
     clear_pdo_log_button.addEventListener('click', function(e) {
         clear_pdo_log(port);
         console.log("clear pdo log");
@@ -133,7 +134,7 @@
     //  setTimeout(() => { set_ww_string(port, command_list.CMD_MFG_DATE, mfg_date.value); }, 800);
     //  setTimeout(() => { setVoltage(port, voltage); }, 1200);
     //  setTimeout(() => { commit_flash(port); }, 1400);
- 
+
     //});
 
     bootloader_image.addEventListener('click', () => {
@@ -142,7 +143,7 @@
     bootloader_image.addEventListener('change', function(e) {
       readSingleFile(e);
     }, false);
- 
+
     //flash_led_conf.addEventListener('click', () => {
     //  console.log("blink");
     //  ledBlink(5, confBlink);
