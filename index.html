@@ -20,134 +20,180 @@
       function toggle(b){b.value=(b.value=="enabled")?"disabled":"enabled";}
     </script>
     <div>
-      <h1>vFlex Programmer</h1>
+      <h1>vFlex Tool</h1>
     </div>
-    <div class="main-content">
-      <div><button id="connectButton" type="button">Connect</button></div>
-      <div id="controls">
-        <!--<select id="voltage_select" style="text-align: center;"_-->
-        <select id="voltage_select">
-          <option value="5000">5V</option>
-          <option value="9000">9V</option>
-          <option value="12000">12V</option>
-          <option value="15000">15V</option>
-          <option value="20000">20V</option>
-          <option value="pps">Custom</option>
-        </select>
-        
-        <div id="ppsInput">
+
+    <div id="controls">        
+      <div id="ppsInput">
+        <div class="input-wrapper">
           <input id="voltage_pps" placeholder="" inputmode="numeric" maxlength="5" style="text-align: center;">
-          <span class="right-text">Volts</span>
-
-          <script>
-
-            const inputField = document.getElementById('voltage_pps');
-
-            inputField.addEventListener('input', function (e) {
-              // Remove anything that's not a digit, decimal point, or comma
-              let value = inputField.value.replace(/[^0-9.,]/g, '');
-
-              // Check if the user has already entered a decimal point or comma
-              let hasDecimalOrComma = value.includes('.') || value.includes(',');
-
-              if (!hasDecimalOrComma) {
-                // No decimal or comma added by the user, format automatically
-                value = value.replace(/\D/g, ''); // Remove non-numeric characters
-
-                if (value.length > 5) {
-                  value = value.slice(0, 5); // Enforce 4 digits maximum before formatting
-                }
-
-                if(value.length === 1 && value[0] >= '5' && value[0] <= '9'){
-                  if(e.inputType !== 'deleteContentBackward'){
-                    value = value[0] + '.';
-                  }
-                }
-                if(value.length === 2 && value[0] >= '1' && value[0] <= '4'){
-                  if(e.inputType !== 'deleteContentBackward'){
-                    value = value[0] + value[1] + '.';
-                  }
-                }
-                if (value.length === 3 && value[2] !== '.') {
-                  // Format as x.xx
-                  value = value[0] + '.' + value.slice(1);
-                } else if (value.length === 5) {
-                  // Format as xx.xx
-                  value = value.slice(0, 2) + '.' + value.slice(2);
-                }
-              } else {
-                // Allow user to input the decimal point (.) or comma (,)
-                // Normalize the comma to a period for consistency
-                value = value.replace(',', '.');
-
-                if (value.length > 5) {
-                  value = value.slice(0, 5); // Enforce 4 digits maximum before formatting
-                }
-
-                // Ensure only one decimal point is present
-                let parts = value.split('.');
-                if (parts.length > 2) {
-                  // If there are multiple decimals, retain only the first one
-                  value = parts[0] + '.' + parts[1];
-                }
-
-                if (value.length === 5) {
-                  // Format as xx.xx
-                  if(value[1] === '.'){
-                    value = value.slice(0, 1) + value.slice(2,3) + '.' + value.slice(3);
-                  }
-                }    
-              }
-              
-              let fValue = parseFloat(value);
-
-              switch(true) {
-                case (value.length === 4 && value[3] != '5' && value[3] != '0' && value[2] != '.'):
-                  pps_message.textContent = 'Must be in 0.05 Volt increments!';
-                  document.getElementById('set_voltage').disabled = true;
-                  set_voltage.style.backgroundColor = 'gray';
-                  break; 
-                case (value.length === 5 && value[4] != '5' && value[4] != '0'):
-                  pps_message.textContent = 'Must be in 0.05 Volt increments!';
-                  document.getElementById('set_voltage').disabled = true;
-                  set_voltage.style.backgroundColor = 'gray';
-                  break;
-                case(fValue < 3.35 || fValue > 48):
-                  pps_message.textContent = 'Must be between 3.35 Volts and 48.00 Volts';
-                  document.getElementById('set_voltage').disabled = true;
-                  set_voltage.style.backgroundColor = 'gray';
-                  break;
-                case(value >= '3.35' && value <= '4.95' || value > '16.00' && value <= '48.00'):
-                  pps_message.innerHTML = 'May be outside of normal operation <a href="https://app.werewolf.com/pps-info">(learn more)</a>';
-                  set_voltage.style.display = 'block';
-                  set_voltage.style.visibility = 'visible';
-                  set_voltage.style.backgroundColor = '#000B14';
-                  document.getElementById('set_voltage').disabled = false;
-                  break;
-                default:
-                  pps_message.textContent = '';
-                  set_voltage.style.display = 'block';
-                  set_voltage.style.visibility = 'visible';
-                  set_voltage.style.backgroundColor = '#000B14';
-                  document.getElementById('set_voltage').disabled = false;
-              }
-
-              inputField.value = value;
-            });
-
-          </script>
-
+          <span id="label_right" class="right-text">Volts</span>
         </div>
-        
-        
-        <button id="set_voltage" class="lines">Program</button>
-        
+
+            <!-- Added Three Bars -->
+        <div id="voltage_modes" style="display: flex; justify-content: space-evenly; margin: 2px 0;">
+          <div id="standardMode" class="modes">Standard</div>
+          <div class="space-between"></div>
+          <div id="ppsMode" class="modes">PPS</div>
+          <div class="space-between"></div>
+          <div id="extendedMode" class="modes">Extended</div>
+        </div>
+
+        <script>
+
+          const inputField = document.getElementById('voltage_pps');
+
+          inputField.addEventListener('input', function (e) {
+            // Remove anything that's not a digit, decimal point, or comma
+            let value = inputField.value.replace(/[^0-9.,]/g, '');
+
+            let wwgrey = "#F6F6F9"
+
+            // Check if the user has already entered a decimal point or comma
+            let hasDecimalOrComma = value.includes('.') || value.includes(',');
+
+            if (!hasDecimalOrComma) {
+              // No decimal or comma added by the user, format automatically
+              value = value.replace(/\D/g, ''); // Remove non-numeric characters
+
+              if (value.length > 5) {
+                value = value.slice(0, 5); // Enforce 4 digits maximum before formatting
+              }
+
+              if(value.length === 1 && value[0] >= '5' && value[0] <= '9'){
+                if(e.inputType !== 'deleteContentBackward'){
+                  value = value[0] + '.';
+                }
+              }
+              if(value.length === 2 && value[0] >= '1' && value[0] <= '4'){
+                if(e.inputType !== 'deleteContentBackward'){
+                  value = value[0] + value[1] + '.';
+                }
+              }
+              if (value.length === 3 && value[2] !== '.') {
+                // Format as x.xx
+                value = value[0] + '.' + value.slice(1);
+              } else if (value.length === 5) {
+                // Format as xx.xx
+                value = value.slice(0, 2) + '.' + value.slice(2);
+              }
+            } else {
+              // Allow user to input the decimal point (.) or comma (,)
+              // Normalize the comma to a period for consistency
+              value = value.replace(',', '.');
+
+              if (value.length > 5) {
+                value = value.slice(0, 5); // Enforce 4 digits maximum before formatting
+              }
+
+              // Ensure only one decimal point is present
+              let parts = value.split('.');
+              if (parts.length > 2) {
+                // If there are multiple decimals, retain only the first one
+                value = parts[0] + '.' + parts[1];
+              }
+
+              if (value.length === 5) {
+                // Format as xx.xx
+                if(value[1] === '.'){
+                  value = value.slice(0, 1) + value.slice(2,3) + '.' + value.slice(3);
+                }
+              }    
+            }
+            
+            let fValue = parseFloat(value);
+
+            let scaledValue = Math.round(fValue * 100);
+
+            function selectedMode(mode) {
+              mode.style.backgroundColor = '#525659';
+              mode.style.color = 'white';
+            }
+
+            function unSelectedMode(mode1, mode2){
+              mode1.style.backgroundColor = wwgrey
+              mode1.style.color = 'black';
+              mode2.style.backgroundColor = wwgrey
+              mode2.style.color = 'black';
+            }
+
+            function disabledSave (){
+              document.getElementById('set_voltage').disabled = true;
+              set_voltage.style.backgroundColor = 'gray';
+            }
+
+            switch(true) {
+              case (value.length === 4 && value[3] != '5' && value[3] != '0' && value[2] != '.'):
+                pps_message.textContent = 'Must be in 0.05 Volt increments!';
+                disabledSave();
+                break; 
+              case (value.length === 5 && value[4] != '5' && value[4] != '0'):
+                pps_message.textContent = 'Must be in 0.05 Volt increments!';
+                disabledSave();
+                break;
+              case(fValue < 3.35 || fValue > 48):
+                pps_message.textContent = 'Must be between 3.35 Volts and 48.00 Volts';
+                disabledSave();
+                break;
+              case(value >= '3.35' && value <= '4.95' || (value > '16.00' && value <= '48.00' && fValue !==20)):
+                pps_message.innerHTML = 'May be outside of normal operation <a href="https://app.werewolf.com/pps-info">(learn more)</a>';
+                set_voltage.style.display = 'block';
+                set_voltage.style.visibility = 'visible';
+                set_voltage.style.backgroundColor = '#000B14';
+                document.getElementById('set_voltage').disabled = false;
+                break;
+              default:
+                pps_message.textContent = '';
+                set_voltage.style.display = 'block';
+                set_voltage.style.visibility = 'visible';
+                set_voltage.style.backgroundColor = '#000B14';
+                document.getElementById('set_voltage').disabled = false;
+            }
+
+            console.log(scaledValue % 5);
+
+            switch(true) {
+              case(fValue === 5 || fValue === 9 || fValue === 12 || fValue === 15 || fValue === 20):
+                selectedMode(standardMode);
+                unSelectedMode(ppsMode, extendedMode);
+                break;
+              case(scaledValue % 5 === 0 && fValue > 4.95 && fValue < 16.05):
+                selectedMode(ppsMode);
+                unSelectedMode(standardMode, extendedMode);
+                break;
+              case((scaledValue % 5 === 0) && ((fValue > 3.30 && fValue < 5.0) || (fValue > 16.00 && fValue < 48.05))):
+                selectedMode(extendedMode);
+                unSelectedMode(ppsMode, standardMode);
+                break;
+              default:
+                standardMode.style.backgroundColor = wwgrey;
+                standardMode.style.color = 'black';
+                ppsMode.style.backgroundColor = wwgrey;
+                ppsMode.style.color = 'black';
+                extendedMode.style.backgroundColor = wwgrey;
+                extendedMode.style.color = 'black';
+            }
+
+            inputField.value = value;
+          });
+
+        </script>
       </div>
-      <div id="pps_message">Programmable in 50mV increments</div>
+        
+      <button id="edit_voltage">Modify</button>  
+      <div class="button-wrapper" style="display: flex; justify-content: space-evenly; margin: 2px 0;">
+        <button id="cancel_voltage" class="edit-btn">Cancel</button> 
+        <button id="set_voltage" class="edit-btn">Save</button>
+      </div>
+      
+
+      <div id="pps_message">Programmable in 0.05V increments</div>
       <div id="voltageStatus"></div>
+      <span id="fw_version"></span>
+    </div>
+
+    <div><button id="connectButton" type="button">Connect</button></div>
     
-    
-    <span id="fw_version"></span>
     <p id="troubleConnectingLink">Trouble Connecting?</p>
     <div id="popupBox" class="popup">
       <div class="popup-content">
@@ -159,8 +205,9 @@
           </div>
       </div>
     </div>
-    <div class="command-line">firmware id <input id="fw_id" class="command-line" placeholder="" /> </div>
-      <div id="advanced_settings">
+    
+      <div id="hidden_settings">
+        <div class="command-line">firmware id <input id="fw_id" class="command-line" placeholder="" /> </div>
         <div class="command-line">Active vFlex setting:<input id="programmed_voltage" value=""/></div>
         <div>current limit (mA): <input id="current" class="command-line" placeholder="asdfasdf" /> </div>
         <div>uuid: <input id="uuid" class="command-line" placeholder="" /> </div>

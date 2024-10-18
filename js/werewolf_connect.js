@@ -27,6 +27,11 @@ function connect() {
           let next_packet;
           let response;
           switch(command_code) {
+            case command_list.CMD_DISABLE_LED_DURING_OPERATION:
+              let disabled = data.getUint8(2);
+              console.log("led disabled?:", disabled);
+              break;
+
             case command_list.CMD_PDO_LOG:
               if (data.byteLength == 6) {
                 pdo_log_byte_queue.push(data.getUint8(2)); 
@@ -172,7 +177,7 @@ function connect() {
               console.log("jumping to bootloader");
 
             default:
-              console.log("invalid usb incoming message. unexpected command code");
+              console.log("invalid usb incoming message. unexpected command code",command_code );
           }
           if (data.getInt8() === 13) {
             currentReceiverLine = null;
