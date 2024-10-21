@@ -1,4 +1,4 @@
-let port;    
+let port;
 let connected = false;
 let bootloader_mode = 0; // todo: from html
 
@@ -29,15 +29,17 @@ function connect() {
           switch(command_code) {
             case command_list.CMD_DISABLE_LED_DURING_OPERATION:
               let disabled = data.getUint8(2);
+              // todo: check if calibration_values.led exists here?
+              calibration_values.led_disable_during_operation = disabled;
               console.log("led disabled?:", disabled);
               break;
 
-            case command_list.CMD_PDO_LOG:
+           case command_list.CMD_PDO_LOG:
               if (data.byteLength == 6) {
-                pdo_log_byte_queue.push(data.getUint8(2)); 
-                pdo_log_byte_queue.push(data.getUint8(3)); 
-                pdo_log_byte_queue.push(data.getUint8(4)); 
-                pdo_log_byte_queue.push(data.getUint8(5)); 
+                pdo_log_byte_queue.push(data.getUint8(2));
+                pdo_log_byte_queue.push(data.getUint8(3));
+                pdo_log_byte_queue.push(data.getUint8(4));
+                pdo_log_byte_queue.push(data.getUint8(5));
                 get_pdo_log(port);
               } else {
                 let n_pdos = pdo_log_byte_queue.length / 4;
@@ -200,7 +202,7 @@ function connect() {
 
         if (calibration_values.bootload_enable) {
           if (calibration_values.bootload_enable.value == "enabled" && connected) {
-            console.log(calibration_values.bootload_enable.value); 
+            console.log(calibration_values.bootload_enable.value);
             console.log("boot load enable");
             boot_message.textContent = "bootloader connecting...";
             setTimeout(() => { bootload_cancel_app_timeout(port); }, 100);

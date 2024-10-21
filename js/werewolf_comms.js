@@ -257,12 +257,18 @@ function bootload_prom_function(port, data_object){ // data is of type "object" 
 }
 
 
-function disable_leds_operation_fn(port, disable){ // data is of type "object" which is definitely a real type
+function disable_leds_operation_fn(port, disable, write){
   let bootloader_preamble_len = 2; // Cmd, Len, Rev[2]; // todo: modify away rev, i believe it's redundant as we store a fw revision elsewhere
-  var output_arr = new Uint8Array(3);
-  output_arr[0] = 3;
-  output_arr[1] = command_list.CMD_DISABLE_LED_DURING_OPERATION; // set write bit for clear
-  output_arr[2] = disable;
+  if (write) {
+    var output_arr = new Uint8Array(3);
+    output_arr[0] = 3;
+    output_arr[1] = command_list.CMD_DISABLE_LED_DURING_OPERATION | 0x80; // set write bit for clear
+    output_arr[2] = disable;
+  } else {
+    var output_arr = new Uint8Array(2);
+    output_arr[0] = 2;
+    output_arr[1] = command_list.CMD_DISABLE_LED_DURING_OPERATION; // set write bit for clear
+  }
   port.send(output_arr);
 }
 
