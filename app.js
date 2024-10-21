@@ -25,13 +25,16 @@
         let fw_id = document.getElementById("fw_id");
         let mfg_date = document.getElementById("mfg_date");
         let fw_version = document.getElementById("fw_version");
-        let currentFW = 'APP.01.06.00';
+        let currentFW = 'APP.01.06.01';
 
         let fw_or_recover
 
         const troubleConnectingBtn = document.getElementById('troubleConnectingLink');
         const popupBox = document.getElementById('popupBox');
         const nextBtn = document.getElementById('nextBtn');
+
+        const toggleButton = document.getElementById('toggle-button');
+        const toggleStatus = document.getElementById('toggle-status');
         
 
         calibration_values.voltage = programmed_voltage; // points to voltage elem
@@ -44,6 +47,17 @@
         bootload_prom.addEventListener('click', function(e) {
           bootload_prom_function(port, app_bin_data["data"]);
         });
+
+        // disable_leds_operation_fn(port, 1, 0);
+        // console.log(calibration_values.led_disable_during_operation);
+
+        toggleButton.addEventListener('click', function(e) {
+            setTimeout(() => {
+              console.log(calibration_values.led_disable_during_operation);
+              let toggled = calibration_values.led_disable_during_operation == 0 ? 1 : 0;
+              disable_leds_operation_fn(port, toggled, 1); // write
+            }, 200);
+          });
 
         
 
@@ -72,7 +86,14 @@
                 let fInput = programmed_voltage.value/1000;
                 voltage_pps.value = fInput.toFixed(2);
 
+                disable_leds_operation_fn(port, 1, 0);
+                setTimeout(() => {
+                    if(calibration_values.led_disable_during_operation === 0){
+                        toggleButton.checked = true;
+                    }
+                  }, 200);
                 
+
             } else {
                 connectButton.textContent = 'Connect';
                 fw_version.textContent = '';
@@ -300,6 +321,14 @@
                 console.log("Stopped attempting to connect.");
             }
         }
+
+        // toggleButton.addEventListener('change', () => {
+        //     if (toggleButton.checked) {
+        //         toggleStatus.textContent = 'LED Always On';
+        //     } else {
+        //         toggleStatus.textContent = 'LED Always Off';
+        //     }
+        // });
         
         bootload_enable.addEventListener('click', function() {
             setInterval(werewolf_attempt_connect, 200);
