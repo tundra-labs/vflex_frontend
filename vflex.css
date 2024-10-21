@@ -3,275 +3,299 @@
     src: url('https://cdn.shopify.com/s/files/1/0673/8532/7855/files/65c4f4afbfc1d89087cb8de4_NeulisNeue-Bold.otf?v=1719856432') format('opentype')
   }
   
-  .vflexbody {
-    font-family: 'Neuelis', sans-serif;
-    background-color: #FFFFFF;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    height: 100vh;
-  }
+.vflexbody {
+  font-family: 'Neuelis', sans-serif;
+  background-color: #FFFFFF;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+}
+
+h1 {
+  color: #000B14;
+  text-align: center;
+  font-size: 50px;
+  margin-bottom: 20px;
+}
+
+#hidden_settings {
+  display: none;
+}
+
+#voltage_select {
+  width: 100%;
+  max-width: 400px;
+  text-align: center;
+}
+
+#edit_voltage {
+  background-color: #000B14; /* Blue */
+  color: white;
+  border: none;
+  width: 400px;
+  margin-top: 10px; /* Add some space between input and button */
+  text-align: center;
+  padding: 10px;
+}
+
+#edit_voltage:hover {
+  background-color: #9696A8;
   
-  h1 {
-    color: #000B14;
+}
+
+.edit-btn{
+  background-color: #000B14; /* Blue */
+  color: white;
+  border: none;
+  width: 190px;
+  margin-top: 10px; /* Add some space between input and button */
+  text-align: center;
+  padding: 10px;
+}
+
+#cancel_voltage {
+  display: none;
+}
+
+#set_voltage {
+  display: none;
+}
+
+#controls{
+  display: none;
+}
+
+#voltageStatus {
+    font-size: 15px;
+    font-family: "Roboto", sans-serif;
+    font-weight: 600;
     text-align: center;
-    font-size: 50px;
     margin-bottom: 20px;
-  }
-  
-  button, select, input[type="text"] {
-    margin: 10px;
-    padding: 10px 20px;
-    font-size: 16px;
-    width: 400px;
-    font-weight:600;
-    border: 2px solid #9696A8;
-    background-color: #F6F6F9;
-    color: #9696A8;
-    cursor: pointer;
-    transition: background-color 0.3s, color 0.3s, border-color 0.3s;
-  }
-  
-  button:hover, select:hover, input[type="text"]:hover {
-    background-color: #000B14;
-    color: #fff;
-    border-color: #000B14;
-  }
-  
-  #sender_lines, #receiver_lines {
-    display: none;
-    margin: 10px;
-    padding: 10px;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    max-width: 400px;
-    overflow-y: auto;
-    max-height: 200px;
-  }
-  
-  .line {
-    margin-bottom: 5px;
-  }
-  
-  #command_line {
-    width: calc(100% - 42px); /* Adjust for padding and border */
-    max-width: 400px;
-    display: none;
-  }
-  
-  #voltage_select {
-    width: 100%;
-    max-width: 400px;
-    text-align: center;
-  }
-  
-  #set_voltage {
-    background-color: #000B14; /* Blue */
-    color: white;
-    border: none;
-    width: 400px;
-  }
-  
-  #set_voltage:hover {
-    background-color: #9696A8;
-    
-  }
-  
-  #voltageStatus {
-      font-size: 15px;
-      font-family: "Roboto", sans-serif;
-      font-weight: 600;
-      text-align: center;
-      margin-bottom: 20px;
-      margin-top: 40px;
-  }
-  
-  #advanced_settings_link{
-    display: block;
-  }
-  #advanced_settings{
-    display: none;
-  }
+    margin-top: 40px;
+}
 
-  #controls {
-    text-align: center;
-    display: none;
-  }
-  
-  #connectButton {
-    background-color: #04D3BC !important; /* Green */
-    color: white;
-    border: none;
-    width: 400px;
-    padding: 10px;
-    margin: 5px;
-    cursor: pointer;
-    text-align: center;
-  }
-  
-  #connectButton:hover {
-    background-color: #e0e0e0 !important;
-  }
+#connectButton {
+  background-color: #04D3BC !important; /* Green */
+  color: white;
+  border: none;
+  width: 400px;
+  padding: 10px;
+  margin: 5px;
+  cursor: pointer;
+  text-align: center;
+}
 
-  .main-content {
-    font-family: 'Neuelis', sans-serif;
-    background-color: #FFFFFF;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
+#connectButton:hover {
+  background-color: #e0e0e0 !important;
+}
 
-  .command-line {
-    display: none;
-  }
+.main-content {
+  font-family: 'Neuelis', sans-serif;
+  background-color: #FFFFFF;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
 
-  #pps_message {
-    display: none;
-    width: 400px;
-    height: 75px;
-    color: red;
-  }
-  
-  .main-content{
-    display: block;
-    text-align: center;
-  }
+#pps_message {
+  width: 400px;
+  height: 75px;
+  color: red;
+  text-align: center;
+}
 
-  /* #voltage_pps {
-    margin: 0 auto;
-  } */
-  
-  /* #ppsInput {
-    display: flex;
-    align-items: center;
-    gap: 5px; 
-    margin: 0 auto;
-  }
-  
-  #ppsInput select, #decimal {
-    display: inline-block;
-  } */
-  
-  #ppsBody {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    margin: 0; /* Remove default body margin */
-  }
-  
-  #ppsInput {
-    position: relative;
-    display: inline-block;
-  }
+#ppsInput {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center the content horizontally */
+}
 
-  input {
-    border: none;
-    border-bottom: 2px solid black;
-    outline: none;
-    font-size: 48px;
-    width: 400px;
-  }
+.input-wrapper {
+  display: inline-block;
+  position: relative; /* Allows absolute positioning of the label */
+  width: 400px; /* Set width to match the input */
+}
 
-  .right-text {
-    position: absolute;
-    right: 0px;   /* Distance from the right edge of the container */
-    top: 50%;
-    transform: translateY(-50%);  /* Vertically center the text */
-    pointer-events: none;  /* Make sure the text doesn't interfere with input clicks */
-    color: #000B14;
-    font-size: 48px;
-  }
+input {
+  border: none;
+  border-bottom: 2px solid black;
+  outline: none;
+  font-size: 48px;
+  width: 400px;
+  text-align: center;
+}
 
-   #fw_version {
-    align-items: start;
-  } 
+.right-text {
+  position: absolute;
+  right: 0px;   /* Distance from the right edge of the container */
+  top: 50%;
+  transform: translateY(-50%);  /* Vertically center the text */
+  pointer-events: none;  /* Make sure the text doesn't interfere with input clicks */
+  color: #000B14;
+  font-size: 48px;
+}
+
+#fw_version {
+  display: block;
+  text-align: center;
+  font-size: 20px; /* Adjust size if necessary */
+  margin-top: 20px; /* Optional: Adds some space above the text */
+  width: 100%;
+}
+
+.space-between {
+  width: 2px;
+}
+
+.modes {
+  width: 125px;
+  height: 28px;
+  text-align: center;
+  padding: 0px;
+  background-color: #F6F6F9;
+  flex: 1;
+  border-radius: 50px;
+  font-size: 16px;
+  line-height: 1.7;
+}
 
 /* Hide the popup by default */
 .popup {
-  display: none; /* Hidden by default */
-  position: fixed;
-  z-index: 1; /* Ensure it’s on top */
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  background-color: rgba(0, 0, 0, 0.4); /* Overlay effect */
+display: none; /* Hidden by default */
+position: fixed;
+z-index: 1; /* Ensure it’s on top */
+left: 0;
+top: 0;
+width: 100%;
+height: 100%;
+background-color: rgba(0, 0, 0, 0.4); /* Overlay effect */
 }
 
 .popup-content {
-  background-color: white;
-  margin: 15% auto;
-  padding: 20px;
-  border: 1px solid #888;
-  width: 500px;
-  height: 400px;
-  text-align: center;
-  align-content: center;
-  border-radius: 8px;
-  font-size: 30px;
-  position: relative; /* So the close button can be positioned inside */
+background-color: white;
+margin: 15% auto;
+padding: 20px;
+border: 1px solid #888;
+width: 500px;
+height: 400px;
+text-align: center;
+align-content: center;
+border-radius: 8px;
+font-size: 30px;
+position: relative; /* So the close button can be positioned inside */
 }
 
 /* Close button */
 .close-btn {
-  position: absolute;
-  top: 10px;
-  right: 20px;
-  font-size: 30px;
-  cursor: pointer;
-  color: #aaa;
+position: absolute;
+top: 10px;
+right: 20px;
+font-size: 30px;
+cursor: pointer;
+color: #aaa;
 }
 
 .close-btn:hover {
-  color: red; /* Highlight close button when hovered */
+color: red; /* Highlight close button when hovered */
 }
 
 
 #nextBtn {
-  background-color: #04D3BC;
-  color: white;
-  padding: 10px 20px;
-  border: none;
-  border-radius: 5px;
-  cursor: pointer;
-  width: 300px;
-  font-size: 20px;
+background-color: #04D3BC;
+color: white;
+padding: 10px 20px;
+border: none;
+border-radius: 5px;
+cursor: pointer;
+width: 300px;
+font-size: 20px;
 }
 
 #nextBtn:hover {
-  background-color: #e0e0e0;
+background-color: #e0e0e0;
 }
 
 .progress-bar-container {
-  width: 100%;
-  background-color: #eee;
-  border-radius: 5px;
-  margin: 20px 0; /* Adjust spacing as needed */
-  height: 30px; /* Height of the progress bar */
+width: 100%;
+background-color: #eee;
+border-radius: 5px;
+margin: 20px 0; /* Adjust spacing as needed */
+height: 30px; /* Height of the progress bar */
 }
 
 .progress-bar {
-  width: 0%; /* Start at 0% */
-  height: 100%;
-  background-color: #039E8D; /* Green color */
-  border-radius: 5px; /* Rounded corners */
-  transition: width 0.3s; /* Smooth transition */
+width: 0%; /* Start at 0% */
+height: 100%;
+background-color: #039E8D; /* Green color */
+border-radius: 5px; /* Rounded corners */
+transition: width 0.3s; /* Smooth transition */
 }
 
 #troubleConnectingLink {
-  color: #039E8D; /* Link color */
-  text-decoration: underline; /* Underline like a link */
-  cursor: pointer; /* Change the cursor to a pointer */
+color: #039E8D; /* Link color */
+text-decoration: underline; /* Underline like a link */
+cursor: pointer; /* Change the cursor to a pointer */
 }
 
 #troubleConnectingLink:hover {
-  color: #9696A8; /* Slightly darker color on hover */
+color: #9696A8; /* Slightly darker color on hover */
 }
 
+.toggle-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.toggle {
+  position: relative;
+  display: inline-block;
+  width: 60px;
+  height: 34px;
+}
+
+.toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: #ccc;
+  transition: .4s;
+  border-radius: 34px;
+}
+
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 26px;
+  width: 26px;
+  left: 4px;
+  bottom: 4px;
+  background-color: white;
+  transition: .4s;
+  border-radius: 50%;
+}
+
+input:checked + .slider {
+  background-color: #9ceee5;
+}
+
+input:checked + .slider:before {
+  transform: translateX(26px);
+}
   

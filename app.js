@@ -6,13 +6,8 @@
         const statusDisplay = document.querySelector('#voltageStatus');
         const controls = document.querySelector("#controls"); // Assuming this contains the voltage select and program button
         const voltageSelect = document.querySelector("#voltage_select");
-        const commandLine = document.querySelector("#command_line");
-        const getVoltageButton = document.querySelector("#getVoltage");
-        // const advancedSettings = document.querySelector("#advanced_settings");
-        // const advancedSettingsLink = document.querySelector("#advanced_settings_link");
-        const recoveryBtn = document.querySelector("#jump_to_bootloader");
+
         const ppsMessage = document.querySelector("#pps_message");
-        const customInput = document.getElementById('#voltage_pps');
         let bootload_enable = document.getElementById("bootload_enable");
         let recovery_msg = document.getElementById('recovery_msg');
         let connectInterval;
@@ -30,15 +25,16 @@
         let fw_id = document.getElementById("fw_id");
         let mfg_date = document.getElementById("mfg_date");
         let fw_version = document.getElementById("fw_version");
-        let currentFW = 'APP.01.04.03';
+        let currentFW = 'APP.01.06.01';
 
         let fw_or_recover
-        // let hide = 'Hide Advanced Features';
-        // let trouble = 'Trouble Connecting?';
 
         const troubleConnectingBtn = document.getElementById('troubleConnectingLink');
         const popupBox = document.getElementById('popupBox');
         const nextBtn = document.getElementById('nextBtn');
+
+        const toggleButton = document.getElementById('toggle-button');
+        const toggleStatus = document.getElementById('toggle-status');
         
 
         calibration_values.voltage = programmed_voltage; // points to voltage elem
@@ -52,33 +48,61 @@
           bootload_prom_function(port, app_bin_data["data"]);
         });
 
+        // disable_leds_operation_fn(port, 1, 0);
+        // console.log(calibration_values.led_disable_during_operation);
+
+        toggleButton.addEventListener('click', function(e) {
+            setTimeout(() => {
+              console.log(calibration_values.led_disable_during_operation);
+              let toggled = calibration_values.led_disable_during_operation == 0 ? 1 : 0;
+              disable_leds_operation_fn(port, toggled, 1); // write
+            }, 200);
+          });
+
         
 
         //Checking to see if variable connected from werewolf_connect.js changes
-        window.addEventListener('connectedChange', function(event) {
+        window.addEventListener('connectedChange', async function(event) {
             const isConnected = event.detail;
-            if (isConnected) {
+            if (isConnected && window.getComputedStyle(popupBox).display === 'none') {
+                console.log(calibration_values.fw_id.value);
+                console.log(calibration_values.voltage.value);
                 connectButton.textContent = 'Disconnect';
                 controls.style.display = 'block';
-                ppsInput.style.display = 'none';
-                ppsCheck();
-                setTimeout(() => {
-                    if(fw_id.value === currentFW){
-                        fw_version.textContent = 'Firmware Version:  ' + fw_id.value;
-                    } else {
-                        newFirmware();
-                    }
-                    
-                }, 2000);
                 troubleConnectingBtn.style.display = 'none';
-                statusDisplay.style.display = 'block';
+
+                document.getElementById('voltage_pps').disabled = true;
+
+                await waitForFirmware();
+
+                if(fw_id.value === currentFW){
+                    fw_version.textContent = 'Firmware Version:  ' + fw_id.value;
+                } else {
+                    newFirmware();
+                }
+                
+                await waitForVoltageChange();
+                
+                let fInput = programmed_voltage.value/1000;
+                voltage_pps.value = fInput.toFixed(2);
+
+                disable_leds_operation_fn(port, 1, 0);
+                setTimeout(() => {
+                    if(calibration_values.led_disable_during_operation === 0){
+                        toggleButton.checked = true;
+                    }
+                  }, 200);
+                
+
             } else {
                 connectButton.textContent = 'Connect';
-                controls.style.display = 'none';
-                ppsMessage.style.display = 'none';
                 fw_version.textContent = '';
                 troubleConnectingBtn.style.display = 'block';
-                statusDisplay.textContent = '';
+                controls.style.display = 'none';
+                edit_voltage.style.display = 'block';
+                set_voltage.style.display = 'none';
+                cancel_voltage.style.display = 'none';
+                document.getElementById('voltage_pps').disabled = true;
             }
         });
         
@@ -92,52 +116,50 @@
             }
         });
 
-
-        // Checking for PPS when drop down is interacted with
-        voltageSelect.addEventListener('change', function() {
-            ppsCheck();
+        edit_voltage.addEventListener('click', function(){
+            document.getElementById('voltage_pps').disabled = false;
+            edit_voltage.style.display = 'none';
+            set_voltage.style.display = 'block';
+            cancel_voltage.style.display = 'block';
         });
 
-        // Checking to see if "Custom" is selected
-        function ppsCheck() {
-            const selectedValue = voltageSelect.value;
-            
-            if (selectedValue === 'pps') {
-                ppsInput.style.display = 'block';
-                ppsMessage.style.display = 'block';
-                ppsMessage.innerHTML = ppsMessageContent;
-            } else {
-                ppsInput.style.display = 'none';
-                ppsMessage.style.display = 'none';
-                setTimeout(() => {
-                    statusDisplay.textContent = "Programmed to " + (calibration_values.voltage.value / 1000) + "V";
-                    fw_version.style.textDecoration = 'none';
-                    fw_version.style.color = 'black';
-                }, 1500);
-            }
-        }
+        cancel_voltage.addEventListener('click', function(){
+            document.getElementById('voltage_pps').disabled = true;
+            edit_voltage.style.display = 'block';
+            set_voltage.style.display = 'none';
+            cancel_voltage.style.display = 'none';
+            let fInput = programmed_voltage.value/1000;
+            voltage_pps.value = fInput.toFixed(2);
+        });
 
-        set_voltage.addEventListener('click', function(e) {
-            let i = voltageSelect.selectedIndex;
-            let option = voltageSelect.options[i];
-            let v_select = option.value;
-            let setting_mv = 5000;
-            if(v_select == "pps") {
-              
-              let floatValue = (parseFloat(voltage_pps.value)*1000);
-              setting_mv = floatValue.toFixed(0);
-            } else {
-              setting_mv = v_select;
+        // setting the voltage after clicking
+        set_voltage.addEventListener('click', async function(e) {
+            console.log("clicking");
+          
+            let floatValue = (parseFloat(voltage_pps.value) * 1000);
+            let setting_mv = floatValue.toFixed(0);
+        
+            console.log(setting_mv);
+            
+            if (connected) {
+                // Call setVoltage and wait for it to complete
+                await setVoltage(port, setting_mv);
+                pps_message.textContent = "";
             }
-            if(connected) {
-              setVoltage(port, setting_mv);
-              ppsMessage.textContent = "";
-            } 
-            statusDisplay.textContent = "";
-            setTimeout(() => {
-                statusDisplay.textContent = "Programmed to " + (calibration_values.voltage.value / 1000) + "V";
-            }, 300);  // 200ms delay
-          });
+            
+            voltageStatus.textContent = "";
+        
+            // Wait for calibration_values.voltage.value to be updated before proceeding
+            await waitForVoltageChange();
+        
+            let fInput = programmed_voltage.value/1000;
+            voltage_pps.value = fInput.toFixed(2);
+
+            edit_voltage.style.display = 'block';
+            set_voltage.style.display = 'none';
+            cancel_voltage.style.display = 'none';
+            document.getElementById('voltage_pps').disabled = true;
+        });
 
         jump_to_bootloader_elem.addEventListener('click', function(e) {
             if(fw_version.textContent === 'New Firmware Available!'){
@@ -269,6 +291,29 @@
                 console.log("Clicked on New Firmware Available!");
             });
         }
+
+        // This function waits for the voltage value to change
+        function waitForVoltageChange() {
+            return new Promise((resolve) => {
+                const interval = setInterval(() => {
+                    if (calibration_values.voltage.value !== null && calibration_values.voltage.value !== 0 && calibration_values.voltage.value !== '') { // Change condition based on your use case
+                        clearInterval(interval);  // Stop the interval when the value is updated
+                        resolve();  // Resolve the promise
+                    }
+                }, 50);  // Check every 100ms (adjust the interval if needed)
+            });
+        }
+
+        function waitForFirmware(){
+            return new Promise((resolve) => {
+                const interval = setInterval(() => {
+                    if(calibration_values.fw_id.value !== '') {
+                        clearInterval(interval);
+                        resolve();
+                    }
+                }, 100);
+            });
+        }
         
         function stopConnectionAttempts() {
             if (connectInterval) {
@@ -276,6 +321,14 @@
                 console.log("Stopped attempting to connect.");
             }
         }
+
+        // toggleButton.addEventListener('change', () => {
+        //     if (toggleButton.checked) {
+        //         toggleStatus.textContent = 'LED Always On';
+        //     } else {
+        //         toggleStatus.textContent = 'LED Always Off';
+        //     }
+        // });
         
         bootload_enable.addEventListener('click', function() {
             setInterval(werewolf_attempt_connect, 200);
