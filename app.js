@@ -68,6 +68,7 @@
                 console.log(calibration_values.fw_id.value);
                 console.log(calibration_values.voltage.value);
                 connectButton.textContent = 'Disconnect';
+                connectButton.classList.add('deactive');
                 controls.style.display = 'block';
                 troubleConnectingBtn.style.display = 'none';
 
@@ -96,6 +97,7 @@
 
             } else {
                 connectButton.textContent = 'Connect';
+                connectButton.classList.remove('deactive');
                 fw_version.textContent = '';
                 troubleConnectingBtn.style.display = 'block';
                 controls.style.display = 'none';
@@ -284,23 +286,24 @@
 
         function newFirmware(){
             fw_version.textContent = 'New Firmware Available!';
-            fw_version.style.color = '#039E8D';
+            fw_version.style.color = '#2B303B';
             fw_version.style.cursor = 'pointer';
             fw_version.style.textDecoration = 'underline';
             fw_version.addEventListener('click', function(){
                 console.log("Clicked on New Firmware Available!");
             });
+            fw_version.classList.add('hover');
         }
 
         // This function waits for the voltage value to change
         function waitForVoltageChange() {
             return new Promise((resolve) => {
                 const interval = setInterval(() => {
-                    if (calibration_values.voltage.value !== null && calibration_values.voltage.value !== 0 && calibration_values.voltage.value !== '') { // Change condition based on your use case
+                    if (calibration_values.voltage.value !== null && calibration_values.voltage.value !== '') { // Change condition based on your use case
                         clearInterval(interval);  // Stop the interval when the value is updated
                         resolve();  // Resolve the promise
                     }
-                }, 50);  // Check every 100ms (adjust the interval if needed)
+                }, 25);  // Check every 100ms (adjust the interval if needed)
             });
         }
 
@@ -311,7 +314,7 @@
                         clearInterval(interval);
                         resolve();
                     }
-                }, 100);
+                }, 25);
             });
         }
         

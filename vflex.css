@@ -16,7 +16,7 @@
 }
 
 h1 {
-  color: #000B14;
+  color: #2B303B;
   text-align: center;
   font-size: 50px;
   margin-bottom: 20px;
@@ -33,28 +33,38 @@ h1 {
 }
 
 #edit_voltage {
-  background-color: #000B14; /* Blue */
+  background-color: #2B303B; /* Green */
   color: white;
-  border: none;
+  border: 2px solid transparent;
   width: 400px;
-  margin-top: 10px; /* Add some space between input and button */
-  text-align: center;
   padding: 10px;
+  margin: 5px;
+  cursor: pointer;
+  text-align: center;
 }
 
 #edit_voltage:hover {
-  background-color: #9696A8;
+  background-color: white;
+  color: #2B303B;
+  border: 2px solid #2B303B; 
   
 }
 
 .edit-btn{
-  background-color: #000B14; /* Blue */
+  background-color: #2B303B !important;
   color: white;
-  border: none;
+  border: 2px solid transparent;
   width: 190px;
   margin-top: 10px; /* Add some space between input and button */
   text-align: center;
+  cursor: pointer;
   padding: 10px;
+}
+
+.edit-btn:hover{
+  background-color: white !important;
+  color: #2B303B !important;
+  border: 2px solid #2B303B !important; 
 }
 
 #cancel_voltage {
@@ -74,14 +84,14 @@ h1 {
     font-family: "Roboto", sans-serif;
     font-weight: 600;
     text-align: center;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     margin-top: 40px;
 }
 
 #connectButton {
-  background-color: #04D3BC !important; /* Green */
+  background-color: #2B303B; /* Green */
   color: white;
-  border: none;
+  border: 2px solid transparent;
   width: 400px;
   padding: 10px;
   margin: 5px;
@@ -89,8 +99,29 @@ h1 {
   text-align: center;
 }
 
+#connectButton.deactive {
+  background-color: white;       /* Set the interior to white */
+  color: black;                  /* Set text color to black */
+  border: 2px solid #2B303B;       /* Black outline */
+  width: 400px;
+  padding: 10px;
+  margin: 5px;
+  cursor: pointer;
+  text-align: center;
+  font-size: 16px;               /* Optional: Adjust font size */
+  transition: background-color 0.3s, color 0.3s;  /* Smooth transition */
+}
+
+#connectButton.deactive:hover {
+  background-color: #2B303B;       /* Change background on hover */
+  color: white;          
+}
+
+
 #connectButton:hover {
-  background-color: #e0e0e0 !important;
+  background-color: white;
+  color: #2B303B;
+  border: 2px solid #2B303B; 
 }
 
 .main-content {
@@ -106,8 +137,8 @@ h1 {
 
 #pps_message {
   width: 400px;
-  height: 75px;
-  color: red;
+  height: 15px;
+  color: black;
   text-align: center;
 }
 
@@ -138,7 +169,7 @@ input {
   top: 50%;
   transform: translateY(-50%);  /* Vertically center the text */
   pointer-events: none;  /* Make sure the text doesn't interfere with input clicks */
-  color: #000B14;
+  color: #2B303B;
   font-size: 48px;
 }
 
@@ -148,6 +179,10 @@ input {
   font-size: 20px; /* Adjust size if necessary */
   margin-top: 20px; /* Optional: Adds some space above the text */
   width: 100%;
+}
+
+#fw_version.hover:hover{
+  color: grey !important;
 }
 
 .space-between {
@@ -208,7 +243,7 @@ color: red; /* Highlight close button when hovered */
 
 
 #nextBtn {
-background-color: #04D3BC;
+background-color: #2B303B;
 color: white;
 padding: 10px 20px;
 border: none;
@@ -233,13 +268,13 @@ height: 30px; /* Height of the progress bar */
 .progress-bar {
 width: 0%; /* Start at 0% */
 height: 100%;
-background-color: #039E8D; /* Green color */
+background-color: #2B303B; /* Green color */
 border-radius: 5px; /* Rounded corners */
 transition: width 0.3s; /* Smooth transition */
 }
 
 #troubleConnectingLink {
-color: #039E8D; /* Link color */
+color: #2B303B; /* Link color */
 text-decoration: underline; /* Underline like a link */
 cursor: pointer; /* Change the cursor to a pointer */
 }
@@ -292,7 +327,7 @@ color: #9696A8; /* Slightly darker color on hover */
 }
 
 input:checked + .slider {
-  background-color: #9ceee5;
+  background-color: #2B303B;
 }
 
 input:checked + .slider:before {
