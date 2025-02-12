@@ -69,6 +69,11 @@ function connect() {
                 pdo_log_byte_queue = [];
               }
               break;
+            case command_list.CMD_ENCRYPT_MSG:
+              let preamble_len = 2;
+              var string = new TextDecoder().decode(data).slice(preamble_len);
+              console.log("received:" ,string);
+              break;
             case command_list.CMD_VOLTAGE:
               let mv = data.getUint8(2) <<8 | (data.getUint8(3));
               if(calibration_values.voltage) {

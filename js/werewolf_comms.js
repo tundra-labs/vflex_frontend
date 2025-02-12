@@ -83,6 +83,7 @@ const command_list = Object.freeze ({
   CMD_COMMIT_CAL_SCRATCHPAD: 20, // commit scratchpad to flash
   CMD_PDO_LOG: 21,
 	CMD_DISABLE_LED_DURING_OPERATION: 22
+	CMD_ENCRYPT_MSG: 23
 });
 
 // Expected string sizes (in bytes) for string set commands
@@ -144,6 +145,18 @@ function send_ww_string(port, string_command, str, write,scratchpad){
   } else {
     return false;
   }
+}
+
+function encrypt_message (port, msg) { // msg is a string
+  let preamble_len = 2;
+  let output_array_len = msg.length + preamble_len;
+  var output_array = new Uint8Array(output_array_len);
+  output_array[0] = output_array_len; // msg len
+  output_array[1] = command_list.CMD_ENCRYPT_MSG | 0x80;
+  for (let i = preamble_len; i < output_array_len; i++) {
+    output_array[i] = str[i-preamble_len].charCodeAt(0);
+  }
+  port.send(array);
 }
 
 function set_ww_string(port, string_command, str){
