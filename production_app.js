@@ -11,7 +11,9 @@
         });
         send_encrypted_msg.addEventListener('click', function(e) {
           console.log("test encrypted message!");
-          fn_send_encrypted_message(port, "hey");
+
+          let encrypted_msg = [162, 84, 35, 100, 61, 33, 115, 83, 235, 172, 111, 141];
+          fn_send_encrypted_message(port, encrypted_msg);
         });
 
 
