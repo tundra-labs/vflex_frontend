@@ -82,7 +82,7 @@ const command_list = Object.freeze ({
   CMD_LOAD_CAL_SCRATCHPAD: 19, // load flash memory into ram calibration scratch pad
   CMD_COMMIT_CAL_SCRATCHPAD: 20, // commit scratchpad to flash
   CMD_PDO_LOG: 21,
-	CMD_DISABLE_LED_DURING_OPERATION: 22
+	CMD_DISABLE_LED_DURING_OPERATION: 22,
 	CMD_ENCRYPT_MSG: 23
 });
 
@@ -147,17 +147,17 @@ function send_ww_string(port, string_command, str, write,scratchpad){
   }
 }
 
-function encrypt_message (port, msg) { // msg is a string
-  let preamble_len = 2;
-  let output_array_len = msg.length + preamble_len;
-  var output_array = new Uint8Array(output_array_len);
-  output_array[0] = output_array_len; // msg len
-  output_array[1] = command_list.CMD_ENCRYPT_MSG | 0x80;
-  for (let i = preamble_len; i < output_array_len; i++) {
-    output_array[i] = str[i-preamble_len].charCodeAt(0);
-  }
-  port.send(array);
-}
+function fn_send_encrypted_message (port, msg) { // msg is a string
+ let preamble_len = 2;
+ let output_array_len = msg.length + preamble_len;
+ var output_array = new Uint8Array(output_array_len);
+ output_array[0] = output_array_len; // msg len
+ output_array[1] = command_list.CMD_ENCRYPT_MSG | 0x80;
+ for (let i = preamble_len; i < output_array_len; i++) {
+   output_array[i] = msg[i-preamble_len].charCodeAt(0);
+ }
+ port.send(output_array);
+}//
 
 function set_ww_string(port, string_command, str){
   let write = 1;
