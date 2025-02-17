@@ -9,11 +9,39 @@
                 werewolf_manual_connect();
             }
         });
+        const ws = new WebSocket("ws://127.0.0.1:8001/");
+        var encrypted_msg;
+        ws.onmessage = function(event){
+          //encrypted_msg = JSON.stringify(event.data, null,4);
+          encrypted_msg = JSON.parse(event.data);
+          console.log("data:", encrypted_msg);
+        };
         send_encrypted_msg.addEventListener('click', function(e) {
           console.log("test encrypted message!");
+          get_ww_string(port, command_list.CMD_WW_SERIAL);
+          //setTimeout(() => { console.log(encrypted_msg); }, 200);
+          var user_msg= "helloworld";
+          // get encrypted message from the server
+          setTimeout(() => {  // send serial number to server to request encrypted packet
+           try {
+               ws.send(serial_num);
+           } catch (error) {
+               //html_msg = '<br/>' + error;
+               //document.getElementById("msg_field").innerHTML= html_msg;
+             console.log('err');
+           }
+          }, 200);
+       
+          setTimeout(() => {  // send serial number to server to request encrypted packet
+            fn_send_encrypted_message(port, encrypted_msg);
+          }, 1000);
 
-          let encrypted_msg = [162, 84, 35, 100, 61, 33, 115, 83, 235, 172, 111, 141];
-          fn_send_encrypted_message(port, encrypted_msg);
+           //html_msg += "<br />  msg sent ["+user_msg+']'
+           //document.getElementById("msg_field").innerHTML= html_msg;
+           //console.log("Msg sent ", user_msg);
+ 
+
+
         });
 
 

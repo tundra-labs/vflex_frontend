@@ -147,16 +147,19 @@ function send_ww_string(port, string_command, str, write,scratchpad){
   }
 }
 function fn_send_encrypted_message (port, msg) { // msg is a string
+  console.log(msg, msg.length);
  let preamble_len = 2;
  let output_array_len = msg.length + preamble_len;
+ console.log("enc msg info", output_array_len, msg.length, preamble_len);
  var output_array = new Uint8Array(output_array_len);
  output_array[0] = output_array_len; // msg len
  output_array[1] = command_list.CMD_ENCRYPT_MSG | 0x80;
- for (let i = preamble_len; i < output_array_len; i++) {
-   output_array[i] = msg[i-preamble_len];
+ for (let i = 0; i < msg.length; i++) {
+   output_array[i+preamble_len] = msg[i];
  }
+ console.log("output_array", output_array);
  port.send(output_array);
-}//
+}
 
 
 //function fn_send_encrypted_message (port, msg) { // msg is a string
