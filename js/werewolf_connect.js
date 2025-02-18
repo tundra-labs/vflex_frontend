@@ -40,6 +40,15 @@ function connect() {
               ACK = 1;
               console.log("ACK");
               break;
+            case command_list.CMD_SB_COMMIT_PAGE:
+              ACK = 1;
+              console.log("ACK commit");
+              break;
+
+            case command_list.CMD_SB_VERIFY:
+              console.log("verify");
+              break;
+
            case command_list.CMD_PDO_LOG:
               if (data.byteLength == 6) {
                 pdo_log_byte_queue.push(data.getUint8(2));

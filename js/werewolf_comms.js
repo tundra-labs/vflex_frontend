@@ -166,19 +166,19 @@ function fn_send_encrypted_message (port, msg) { // msg is a string
 }
 
 // packet format(size): len(1) cmd(1) pg_msb(1) pg_lsb(1) which_half(1) data(32)
-function fn_send_bootloader_half_page_encrypted(port, msg, pg_id, which_half) {
+function fn_send_bootloader_chunk_encrypted(port, msg, pg_id, chunk_id) {
   let preamble_len = 2;
   let data_start_pos = 5;
   let pg_id_sz = 2;
-  let which_half_sz = 1;
+  let chunk_sz = 1;
 
-  let output_array_len =  preamble_len +pg_id_sz + which_half_sz + msg.length;
+  let output_array_len =  preamble_len +pg_id_sz + chunk_sz + msg.length;
   var output_array = new Uint8Array(output_array_len);
   output_array[0] = output_array_len; // msg len
   output_array[1] = command_list.CMD_SB_WRITE_HALF_PAGE | 0x80;
-  output_array[2] = pg_id << 8;
+  output_array[2] = pg_id >> 8;
   output_array[3] = pg_id&0xff;
-  output_array[4] = which_half;
+  output_array[4] = chunk_id;
   
   for (let i = 0; i < msg.length; i++) {
    output_array[i+data_start_pos] = msg[i];
@@ -186,8 +186,27 @@ function fn_send_bootloader_half_page_encrypted(port, msg, pg_id, which_half) {
   console.log("output_array", output_array);
   port.send(output_array);
 }
+function fn_verify_bootloader(port, mem_len) {
+  let preamble_len = 2;
+  let data_len = 2;
+  let output_array_len =  preamble_len + data_len;
+  var output_array = new Uint8Array(output_array_len);
+  output_array[0] = output_array_len; // msg len
+  output_array[1] = command_list.CMD_SB_VERIFY | 0x80;
+  output_array[2] = mem_len >> 8;
+  output_array[3] = mem_len & 0xff;
+  console.log(output_array);
+  port.send(output_array);
+}
 
-
+function fn_commit_bootloader_page(port) {
+  let preamble_len = 2;
+  let output_array_len =  preamble_len;
+  var output_array = new Uint8Array(output_array_len);
+  output_array[0] = output_array_len; // msg len
+  output_array[1] = command_list.CMD_SB_COMMIT_PAGE | 0x80;
+  port.send(output_array);
+}
 //function fn_send_encrypted_message (port, msg) { // msg is a string
 // let preamble_len = 2;
 // let output_array_len = msg.length + preamble_len;
