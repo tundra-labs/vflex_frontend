@@ -2,6 +2,7 @@ let port;
 let connected = false;
 let bootloader_mode = 0; // todo: from html
 let serial_num = 0;
+let ACK = 0;
 
 var calibration_values = {}; // assigned at import level to user defined html fields. messages populated iff they're defined.
 
@@ -35,7 +36,10 @@ function connect() {
               calibration_values.led_disable_during_operation = disabled;
               console.log("led disabled?:", disabled);
               break;
-
+            case command_list.CMD_SB_WRITE_HALF_PAGE:
+              ACK = 1;
+              console.log("ACK");
+              break;
            case command_list.CMD_PDO_LOG:
               if (data.byteLength == 6) {
                 pdo_log_byte_queue.push(data.getUint8(2));

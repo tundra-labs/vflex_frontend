@@ -1,3 +1,38 @@
+var encrypted_msg = 0;
+function waitForACK(){
+    return new Promise((resolve) => {
+        const interval = setInterval(() => {
+            if(ACK) {
+                ACK = 0;
+                clearInterval(interval);
+                resolve();
+            }
+        }, 25);
+    });
+}
+async function waitForEncryptedMsg(){
+    return new Promise((resolve) => {
+        const interval = setInterval(() => {
+            if(encrypted_msg) {
+                clearInterval(interval);
+                resolve();
+            }
+        }, 25);
+    });
+}
+async function waitForSerial(){
+    return new Promise((resolve) => {
+        const interval = setInterval(() => {
+            if (calibration_values.serial_num !== null && calibration_values.serial_num !== '') {
+                clearInterval(interval);
+                resolve();
+            }
+        }, 25);
+    });
+}
+
+
+
 (function() {
     'use strict';
   
@@ -10,38 +45,27 @@
             }
         });
         const ws = new WebSocket("ws://127.0.0.1:8001/");
-        var encrypted_msg;
+
+
         ws.onmessage = function(event){
           //encrypted_msg = JSON.stringify(event.data, null,4);
           encrypted_msg = JSON.parse(event.data);
           console.log("data:", encrypted_msg);
         };
-        send_encrypted_msg.addEventListener('click', function(e) {
-          console.log("test encrypted message!");
+        send_encrypted_msg.addEventListener('click', async function(e) {
+          encrypted_msg = 0; // reset
           get_ww_string(port, command_list.CMD_WW_SERIAL);
-          //setTimeout(() => { console.log(encrypted_msg); }, 200);
-          var user_msg= "helloworld";
-          // get encrypted message from the server
-          setTimeout(() => {  // send serial number to server to request encrypted packet
-           try {
-               ws.send(serial_num);
-           } catch (error) {
-               //html_msg = '<br/>' + error;
-               //document.getElementById("msg_field").innerHTML= html_msg;
-             console.log('err');
-           }
-          }, 200);
-       
-          setTimeout(() => {  // send serial number to server to request encrypted packet
-            fn_send_encrypted_message(port, encrypted_msg);
-          }, 1000);
-
-           //html_msg += "<br />  msg sent ["+user_msg+']'
-           //document.getElementById("msg_field").innerHTML= html_msg;
-           //console.log("Msg sent ", user_msg);
- 
-
-
+          await waitForSerial();
+          try {ws.send(serial_num);} // send serial number to server, server responds with encrypted bootload packets
+          catch (error) {console.log('err');}
+          await waitForEncryptedMsg();
+          for (let i = 0; i < encrypted_msg.length; i++) {
+              fn_send_bootloader_half_page_encrypted(port, encrypted_msg[i].first_half_encrypted, encrypted_msg[i].pg_id, 0)
+              await waitForACK();
+              fn_send_bootloader_half_page_encrypted(port, encrypted_msg[i].second_half_encrypted, encrypted_msg[i].pg_id, 1);
+              await waitForACK();
+          }
+          console.log('done');
         });
 
 
