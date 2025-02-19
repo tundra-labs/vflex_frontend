@@ -44,7 +44,7 @@ async function waitForSerial(){
                 werewolf_manual_connect();
             }
         });
-        const ws = new WebSocket("ws://127.0.0.1:8001/");
+        const ws = new WebSocket("ws://192.168.1.94:8001");
 
         ws.onmessage = function(event){
           //encrypted_msg = JSON.stringify(event.data, null,4);
@@ -83,7 +83,8 @@ async function waitForSerial(){
           jump_to_app(port);
         });
 
-        const commission_ws = new WebSocket("ws://127.0.0.1:8002/");
+        //const commission_ws = new WebSocket("ws://127.0.0.1:8002/");
+        const commission_ws = new WebSocket("ws://192.168.1.94:8002/");
         get_new_img.addEventListener('click', async function(e) {
           try {commission_ws.send("anything");}
           catch (error) {console.log(error);}
@@ -96,7 +97,7 @@ async function waitForSerial(){
           var blob = new Blob(["\ufeff", data]);
           var url = URL.createObjectURL(blob);
           downloadLink.href = url;
-          downloadLink.download = "data.hex";
+          downloadLink.download = "data.hex.txt";
 
           document.body.appendChild(downloadLink);
           downloadLink.click();
