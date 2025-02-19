@@ -46,7 +46,6 @@ async function waitForSerial(){
         });
         const ws = new WebSocket("ws://127.0.0.1:8001/");
 
-
         ws.onmessage = function(event){
           //encrypted_msg = JSON.stringify(event.data, null,4);
           encrypted_msg = JSON.parse(event.data);
@@ -84,10 +83,25 @@ async function waitForSerial(){
           jump_to_app(port);
         });
 
-        verify_encrypted_msg.addEventListener('click', async function(e) {
-          fn_verify_bootloader(port,5);
+        const commission_ws = new WebSocket("ws://127.0.0.1:8002/");
+        get_new_img.addEventListener('click', async function(e) {
+          try {commission_ws.send("anything");}
+          catch (error) {console.log(error);}
         });
+        commission_ws.onmessage = function(event){ // creates new 
+          let data = JSON.parse(event.data);
+          console.log('created new device in database:',data.serial)
+          data = data.hex_img;
+          var downloadLink = document.createElement("a");
+          var blob = new Blob(["\ufeff", data]);
+          var url = URL.createObjectURL(blob);
+          downloadLink.href = url;
+          downloadLink.download = "data.hex";
 
+          document.body.appendChild(downloadLink);
+          downloadLink.click();
+          document.body.removeChild(downloadLink);
+        };
 
         //}
         ////  bootload_prom_function(port, app_bin_data["data"]);
