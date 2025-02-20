@@ -44,7 +44,7 @@ async function waitForSerial(){
                 werewolf_manual_connect();
             }
         });
-        const ws = new WebSocket("ws://192.168.1.94:8001");
+        const ws = new WebSocket("https://ken-1.tail3793c.ts.net:8401/boot_server");
 
         ws.onmessage = function(event){
           //encrypted_msg = JSON.stringify(event.data, null,4);
@@ -84,7 +84,7 @@ async function waitForSerial(){
         });
 
         //const commission_ws = new WebSocket("ws://127.0.0.1:8002/");
-        const commission_ws = new WebSocket("ws://192.168.1.94:8002/");
+        const commission_ws  = new WebSocket("https://ken-1.tail3793c.ts.net:8402/comm_server");
         get_new_img.addEventListener('click', async function(e) {
           try {commission_ws.send("anything");}
           catch (error) {console.log(error);}
