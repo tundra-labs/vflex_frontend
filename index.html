@@ -44,71 +44,89 @@
         CMD_ENCRYPT_MSG: 23
       });
 
-      // Singleton MIDI handler
-      const midiHandler = (() => {
-          let midiAccess = null;
-          let output = null;
-          let input = null;
-          let isInitialized = false;
+    let output = null;
+    let input = null;
+    let receiveBuffer = [];
+    let receiveComplete = false;
 
-          // Initialize MIDI access and setup listener
-          async function initialize() {
-              if (isInitialized) return;
+    // Initialize WebMIDI
+    navigator.requestMIDIAccess().then(midiAccess => {
+      // Find CH32X035 output (adjust name as seen in MIDI-OX)
+      for (let out of midiAccess.outputs.values()) {
+        console.log("Output:", out.name);
+        if (out.name.includes("vFlex")) { // Adjust based on your device name
+          output = out;
+          break;
+        }
+      }
+      if (!output) console.error("No output found!");
 
-              try {
-                  midiAccess = await navigator.requestMIDIAccess({ sysex: true });
-                  output = Array.from(midiAccess.outputs.values())[0];
-                  input = Array.from(midiAccess.inputs.values())[0];
+      // Find CH32X035 input
+      for (let inPort of midiAccess.inputs.values()) {
+        console.log("Input:", inPort.name);
+        if (inPort.name.includes("vFlex")) {
+          input = inPort;
+          input.onmidimessage = handleMidiMessage;
+          break;
+        }
+      }
+      if (!input) console.error("No input found!");
+    }, err => console.error("MIDI Access Failed:", err));
 
-                  if (!output || !input) {
-                      console.error("No MIDI output or input found");
-                      return;
-                  }
+      function handleMidiMessage(event) {
+      const [status, data1, data2] = event.data;
+      console.log("status byte!", status);
+      if (status === 0x80) { // Note Off: Clear buffer
+        receiveBuffer = [];
+        receiveComplete = false;
+        console.log("Buffer cleared");
+      } else if (status === 0x90) { // Note On: Accumulate 8-bit byte
+        if (receiveBuffer.length < 64) {
+          const byte = (data1 << 4) | data2; // Recombine high/low nibbles
+          receiveBuffer.push(byte);
+          console.log(`Added: ${byte.toString(16)} | Buffer size: ${receiveBuffer.length}`);
+        }
+      } else if (status === 0xA0) { // Start: End of payload
+        receiveComplete = true;
+        console.log("Payload received:", receiveBuffer.map(b => b.toString(16).padStart(2, '0')));
+      }
+    }
 
-                  // Set up the listener once
-                  input.onmidimessage = (event) => {
-                      if (event.data[0] === 0xF0 && event.data[event.data.length - 1] === 0xF7) {
-                          console.log("Received SysEx:", event.data);
-                          const payload = event.data.slice(2, -1); // Skip F0, manufacturer ID, and F7
-                          console.log("Payload:", payload);
-                      }
-                  };
+    // Send a payload to device
+    async function sendPayload(payload) {
+      if (!output) return console.error("No output device!");
+      if (payload.length > 64) payload = payload.slice(0, 64);
 
-                  isInitialized = true;
-                  console.log("MIDI initialized");
-              } catch (err) {
-                  console.error("MIDI Access failed:", err);
-              }
-          }
+      // Clear buffer
+      output.send([0x80, 0, 0]); // Note Off
+      //console.log("Sent: Clear buffer");
+      Delay(10);
 
-          // Reusable send function
-          async function sendSysExToDevice(payload) {
-              await initialize(); // Ensure MIDI is ready
+      // Send each byte as high/low nibbles
+      for (let i = 0; i < payload.length; i++) {
+        const byte = payload[i];
+        const highNibble = (byte >> 4) & 0x0F; // High 4 bits (0x0-0xF)
+        const lowNibble = byte & 0x0F;          // Low 4 bits (0x0-0xF)
+        output.send([0x90, highNibble, lowNibble]); // Note On
+        //console.log(`Sent: 90 ${highNibble.toString(16)} ${lowNibble.toString(16)}`);
+        Delay(10);
+      }
 
-              if (!output) {
-                  console.error("No MIDI output available");
-                  return;
-              }
+      // Signal end
+      output.send([0xA0, 0, 0]); // Start
+      console.log("Sent: End of payload");
+    }
 
-              const encoded = [];
-              for (let i = 0; i < payload.length; i++) {
-                  const byte = payload[i];
-                  encoded.push((byte >> 7) & 0x01); // High bit
-                  encoded.push(byte & 0x7F);        // Low 7 bits
-              }
-              const sysex = [0xF0, 0x7D, ...encoded, 0xF7];
-              console.log("Sending SysEx:", sysex);
-              output.send(sysex);
-          }
-
-          return { sendSysExToDevice };
-      })();
-
+    // Simulate delay (since browser lacks native delay)
+    function Delay(ms) {
+      const start = Date.now();
+      while (Date.now() - start < ms) {}
+    }
       async function getVoltage () {
         var array = new Uint8Array(2);
         array[0] = 2; // msg len
         array[1] = command_list.CMD_VOLTAGE;
-        await midiHandler.sendSysExToDevice(array);
+        await sendPayload(array);
       }
 
       async function setVoltage (setting_mv) {
@@ -116,39 +134,51 @@
         array[0] = 4; // msg len
         array[1] = command_list.CMD_VOLTAGE | 0x80;
 
-        //let setting_mv = radioArray.value;
+        ////let setting_mv = radioArray.value;
         let setting_mv_msb = (setting_mv >> 8)&0xFF;
         let setting_mv_lsb = setting_mv & 0xFF;
         array[2] = setting_mv_msb;
         array[3] = setting_mv_lsb;
 
-        await midiHandler.sendSysExToDevice(array);
+        await sendPayload(array);
         //port.send(array);
       }
 
 
-      // Usage example
-      (async () => {
-          console.log('factory');
-          getVoltage();
-          console.log('fset to 5k');
-          setVoltage(5000);
-          console.log('read');
-          getVoltage();
-          console.log('to 9k');
-          setVoltage(9000);
-          console.log('read');
-          getVoltage();
-          // Test send #1
-          //const sampleData1 = new Uint8Array(32).map((_, i) => i % 256);
-          //await midiHandler.sendSysExToDevice(sampleData1);
-          //console.log("First SysEx transfer initiated");
 
-          //// Test send #2 (reusing the same setup)
-          //const sampleData2 = new Uint8Array(4).map((_, i) => i + 100);
-          //await midiHandler.sendSysExToDevice(sampleData2);
-          //console.log("Second SysEx transfer initiated");
-      })();
+    // Example: Send a test payload every 5 seconds
+    setInterval(() => {
+      getVoltage();
+      //const payload = Array.from({length: 8}, (_, i) => i + 1); // [1, 2, 3, 4, 5, 6, 7, 8]
+      //const payload1 = Array.from({length: 8}, (_, i) => i + 1); // [1, 2, 3, 4, 5, 6, 7, 8]
+      //sendPayload(payload);
+     //       console.log('fake');
+      //setVoltage(5000);
+    }, 2000);
+
+
+      //// Usage example
+      //(async () => {
+          //console.log('factory');
+          //getVoltage();
+          ////console.log('fset to 5k');
+          ////setVoltage(5000);
+          ////console.log('read');
+          ////getVoltage();
+          ////console.log('to 9k');
+          ////setVoltage(9000);
+          ////console.log('read');
+          ////getVoltage();
+          //// Test send #1
+          ////const sampleData1 = new Uint8Array(32).map((_, i) => i % 256);
+          ////await midiHandler.sendSysExToDevice(sampleData1);
+          ////console.log("First SysEx transfer initiated");
+
+          ////// Test send #2 (reusing the same setup)
+          ////const sampleData2 = new Uint8Array(4).map((_, i) => i + 100);
+          ////await midiHandler.sendSysExToDevice(sampleData2);
+          ////console.log("Second SysEx transfer initiated");
+      //})();
 
 
 
