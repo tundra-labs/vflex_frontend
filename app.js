@@ -62,7 +62,7 @@
           });
 
         test_button.addEventListener('click', function(e) {
-              getVoltage(port);
+              setVoltage(port, 9000);
         });
 
 
