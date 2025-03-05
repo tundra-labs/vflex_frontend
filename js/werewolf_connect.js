@@ -489,6 +489,9 @@ function connect() {
         midiInput = null;
         port = null;
         console.log("Disconnected: port cleared");
+        connected = false;
+        setConnected(false);
+
       } else { // Connect
         navigator.requestMIDIAccess().then(midiAccess => {
           console.log("MIDI Access Granted");
@@ -540,6 +543,9 @@ function connect() {
               console.log("Sent: End [A0 00 00]");
             }
           };
+          connected = true;
+          setConnected(connected);
+
           console.log("Connected: port set:", port);
 
         }, err => console.error("MIDI Access Failed:", err));
