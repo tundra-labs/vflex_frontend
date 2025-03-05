@@ -3,6 +3,8 @@
   
     document.addEventListener('DOMContentLoaded', event => {
         const connectButton = document.querySelector("#connectButton");
+        const test_button = document.querySelector("#testbutton");
+
         const statusDisplay = document.querySelector('#voltageStatus');
         const controls = document.querySelector("#controls"); // Assuming this contains the voltage select and program button
         const voltageSelect = document.querySelector("#voltage_select");
@@ -59,7 +61,11 @@
             }, 200);
           });
 
-        
+        test_button.addEventListener('click', function(e) {
+              getVoltage(port);
+        });
+
+
 
         //Checking to see if variable connected from werewolf_connect.js changes
         window.addEventListener('connectedChange', async function(event) {

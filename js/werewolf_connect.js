@@ -291,6 +291,10 @@ function connect() {
       }
     }
 
+    function Delay(ms) {
+      const start = Date.now();
+      while (Date.now() - start < ms) {}
+    }
     function connectMidi() {
       if (port) { // Disconnect
         console.log("Disconnecting MIDI...");
