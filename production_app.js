@@ -38,11 +38,8 @@ async function waitForSerial(){
   
     document.addEventListener('DOMContentLoaded', event => {
         connectButton.addEventListener('click', function() {
-            if(connected){
-                port.disconnect();
-            } else {
+		console.log('fudge');
                 werewolf_manual_connect();
-            }
         });
         const ws = new WebSocket("https://ken-1.tail3793c.ts.net:8401/boot_server");
 
