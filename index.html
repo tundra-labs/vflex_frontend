@@ -75,16 +75,15 @@
 
       function handleMidiMessage(event) {
       const [status, data1, data2] = event.data;
-      console.log("status byte!", status);
       if (status === 0x80) { // Note Off: Clear buffer
         receiveBuffer = [];
         receiveComplete = false;
-        console.log("Buffer cleared");
+        //console.log("Buffer cleared");
       } else if (status === 0x90) { // Note On: Accumulate 8-bit byte
         if (receiveBuffer.length < 64) {
           const byte = (data1 << 4) | data2; // Recombine high/low nibbles
           receiveBuffer.push(byte);
-          console.log(`Added: ${byte.toString(16)} | Buffer size: ${receiveBuffer.length}`);
+          //console.log(`Added: ${byte.toString(16)} | Buffer size: ${receiveBuffer.length}`);
         }
       } else if (status === 0xA0) { // Start: End of payload
         receiveComplete = true;
@@ -114,7 +113,7 @@
 
       // Signal end
       output.send([0xA0, 0, 0]); // Start
-      console.log("Sent: End of payload");
+      console.log("Sent(EOP)");
     }
 
     // Simulate delay (since browser lacks native delay)
