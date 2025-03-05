@@ -1,4 +1,8 @@
-let port;
+let port = null;
+let midiOutput = null;
+let midiInput = null;
+let receiveBuffer = [];
+let receiveComplete = false;
 let connected = false;
 let bootloader_mode = 0; // todo: from html
 let serial_num = 0;
@@ -268,21 +272,107 @@ function connect() {
         }
       });
     }
+    function handleMidiMessage(event) {
+      const [status, data1, data2] = event.data;
+      console.log(`Raw MIDI @ ${event.timeStamp}: ${status.toString(16)} ${data1.toString(16)} ${data2.toString(16)}`);
+      if (status === 0x80) {
+        receiveBuffer = [];
+        receiveComplete = false;
+        console.log("Buffer cleared");
+      } else if (status === 0x90) {
+        if (receiveBuffer.length < 64) {
+          const byte = (data1 << 4) | data2;
+          receiveBuffer.push(byte);
+          console.log(`Added: ${byte.toString(16)} | Buffer size: ${receiveBuffer.length}`);
+        }
+      } else if (status === 0xA0) {
+        receiveComplete = true;
+        console.log("Payload received:", receiveBuffer.map(b => b.toString(16).padStart(2, '0')));
+      }
+    }
+
+    function connectMidi() {
+      if (port) { // Disconnect
+        console.log("Disconnecting MIDI...");
+        if (midiInput) {
+          midiInput.onmidimessage = null; // Remove listener
+          console.log("Input listener removed:", midiInput.name);
+        }
+        midiOutput = null;
+        midiInput = null;
+        port = null;
+        console.log("Disconnected: port cleared");
+      } else { // Connect
+        navigator.requestMIDIAccess().then(midiAccess => {
+          console.log("MIDI Access Granted");
+
+          // Find output
+          for (let out of midiAccess.outputs.values()) {
+            console.log(`Output: ${out.name} (ID: ${out.id})`);
+            if (out.name.includes("vFlex")) {
+              midiOutput = out;
+              break;
+            }
+          }
+          if (!midiOutput) throw new Error("No MIDI output found!");
+          console.log("Selected Output:", midiOutput.name);
+
+          // Find input
+          for (let inPort of midiAccess.inputs.values()) {
+            console.log(`Input: ${inPort.name} (ID: ${inPort.id})`);
+            if (inPort.name.includes("vFlex")) {
+              midiInput = inPort;
+              midiInput.onmidimessage = handleMidiMessage;
+              break;
+            }
+          }
+          if (!midiInput) console.warn("No MIDI input found!");
+          else console.log("Selected Input:", midiInput.name);
+
+          // Set up port wrapper
+          port = {
+            send: function(data) {
+              if (!midiOutput) {
+                console.error("No MIDI output connected!");
+                return;
+              }
+              midiOutput.send([0x80, 0, 0]);
+              console.log("Sent: Clear buffer [80 00 00]");
+              Delay(20);
+
+              for (let i = 0; i < data.length; i++) {
+                const byte = data[i];
+                const highNibble = (byte >> 4) & 0x0F;
+                const lowNibble = byte & 0x0F;
+                midiOutput.send([0x90, highNibble, lowNibble]);
+                console.log(`Sent: [90 ${highNibble.toString(16)} ${lowNibble.toString(16)}]`);
+                Delay(20);
+              }
+
+              midiOutput.send([0xA0, 0, 0]);
+              console.log("Sent: End [A0 00 00]");
+            }
+          };
+          console.log("Connected: port set:", port);
+
+        }, err => console.error("MIDI Access Failed:", err));
+      }
+    }
 
     function werewolf_manual_connect() {
-      if (port) {
-        port.disconnect();
-        //connectButton.textContent = 'Connect';
-        port = null;
-      } else {
-        serial.requestPort().then(selectedPort => {
-          port = selectedPort;
-          connect();
-        }).catch(error => {
-          console.log(error);
-        });
-      }
-
+      connectMidi();
+      //if (port) {
+        //port.disconnect();
+        ////connectButton.textContent = 'Connect';
+        //port = null;
+      //} else {
+        //serial.requestPort().then(selectedPort => {
+          //port = selectedPort;
+          //connect();
+        //}).catch(error => {
+          //console.log(error);
+        //});
+      //}
     }
 
     function werewolf_attempt_connect() {

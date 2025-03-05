@@ -6,187 +6,239 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <link href="vflex.css" rel="stylesheet">
     <title>vFlex Programmer</title>
-    <!--<script src="js/werewolf_comms.js"></script>
+    <script src="js/werewolf_comms.js"></script>
     <script src="js/werewolf_comms_leds.js"></script>
     <script src="js/werewolf_util.js"></script>
     <script src="js/werewolf_connect.js"></script>
     <script src="js/werewolf_app_image.js"></script>
-    <script src="js/serial.js"></script> -->
+    <script src="js/serial.js"></script>
     <!-- <script src="js/bootload_app.js"></script> -->
-    <!--<script src="app.js"></script>-->
+    <script src="app.js"></script>
   </head>
   <body class="vflexbody">
     <script type="text/javascript">
-      const command_list = Object.freeze ({
-        CMD_BOOTLOAD_PROM: 0,
-        CMD_JUMP_TO_BOOTLOAD: 1,
-        CMD_BOOTLOAD_VERIFY: 2,
-        CMD_BOOTLOAD_END: 3,
-        CMD_BOOTLOAD_CANCEL_APP_TIMEOUT: 4,
-        CMD_BOOTLOAD_RESERVED_0: 5,
-        CMD_BOOTLOAD_RESERVED_1: 6,
-        CMD_BOOTLOAD_RESERVED_2: 7,
-        OK: 8,
-        ERROR: 9,
-        CMD_VOLTAGE: 10,
-        CMD_CURRENT_LIMIT: 11, // optional current limit for pd negotiation
-        CMD_WW_SERIAL: 12, // unique device serial number
-        CMD_CHIP_UUID: 13, // ch32x035 chip uuid
-        CMD_HWID: 14, // werewolf product code
-        CMD_FWID: 15, // major.minor.patch
-        CMD_MFG_DATE: 16, // DDMMMYYYY
-        CMD_FLASH_LED_SEQUENCE_ADVANCED: 17, // write only, read returns confirm sequence received (todo: alternate return when sequence done)
-        CMD_FLASH_LED: 18, // simplified flash led sequence. write only, returns confirm sequence received
-        CMD_LOAD_CAL_SCRATCHPAD: 19, // load flash memory into ram calibration scratch pad
-        CMD_COMMIT_CAL_SCRATCHPAD: 20, // commit scratchpad to flash
-        CMD_PDO_LOG: 21,
-        CMD_DISABLE_LED_DURING_OPERATION: 22,
-        CMD_ENCRYPT_MSG: 23
-      });
-
-    let output = null;
-    let input = null;
-    let receiveBuffer = [];
-    let receiveComplete = false;
-
-    // Initialize WebMIDI
-    navigator.requestMIDIAccess().then(midiAccess => {
-      // Find CH32X035 output (adjust name as seen in MIDI-OX)
-      for (let out of midiAccess.outputs.values()) {
-        console.log("Output:", out.name);
-        if (out.name.includes("vFlex")) { // Adjust based on your device name
-          output = out;
-          break;
-        }
-      }
-      if (!output) console.error("No output found!");
-
-      // Find CH32X035 input
-      for (let inPort of midiAccess.inputs.values()) {
-        console.log("Input:", inPort.name);
-        if (inPort.name.includes("vFlex")) {
-          input = inPort;
-          input.onmidimessage = handleMidiMessage;
-          break;
-        }
-      }
-      if (!input) console.error("No input found!");
-    }, err => console.error("MIDI Access Failed:", err));
-
-      function handleMidiMessage(event) {
-      const [status, data1, data2] = event.data;
-      if (status === 0x80) { // Note Off: Clear buffer
-        receiveBuffer = [];
-        receiveComplete = false;
-        //console.log("Buffer cleared");
-      } else if (status === 0x90) { // Note On: Accumulate 8-bit byte
-        if (receiveBuffer.length < 64) {
-          const byte = (data1 << 4) | data2; // Recombine high/low nibbles
-          receiveBuffer.push(byte);
-          //console.log(`Added: ${byte.toString(16)} | Buffer size: ${receiveBuffer.length}`);
-        }
-      } else if (status === 0xA0) { // Start: End of payload
-        receiveComplete = true;
-        console.log("Payload received:", receiveBuffer.map(b => b.toString(16).padStart(2, '0')));
-      }
-    }
-
-    // Send a payload to device
-    async function sendPayload(payload) {
-      if (!output) return console.error("No output device!");
-      if (payload.length > 64) payload = payload.slice(0, 64);
-
-      // Clear buffer
-      output.send([0x80, 0, 0]); // Note Off
-      //console.log("Sent: Clear buffer");
-      Delay(10);
-
-      // Send each byte as high/low nibbles
-      for (let i = 0; i < payload.length; i++) {
-        const byte = payload[i];
-        const highNibble = (byte >> 4) & 0x0F; // High 4 bits (0x0-0xF)
-        const lowNibble = byte & 0x0F;          // Low 4 bits (0x0-0xF)
-        output.send([0x90, highNibble, lowNibble]); // Note On
-        //console.log(`Sent: 90 ${highNibble.toString(16)} ${lowNibble.toString(16)}`);
-        Delay(10);
-      }
-
-      // Signal end
-      output.send([0xA0, 0, 0]); // Start
-      console.log("Sent(EOP)");
-    }
-
-    // Simulate delay (since browser lacks native delay)
-    function Delay(ms) {
-      const start = Date.now();
-      while (Date.now() - start < ms) {}
-    }
-      async function getVoltage () {
-        var array = new Uint8Array(2);
-        array[0] = 2; // msg len
-        array[1] = command_list.CMD_VOLTAGE;
-        await sendPayload(array);
-      }
-
-      async function setVoltage (setting_mv) {
-        var array = new Uint8Array(4);
-        array[0] = 4; // msg len
-        array[1] = command_list.CMD_VOLTAGE | 0x80;
-
-        ////let setting_mv = radioArray.value;
-        let setting_mv_msb = (setting_mv >> 8)&0xFF;
-        let setting_mv_lsb = setting_mv & 0xFF;
-        array[2] = setting_mv_msb;
-        array[3] = setting_mv_lsb;
-
-        await sendPayload(array);
-        //port.send(array);
-      }
-
-
-
-    // Example: Send a test payload every 5 seconds
-    setInterval(() => {
-      getVoltage();
-      //const payload = Array.from({length: 8}, (_, i) => i + 1); // [1, 2, 3, 4, 5, 6, 7, 8]
-      //const payload1 = Array.from({length: 8}, (_, i) => i + 1); // [1, 2, 3, 4, 5, 6, 7, 8]
-      //sendPayload(payload);
-     //       console.log('fake');
-      //setVoltage(5000);
-    }, 2000);
-
-
-      //// Usage example
-      //(async () => {
-          //console.log('factory');
-          //getVoltage();
-          ////console.log('fset to 5k');
-          ////setVoltage(5000);
-          ////console.log('read');
-          ////getVoltage();
-          ////console.log('to 9k');
-          ////setVoltage(9000);
-          ////console.log('read');
-          ////getVoltage();
-          //// Test send #1
-          ////const sampleData1 = new Uint8Array(32).map((_, i) => i % 256);
-          ////await midiHandler.sendSysExToDevice(sampleData1);
-          ////console.log("First SysEx transfer initiated");
-
-          ////// Test send #2 (reusing the same setup)
-          ////const sampleData2 = new Uint8Array(4).map((_, i) => i + 100);
-          ////await midiHandler.sendSysExToDevice(sampleData2);
-          ////console.log("Second SysEx transfer initiated");
-      //})();
-
-
-
+      function toggle(b){b.value=(b.value=="enabled")?"disabled":"enabled";}
     </script>
     <div>
       <h1>vFlex Tool</h1>
     </div>
+
+    <div id="controls">        
+      <div id="ppsInput">
+        <div class="input-wrapper">
+          <input id="voltage_pps" placeholder="" inputmode="numeric" maxlength="5" style="text-align: center;">
+          <span id="label_right" class="right-text">Volts</span>
+        </div>
+
+            <!-- Added Three Bars -->
+        <div id="voltage_modes" style="display: flex; justify-content: space-evenly; margin: 2px 0;">
+          <div id="standardMode" class="modes">Standard</div>
+          <div class="space-between"></div>
+          <div id="ppsMode" class="modes">PPS</div>
+          <div class="space-between"></div>
+          <div id="extendedMode" class="modes">Extended</div>
+        </div>
+
+        <script>
+
+          const inputField = document.getElementById('voltage_pps');
+
+          inputField.addEventListener('input', function (e) {
+            // Remove anything that's not a digit, decimal point, or comma
+            let value = inputField.value.replace(/[^0-9.,]/g, '');
+
+            let wwgrey = "#F6F6F9"
+
+            // Check if the user has already entered a decimal point or comma
+            let hasDecimalOrComma = value.includes('.') || value.includes(',');
+
+            if (!hasDecimalOrComma) {
+              // No decimal or comma added by the user, format automatically
+              value = value.replace(/\D/g, ''); // Remove non-numeric characters
+
+              if (value.length > 5) {
+                value = value.slice(0, 5); // Enforce 4 digits maximum before formatting
+              }
+
+              if(value.length === 1 && value[0] >= '5' && value[0] <= '9'){
+                if(e.inputType !== 'deleteContentBackward'){
+                  value = value[0] + '.';
+                }
+              }
+              if(value.length === 2 && value[0] >= '1' && value[0] <= '4'){
+                if(e.inputType !== 'deleteContentBackward'){
+                  value = value[0] + value[1] + '.';
+                }
+              }
+              if (value.length === 3 && value[2] !== '.') {
+                // Format as x.xx
+                value = value[0] + '.' + value.slice(1);
+              } else if (value.length === 5) {
+                // Format as xx.xx
+                value = value.slice(0, 2) + '.' + value.slice(2);
+              }
+            } else {
+              // Allow user to input the decimal point (.) or comma (,)
+              // Normalize the comma to a period for consistency
+              value = value.replace(',', '.');
+
+              if (value.length > 5) {
+                value = value.slice(0, 5); // Enforce 4 digits maximum before formatting
+              }
+
+              // Ensure only one decimal point is present
+              let parts = value.split('.');
+              if (parts.length > 2) {
+                // If there are multiple decimals, retain only the first one
+                value = parts[0] + '.' + parts[1];
+              }
+
+              if (value.length === 5) {
+                // Format as xx.xx
+                if(value[1] === '.'){
+                  value = value.slice(0, 1) + value.slice(2,3) + '.' + value.slice(3);
+                }
+              }    
+            }
+            
+            let fValue = parseFloat(value);
+
+            let scaledValue = Math.round(fValue * 100);
+
+            function selectedMode(mode) {
+              mode.style.backgroundColor = '#525659';
+              mode.style.color = 'white';
+            }
+
+            function unSelectedMode(mode1, mode2){
+              mode1.style.backgroundColor = wwgrey
+              mode1.style.color = 'black';
+              mode2.style.backgroundColor = wwgrey
+              mode2.style.color = 'black';
+            }
+
+            function disabledSave (){
+              document.getElementById('set_voltage').disabled = true;
+              set_voltage.style.backgroundColor = 'gray';
+            }
+
+            switch(true) {
+              case (value.length === 4 && value[3] != '5' && value[3] != '0' && value[2] != '.'):
+                pps_message.textContent = 'Must be in 0.05 Volt increments!';
+                disabledSave();
+                break; 
+              case (value.length === 5 && value[4] != '5' && value[4] != '0'):
+                pps_message.textContent = 'Must be in 0.05 Volt increments!';
+                disabledSave();
+                break;
+              case(fValue < 3.35 || fValue > 48):
+                pps_message.textContent = 'Must be between 3.35 Volts and 48.00 Volts';
+                disabledSave();
+                break;
+              case(value >= '3.35' && value <= '4.95' || (value > '16.00' && value <= '48.00' && fValue !==20)):
+                pps_message.innerHTML = 'May be outside of normal operation <a href="https://app.werewolf.com/pps-info">(learn more)</a>';
+                set_voltage.style.display = 'block';
+                set_voltage.style.visibility = 'visible';
+                set_voltage.style.backgroundColor = '#000B14';
+                document.getElementById('set_voltage').disabled = false;
+                break;
+              default:
+                pps_message.textContent = '';
+                set_voltage.style.display = 'block';
+                set_voltage.style.visibility = 'visible';
+                set_voltage.style.backgroundColor = '#000B14';
+                document.getElementById('set_voltage').disabled = false;
+            }
+
+            console.log(scaledValue % 5);
+
+            switch(true) {
+              case(fValue === 5 || fValue === 9 || fValue === 12 || fValue === 15 || fValue === 20):
+                selectedMode(standardMode);
+                unSelectedMode(ppsMode, extendedMode);
+                break;
+              case(scaledValue % 5 === 0 && fValue > 4.95 && fValue < 16.05):
+                selectedMode(ppsMode);
+                unSelectedMode(standardMode, extendedMode);
+                break;
+              case((scaledValue % 5 === 0) && ((fValue > 3.30 && fValue < 5.0) || (fValue > 16.00 && fValue < 48.05))):
+                selectedMode(extendedMode);
+                unSelectedMode(ppsMode, standardMode);
+                break;
+              default:
+                standardMode.style.backgroundColor = wwgrey;
+                standardMode.style.color = 'black';
+                ppsMode.style.backgroundColor = wwgrey;
+                ppsMode.style.color = 'black';
+                extendedMode.style.backgroundColor = wwgrey;
+                extendedMode.style.color = 'black';
+            }
+
+            inputField.value = value;
+          });
+
+        </script>
+      </div>
         
-    <button id="edit_voltage">Modify</button>  
+      <button id="edit_voltage">Modify</button>  
+      <div class="button-wrapper" style="display: flex; justify-content: space-evenly; margin: 2px 0;">
+        <button id="cancel_voltage" class="edit-btn">Cancel</button> 
+        <button id="set_voltage" class="edit-btn">Save</button>
+      </div>
+      
+
+      <div id="pps_message">Programmable in 0.05V increments</div>
+      <div id="voltageStatus"></div>
+      <div class="toggle-container">
+        <span id="toggle-info">LED Always On</span>
+        <label class="toggle">
+            <input type="checkbox" id="toggle-button" />
+            <span class="slider"></span>
+        </label>
+      </div>
+      <span id="fw_version"></span>
+    </div>
+
+    <div><button id="connectButton" type="button">Connect</button></div>
+    
+    <p id="troubleConnectingLink">Trouble Connecting?</p>
+    <div id="popupBox" class="popup">
+      <div class="popup-content">
+          <span id="closePopupBtn" class="close-btn">&times;</span> <!-- Close button -->
+          <p id="recovery_msg">Unplug vFlex Device<br> Then Click Next</p>
+          <button id="nextBtn">Next</button>
+          <div class="progress-bar-container">
+            <div id="progressBar" class="progress-bar"></div>
+          </div>
+      </div>
+    </div>
+    
+      <div id="hidden_settings">
+        <div class="command-line">firmware id <input id="fw_id" class="command-line" placeholder="" /> </div>
+        <div class="command-line">Active vFlex setting:<input id="programmed_voltage" value=""/></div>
+        <div>current limit (mA): <input id="current" class="command-line" placeholder="asdfasdf" /> </div>
+        <div>uuid: <input id="uuid" class="command-line" placeholder="" /> </div>
+        <div class="command-line">serial number: <input id="serial_num" class="command-line" placeholder="" value ="1"/> </div>
+        <div class="command-line">hardware/product id <input id="hw_id" class="command-line" placeholder="" /> </div>
+
+        <div class="command-line">Date of manufacture (DDMMMYY) <input id="mfg_date" class="command-line" placeholder="" /> </div>
+        <div><button id="jump_to_bootloader" class="lines" type="button" value="recovery mode">Recovery Mode</button></div> 
+        <!-- <input id="flash_led_conf" class="lines" type="button" value="Confirmation Blink"/>
+        <input id="flash_led_error" class="lines" type="button" value="Error Blink"/>
+        <div> <input id="load_all" class="lines" type="button" value="load all values from flash"/></div>
+        <div>voltage (mv): <input id="voltage_fixed" class="command-line" placeholder="asdfasdf" /> </div>
+        <div><input id="store_all" class="lines" type="button" value="store all text values to flash"/></div> -->
+        <div ><input id="bootload_prom" class="lines" type="button" value="bootloader program"/></div>
+        <!-- <div><input id="bootload_erase" class="lines" type="button" value="bootloader erase"/></div>
+        <div><input id="bootload_verify" class="lines" type="button" value="bootloader verify"/></div>
+        <div><input id="bootload_end" class="lines" type="button" value="bootloader end"/></div> -->
+        <div class="command-line" >Enable Bootloader:<input type="button" id="bootload_enable" value="disabled" style="color:blue" onclick="toggle(this);"></div>
+        <input class="command-line" type="file" id="bootloader_image" />
+        <pre class="command-line" id="bootloader_image"></pre>
+        <span id="boot_message"> bootloader idle </span>
+      </div>
+      
+    </div>
   </body>
 </html>
 
