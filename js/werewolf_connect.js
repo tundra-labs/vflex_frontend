@@ -1,6 +1,8 @@
 let port;
 let connected = false;
 let bootloader_mode = 0; // todo: from html
+let serial_num = 0;
+let ACK = 0;
 
 var calibration_values = {}; // assigned at import level to user defined html fields. messages populated iff they're defined.
 
@@ -19,9 +21,10 @@ function connect() {
         //connectButton.textContent = 'Disconnect';
         //console.log("connect!");
 
+        let preamble_len = 2;
 
         port.onReceive = data => {
-          let preamble_len = 2;
+          console.log('rx!');
           let textDecoder = new TextDecoder();
           let command_code = data.getUint8(1);
           let next_packet;
@@ -32,6 +35,18 @@ function connect() {
               // todo: check if calibration_values.led exists here?
               calibration_values.led_disable_during_operation = disabled;
               console.log("led disabled?:", disabled);
+              break;
+            case command_list.CMD_SB_WRITE_HALF_PAGE:
+              ACK = 1;
+              console.log("ACK");
+              break;
+            case command_list.CMD_SB_COMMIT_PAGE:
+              ACK = 1;
+              console.log("ACK commit");
+              break;
+
+            case command_list.CMD_SB_VERIFY:
+              console.log("verify");
               break;
 
            case command_list.CMD_PDO_LOG:
@@ -70,7 +85,6 @@ function connect() {
               }
               break;
             case command_list.CMD_ENCRYPT_MSG:
-              let preamble_len = 2;
               var string = new TextDecoder().decode(data).slice(preamble_len);
               console.log("received:" ,string);
               break;
@@ -85,9 +99,9 @@ function connect() {
               break;
             case command_list.CMD_WW_SERIAL:
               var string = new TextDecoder().decode(data).slice(preamble_len);
-              if(calibration_values.serial_num) {
-                calibration_values.serial_num.value = string;
-              }
+              console.log(string);
+              calibration_values.serial_num = string;
+              serial_num = string;
               break;
             case command_list.CMD_CHIP_UUID:
               var string = new TextDecoder().decode(data).slice(preamble_len);
