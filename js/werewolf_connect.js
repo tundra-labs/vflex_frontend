@@ -89,7 +89,7 @@ function connect() {
               }
               break;
             case command_list.CMD_ENCRYPT_MSG:
-              var string = new TextDecoder().decode(data).slice(preamble_len);
+              var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
               console.log("received:" ,string);
               break;
             case command_list.CMD_VOLTAGE:
@@ -102,25 +102,25 @@ function connect() {
             case command_list.CMD_CURRENT_LIMIT:
               break;
             case command_list.CMD_WW_SERIAL:
-              var string = new TextDecoder().decode(data).slice(preamble_len);
+              var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
               console.log(string);
               calibration_values.serial_num = string;
               serial_num = string;
               break;
             case command_list.CMD_CHIP_UUID:
-              var string = new TextDecoder().decode(data).slice(preamble_len);
+              var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
               if(calibration_values.uuid) {
                 calibration_values.uuid.value = string;
               }
               break;
             case command_list.CMD_HWID:
-              var string = new TextDecoder().decode(data).slice(preamble_len);
+              var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
               if(calibration_values.hw_id) {
                 calibration_values.hw_id.value = string;
               }
               break;
             case command_list.CMD_FWID:
-              var string = new TextDecoder().decode(data).slice(preamble_len);
+              var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
               if(calibration_values.fw_id) {
                 calibration_values.fw_id.value = string;
                 // if (string.match("APP*")) {
@@ -132,7 +132,7 @@ function connect() {
               }
               break;
             case command_list.CMD_MFG_DATE:
-              var string = new TextDecoder().decode(data).slice(preamble_len);
+              var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
               if(calibration_values.mfg_date) {
                 calibration_values.mfg_date.value = string;
               }
@@ -207,7 +207,7 @@ function connect() {
           if (data.getInt8() === 13) {
             currentReceiverLine = null;
           } else {
-            //appendLines('receiver_lines', textDecoder.decode(data));
+            //appendLines('receiver_lines', textDecoder.decode(data_u8a));
           }
         };
         port.onReceiveError = error => {
@@ -274,6 +274,7 @@ function connect() {
     }
 
     function process_midi_return(data) {
+        let data_u8a = new Uint8Array(data); 
         let preamble_len = 2;
         let textDecoder = new TextDecoder();
         let command_code = data[1];
@@ -335,7 +336,7 @@ function connect() {
             }
             break;
           case command_list.CMD_ENCRYPT_MSG:
-            var string = new TextDecoder().decode(data).slice(preamble_len);
+            var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
             console.log("received:" ,string);
             break;
           case command_list.CMD_VOLTAGE:
@@ -348,25 +349,25 @@ function connect() {
           case command_list.CMD_CURRENT_LIMIT:
             break;
           case command_list.CMD_WW_SERIAL:
-            var string = new TextDecoder().decode(data).slice(preamble_len);
+            var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
             console.log(string);
             calibration_values.serial_num = string;
             serial_num = string;
             break;
           case command_list.CMD_CHIP_UUID:
-            var string = new TextDecoder().decode(data).slice(preamble_len);
+            var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
             if(calibration_values.uuid) {
               calibration_values.uuid.value = string;
             }
             break;
           case command_list.CMD_HWID:
-            var string = new TextDecoder().decode(data).slice(preamble_len);
+            var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
             if(calibration_values.hw_id) {
               calibration_values.hw_id.value = string;
             }
             break;
           case command_list.CMD_FWID:
-            var string = new TextDecoder().decode(data).slice(preamble_len);
+            var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
             if(calibration_values.fw_id) {
               calibration_values.fw_id.value = string;
               // if (string.match("APP*")) {
@@ -378,7 +379,7 @@ function connect() {
             }
             break;
           case command_list.CMD_MFG_DATE:
-            var string = new TextDecoder().decode(data).slice(preamble_len);
+            var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
             if(calibration_values.mfg_date) {
               calibration_values.mfg_date.value = string;
             }
@@ -456,16 +457,16 @@ function connect() {
 
     function handleMidiMessage(event) {
       const [status, data1, data2] = event.data;
-      console.log(`Raw MIDI @ ${event.timeStamp}: ${status.toString(16)} ${data1.toString(16)} ${data2.toString(16)}`);
+      //console.log(`Raw MIDI @ ${event.timeStamp}: ${status.toString(16)} ${data1.toString(16)} ${data2.toString(16)}`);
       if (status === 0x80) {
         receiveBuffer = [];
         receiveComplete = false;
-        console.log("Buffer cleared");
+        //console.log("Buffer cleared");
       } else if (status === 0x90) {
         if (receiveBuffer.length < 64) {
           const byte = (data1 << 4) | data2;
           receiveBuffer.push(byte);
-          console.log(`Added: ${byte.toString(16)} | Buffer size: ${receiveBuffer.length}`);
+          //console.log(`Added: ${byte.toString(16)} | Buffer size: ${receiveBuffer.length}`);
         }
       } else if (status === 0xA0) {
         receiveComplete = true;
@@ -509,7 +510,7 @@ function connect() {
 
           // Find input
           for (let inPort of midiAccess.inputs.values()) {
-            console.log(`Input: ${inPort.name} (ID: ${inPort.id})`);
+            //console.log(`Input: ${inPort.name} (ID: ${inPort.id})`);
             if (inPort.name.includes("vFlex")) {
               midiInput = inPort;
               midiInput.onmidimessage = handleMidiMessage;
@@ -527,7 +528,7 @@ function connect() {
                 return;
               }
               midiOutput.send([0x80, 0, 0]);
-              console.log("Sent: Clear buffer [80 00 00]");
+              //console.log("Sent: Clear buffer [80 00 00]");
               Delay(20);
 
               for (let i = 0; i < data.length; i++) {
@@ -535,12 +536,12 @@ function connect() {
                 const highNibble = (byte >> 4) & 0x0F;
                 const lowNibble = byte & 0x0F;
                 midiOutput.send([0x90, highNibble, lowNibble]);
-                console.log(`Sent: [90 ${highNibble.toString(16)} ${lowNibble.toString(16)}]`);
+                //console.log(`Sent: [90 ${highNibble.toString(16)} ${lowNibble.toString(16)}]`);
                 Delay(20);
               }
 
               midiOutput.send([0xA0, 0, 0]);
-              console.log("Sent: End [A0 00 00]");
+              //console.log("Sent: End [A0 00 00]");
             }
           };
           connected = true;
