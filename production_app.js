@@ -41,7 +41,10 @@ async function waitForSerial(){
 		console.log('fudge');
                 werewolf_manual_connect();
         });
-        const ws = new WebSocket("https://ken-1.tail3793c.ts.net:8401/boot_server");
+
+        const secure_boot_ws_path = window.WS_SECURE_BOOT_APP || 'http://localhost:8001'; // check for server path provided from index.html, localhost default
+        console.log('connect on', secure_boot_ws_path);
+        const ws = new WebSocket(secure_boot_ws_path);
 
         ws.onmessage = function(event){
           //encrypted_msg = JSON.stringify(event.data, null,4);
@@ -81,7 +84,10 @@ async function waitForSerial(){
         });
 
         //const commission_ws = new WebSocket("ws://127.0.0.1:8002/");
-        const commission_ws  = new WebSocket("https://ken-1.tail3793c.ts.net:8402/comm_server");
+
+        const commission_ws_path = window.WS_COMMISSIONING_APP || 'http://localhost:8002'; // check for server path provided from index.html, localhost default
+        console.log('connect on', commission_ws_path);
+        const commission_ws  = new WebSocket(commission_ws_path);
         get_new_img.addEventListener('click', async function(e) {
           try {commission_ws.send("anything");}
           catch (error) {console.log(error);}
