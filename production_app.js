@@ -31,14 +31,12 @@ async function waitForSerial(){
     });
 }
 
-
-
 (function() {
     'use strict';
   
     document.addEventListener('DOMContentLoaded', event => {
         connectButton.addEventListener('click', function() {
-		console.log('fudge');
+							console.log('fudge');
                 werewolf_manual_connect();
         });
 
@@ -89,22 +87,28 @@ async function waitForSerial(){
         console.log('connect on', commission_ws_path);
         const commission_ws  = new WebSocket(commission_ws_path);
         get_new_img.addEventListener('click', async function(e) {
-          try {commission_ws.send("anything");}
+          try {commission_ws.send(JSON.stringify({N: 2, V_MV : 9000}));}
           catch (error) {console.log(error);}
         });
+
         commission_ws.onmessage = function(event){ // creates new 
           let data = JSON.parse(event.data);
-          console.log('created new device in database:',data.serial)
-          data = data.hex_img;
-          var downloadLink = document.createElement("a");
-          var blob = new Blob(["\ufeff", data]);
-          var url = URL.createObjectURL(blob);
-          downloadLink.href = url;
-          downloadLink.download = "data.hex.txt";
+          console.log('created new device in database:',data)
+					let N = data.N;
+					let base_img = data.base_img;
+					let unique_imgs = data.unique_imgs
+          for (let i = 0; i <= N; i++) {
+					  console.log(unique_imgs[i]);
+						var downloadLink = document.createElement("a");
+						var blob = new Blob(["\ufeff", unique_imgs[i].hex_file]);
+						var url = URL.createObjectURL(blob);
+						downloadLink.href = url;
+						downloadLink.download = "data.hex.txt";
 
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          document.body.removeChild(downloadLink);
+						document.body.appendChild(downloadLink);
+						downloadLink.click();
+						document.body.removeChild(downloadLink);
+					}
         };
 
         //}
