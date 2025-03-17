@@ -33,6 +33,7 @@ function connect() {
           let command_code = data[1];
           let next_packet;
           let response;
+					console.log('command_code = ', command_code);
           switch(command_code) {
             case command_list.CMD_DISABLE_LED_DURING_OPERATION:
               let disabled = data.getUint8(2);
@@ -114,6 +115,7 @@ function connect() {
               }
               break;
             case command_list.CMD_HWID:
+console.log('hwid!');
               var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
               if(calibration_values.hw_id) {
                 calibration_values.hw_id.value = string;
@@ -341,10 +343,10 @@ function connect() {
             break;
           case command_list.CMD_VOLTAGE:
             let mv = data[2] <<8 | (data[3]);
-            if(calibration_values.voltage) {
-              console.log("received:" ,mv);
-              calibration_values.voltage.value = mv;
-            }
+            //if(calibration_values.voltage) {
+              //console.log("received:" ,mv);
+              calibration_values.voltage = mv;
+            //}
             break;
           case command_list.CMD_CURRENT_LIMIT:
             break;
@@ -356,33 +358,35 @@ function connect() {
             break;
           case command_list.CMD_CHIP_UUID:
             var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-            if(calibration_values.uuid) {
-              calibration_values.uuid.value = string;
-            }
+            //if(calibration_values.uuid) {
+              calibration_values.uuid = string;
+            //}
             break;
           case command_list.CMD_HWID:
+						console.log('got hwid');
             var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-            if(calibration_values.hw_id) {
-              calibration_values.hw_id.value = string;
-            }
+            //if(calibration_values.hw_id) {
+              calibration_values.hw_id = string;
+            //}
             break;
           case command_list.CMD_FWID:
             var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-            if(calibration_values.fw_id) {
-              calibration_values.fw_id.value = string;
+            //if(calibration_values.fw_id) {
+              //calibration_values.fw_id.value = string;
+              calibration_values.fw_id = string;
               // if (string.match("APP*")) {
               //   setTimeout(() => {
               //     get_pdo_log(port);
               //     console.log("APP connected, load pdo log:");
               //   }, 100);
               // }
-            }
+            //}
             break;
           case command_list.CMD_MFG_DATE:
             var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-            if(calibration_values.mfg_date) {
-              calibration_values.mfg_date.value = string;
-            }
+            //if(calibration_values.mfg_date) {
+              calibration_values.mfg_date = string;
+            //}
             break;
           case command_list.CMD_FLASH_LED_SEQUENCE_ADVANCED:
             break;
