@@ -91,27 +91,28 @@ async function waitForSerial(){
           catch (error) {console.log(error);}
         });
 
-        commission_ws.onmessage = function(event){ // creates new 
-          let data = JSON.parse(event.data);
-          console.log('created new device in database:',data)
-					let N = data.N;
-					let base_img = data.base_img;
-					let unique_imgs = data.unique_imgs
-          for (let i = 0; i <= N; i++) {
-					  console.log(unique_imgs[i]);
-						var downloadLink = document.createElement("a");
-						var blob = new Blob(["\ufeff", unique_imgs[i].hex_file]);
-						var url = URL.createObjectURL(blob);
-						downloadLink.href = url;
-						downloadLink.download = "data.hex.txt";
-
-						document.body.appendChild(downloadLink);
-						downloadLink.click();
-						document.body.removeChild(downloadLink);
-					}
-        };
-
-        //}
+				commission_ws.onmessage = function(event) {
+						let data = JSON.parse(event.data);
+						console.log('created new device in database:', data);
+						let N = data.N;
+						let base_img = data.base_img;  // Base Intel HEX string
+						let unique_imgs = data.unique_imgs;  // Array of {hex_file: "..."}
+						
+						for (let i = 0; i <= N && i < unique_imgs.length; i++) {  // Bounds check
+								const combined_hex = base_img + '\n' + unique_imgs[i].hex_file;  // Concatenate
+								console.log(`Combined HEX ${i}:`, combined_hex);
+								
+								const downloadLink = document.createElement("a");
+								const blob = new Blob(["\ufeff", combined_hex], { type: "text/plain" });  // UTF-8 BOM + combined
+								const url = URL.createObjectURL(blob);
+								downloadLink.href = url;
+								downloadLink.download = `data_${i}.hex.txt`;  // Unique filenames
+								document.body.appendChild(downloadLink);
+								downloadLink.click();
+								document.body.removeChild(downloadLink);
+						}
+				};
+							//}
         ////  bootload_prom_function(port, app_bin_data["data"]);
         ////});
 
