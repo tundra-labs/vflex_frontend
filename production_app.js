@@ -52,30 +52,37 @@ async function waitForSerial(){
         send_encrypted_msg.addEventListener('click', async function(e) {
           encrypted_msg = 0; // reset
           get_ww_string(port, command_list.CMD_WW_SERIAL);
-          await waitForSerial();
+          //await waitForSerial();
+					await waitForACK();
           try {ws.send(serial_num);} // send serial number to server, server responds with encrypted bootload packets
           catch (error) {console.log('err');}
           await waitForEncryptedMsg();
-          console.log('len en msg,',encrypted_msg.length);
-          for (let i = 0; i < encrypted_msg.length; i++) {
+					console.log('encrypto?');
+					let encrypted_app = encrypted_msg.app_bin;
+					let app_crc = encrypted_msg.crc;
+
+          console.log('len en msg',encrypted_app.length, ', crc = ', app_crc);
+          for (let i = 0; i < encrypted_app.length; i++) {
             for (let j = 0; j < 8; j++) {
-              //console.log(encrypted_msg[i].chunks[j]);
-              fn_send_bootloader_chunk_encrypted(port, encrypted_msg[i].chunks[j], encrypted_msg[i].pg_id, j)
+              console.log(encrypted_app[i].chunks[j]);
+              fn_send_bootloader_chunk_encrypted(port, encrypted_app[i].chunks[j], encrypted_app[i].pg_id, j)
               await waitForACK();
             }
             fn_commit_bootloader_page(port);
             await waitForACK();
- 
               //fn_send_bootloader_chunk_encrypted(port, encrypted_msg[i].second_half_encrypted, encrypted_msg[i].pg_id, 1);
               //await waitForACK();
           }
-          console.log('done', encrypted_msg.length);
+					//fn_verify_bootloader(port);
+					//await waitForAck();
+          console.log('done', encrypted_app.length);
           //fn_verify_bootloader(port,encrypted_msg.length);
-          //fn_verify_bootloader(port,5);
+          fn_verify_bootloader(port);
+					await waitForAck();
         });
 
         verify_encrypted_msg.addEventListener('click', async function(e) {
-          fn_verify_bootloader(port,5);
+          fn_verify_bootloader(port);
         });
         jump_app.addEventListener('click', async function(e) {
           jump_to_app(port);

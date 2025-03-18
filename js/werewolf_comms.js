@@ -186,15 +186,12 @@ function fn_send_bootloader_chunk_encrypted(port, msg, pg_id, chunk_id) {
   console.log("output_array", output_array);
   port.send(output_array);
 }
-function fn_verify_bootloader(port, mem_len) {
+function fn_verify_bootloader(port) {
   let preamble_len = 2;
-  let data_len = 2;
-  let output_array_len =  preamble_len + data_len;
+  let output_array_len =  preamble_len;
   var output_array = new Uint8Array(output_array_len);
   output_array[0] = output_array_len; // msg len
   output_array[1] = command_list.CMD_SB_VERIFY | 0x80;
-  output_array[2] = mem_len >> 8;
-  output_array[3] = mem_len & 0xff;
   console.log(output_array);
   port.send(output_array);
 }

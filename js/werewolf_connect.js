@@ -42,16 +42,16 @@ function connect() {
               console.log("led disabled?:", disabled);
               break;
             case command_list.CMD_SB_WRITE_HALF_PAGE:
-              ACK = 1;
+              //ACK = 1;
               console.log("ACK");
               break;
             case command_list.CMD_SB_COMMIT_PAGE:
-              ACK = 1;
+              //ACK = 1;
               console.log("ACK commit");
               break;
 
             case command_list.CMD_SB_VERIFY:
-              console.log("verify");
+              console.log("verify", data[2]);
               break;
 
            case command_list.CMD_PDO_LOG:
@@ -107,6 +107,7 @@ function connect() {
               console.log(string);
               calibration_values.serial_num = string;
               serial_num = string;
+              //ACK = 1;
               break;
             case command_list.CMD_CHIP_UUID:
               var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
@@ -282,6 +283,7 @@ console.log('hwid!');
         let command_code = data[1];
         let next_packet;
         let response;
+        ACK = 1;
         switch(command_code) {
           case command_list.CMD_DISABLE_LED_DURING_OPERATION:
             let disabled = data[2];
@@ -290,11 +292,11 @@ console.log('hwid!');
             console.log("led disabled?:", disabled);
             break;
           case command_list.CMD_SB_WRITE_HALF_PAGE:
-            ACK = 1;
+            //ACK = 1;
             console.log("ACK");
             break;
           case command_list.CMD_SB_COMMIT_PAGE:
-            ACK = 1;
+            //ACK = 1;
             console.log("ACK commit");
             break;
 
