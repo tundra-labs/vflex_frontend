@@ -82,7 +82,11 @@ const command_list = Object.freeze ({
   CMD_LOAD_CAL_SCRATCHPAD: 19, // load flash memory into ram calibration scratch pad
   CMD_COMMIT_CAL_SCRATCHPAD: 20, // commit scratchpad to flash
   CMD_PDO_LOG: 21,
-	CMD_DISABLE_LED_DURING_OPERATION: 22
+	CMD_DISABLE_LED_DURING_OPERATION: 22,
+	CMD_ENCRYPT_MSG: 23,
+  CMD_SB_WRITE_HALF_PAGE: 24, // secure bootloader
+  CMD_SB_COMMIT_PAGE: 25,
+  CMD_SB_VERIFY: 26 // use crc or hash to verify, verify N bytes starting from programm address
 });
 
 // Expected string sizes (in bytes) for string set commands
@@ -145,6 +149,72 @@ function send_ww_string(port, string_command, str, write,scratchpad){
     return false;
   }
 }
+
+function fn_send_encrypted_message (port, msg) { // msg is a string
+  console.log(msg, msg.length);
+ let preamble_len = 2;
+ let output_array_len = msg.length + preamble_len;
+ console.log("enc msg info", output_array_len, msg.length, preamble_len);
+ var output_array = new Uint8Array(output_array_len);
+ output_array[0] = output_array_len; // msg len
+ output_array[1] = command_list.CMD_ENCRYPT_MSG | 0x80;
+ for (let i = 0; i < msg.length; i++) {
+   output_array[i+preamble_len] = msg[i];
+ }
+ console.log("output_array", output_array);
+ port.send(output_array);
+}
+
+// packet format(size): len(1) cmd(1) pg_msb(1) pg_lsb(1) which_half(1) data(32)
+function fn_send_bootloader_chunk_encrypted(port, msg, pg_id, chunk_id) {
+  let preamble_len = 2;
+  let data_start_pos = 5;
+  let pg_id_sz = 2;
+  let chunk_sz = 1;
+
+  let output_array_len =  preamble_len +pg_id_sz + chunk_sz + msg.length;
+  var output_array = new Uint8Array(output_array_len);
+  output_array[0] = output_array_len; // msg len
+  output_array[1] = command_list.CMD_SB_WRITE_HALF_PAGE | 0x80;
+  output_array[2] = pg_id >> 8;
+  output_array[3] = pg_id&0xff;
+  output_array[4] = chunk_id;
+  
+  for (let i = 0; i < msg.length; i++) {
+   output_array[i+data_start_pos] = msg[i];
+  }
+  console.log("output_array", output_array);
+  port.send(output_array);
+}
+function fn_verify_bootloader(port) {
+  let preamble_len = 2;
+  let output_array_len =  preamble_len;
+  var output_array = new Uint8Array(output_array_len);
+  output_array[0] = output_array_len; // msg len
+  output_array[1] = command_list.CMD_SB_VERIFY | 0x80;
+  console.log(output_array);
+  port.send(output_array);
+}
+
+function fn_commit_bootloader_page(port) {
+  let preamble_len = 2;
+  let output_array_len =  preamble_len;
+  var output_array = new Uint8Array(output_array_len);
+  output_array[0] = output_array_len; // msg len
+  output_array[1] = command_list.CMD_SB_COMMIT_PAGE | 0x80;
+  port.send(output_array);
+}
+//function fn_send_encrypted_message (port, msg) { // msg is a string
+// let preamble_len = 2;
+// let output_array_len = msg.length + preamble_len;
+// var output_array = new Uint8Array(output_array_len);
+// output_array[0] = output_array_len; // msg len
+// output_array[1] = command_list.CMD_ENCRYPT_MSG | 0x80;
+// for (let i = preamble_len; i < output_array_len; i++) {
+//   output_array[i] = msg[i-preamble_len].charCodeAt(0);
+// }
+// port.send(output_array);
+//}//
 
 function set_ww_string(port, string_command, str){
   let write = 1;
