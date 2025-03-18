@@ -90,18 +90,22 @@ async function waitForSerial(){
           try {commission_ws.send(JSON.stringify({N: 2, V_MV : 9000}));}
           catch (error) {console.log(error);}
         });
-
 				commission_ws.onmessage = function(event) {
 						let data = JSON.parse(event.data);
 						console.log('created new device in database:', data);
 						let N = data.N;
 						let base_img = data.base_img;  // Base Intel HEX string
 						let unique_imgs = data.unique_imgs;  // Array of {hex_file: "..."}
-						
+
+						// Split base_img into lines and remove the last line
+						let base_lines = base_img.split('\n');
+						base_lines.pop();  // Remove the last line
+						let trimmed_base_img = base_lines.join('\n');  // Rejoin without the last line
+
 						for (let i = 0; i <= N && i < unique_imgs.length; i++) {  // Bounds check
-								const combined_hex = base_img + '\n' + unique_imgs[i].hex_file;  // Concatenate
+								const combined_hex = trimmed_base_img + '\n' + unique_imgs[i].hex_file;  // Concatenate
 								console.log(`Combined HEX ${i}:`, combined_hex);
-								
+
 								const downloadLink = document.createElement("a");
 								const blob = new Blob(["\ufeff", combined_hex], { type: "text/plain" });  // UTF-8 BOM + combined
 								const url = URL.createObjectURL(blob);
@@ -112,7 +116,7 @@ async function waitForSerial(){
 								document.body.removeChild(downloadLink);
 						}
 				};
-							//}
+				//}
         ////  bootload_prom_function(port, app_bin_data["data"]);
         ////});
 
