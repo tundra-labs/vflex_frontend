@@ -238,12 +238,11 @@ function get_ww_string_scratchpad(port, string_command){
   send_ww_string(port, string_command, "", write, scratchpad);
 }
 
-function getVoltage (port, x) {
+function getVoltage (port) {
   var array = new Uint8Array(2);
   array[0] = 2; // msg len
   array[1] = command_list.CMD_VOLTAGE;
   port.send(array);
-  return true;
 }
 
 function setVoltage (port, setting_mv) {
@@ -384,6 +383,17 @@ function get_pdo_log(port) {
 
   port.send(output_arr);
 }
+function pdo_cmd(port, pdo_cmd) {
+  let packet_len = 3; // Cmd, Len, pdo_cmd; // todo: modify away rev, i believe it's redundant as we store a fw revision elsewhere
+  var output_arr = new Uint8Array(packet_len);
+  output_arr[0] = packet_len;
+  output_arr[1] = command_list.CMD_PDO_LOG; 
+  output_arr[2] = pdo_cmd; 
+
+  port.send(output_arr);
+}
+
+
 
 
 function jump_to_app(port) {
