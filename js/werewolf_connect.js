@@ -306,10 +306,23 @@ console.log('hwid!');
             break;
 
          case command_list.CMD_PDO_LOG:
-              console.log('pdo ok', data.length, data.byteLength);
             if (data.length ==3 ) {
-              console.log("got pdo length!", data[2]);
+              calibration_values.pdo_len = data[2];
+              console.log("got pdo length!", calibration_values.pdo_len);
+              calibration_values.pdo_payload = []; // resets
+            } else if (data.length == 6){
+              console.log("got pdo response!");
+              //calibration_values.pdo_payload append response
+              let new_pdo = [];
+              new_pdo.push(data[2]);
+              new_pdo.push(data[3]);
+              new_pdo.push(data[4]);
+              new_pdo.push(data[5]);
+
+              calibration_values.pdo_payload.push(new_pdo);
             }
+            calibration_values.pdo_ack = true;
+
             //if (data.length == 2) {
             //  console.log(data, data.length);
             //  pdo_log_byte_queue.push(data[2]);
