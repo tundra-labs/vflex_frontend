@@ -396,3 +396,185 @@ function setConnected(newValue){
           });
         }, null);
     }
+// midi specific connection, may deprecate some of the above
+// Global variables
+let midiAccess = null;
+//let midiInput = null;
+//let midiOutput = null;
+//let port = null;
+//let connected = false;
+let isConnecting = false;
+
+// Callbacks (to be set by the user)
+let onConnectSuccess = () => {};
+let onConnectFail = () => {};
+let onDisconnect = () => {};
+
+// Utility delay function
+function Delay(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Handle MIDI messages
+//function handleMidiMessage(message) {
+//    // Your MIDI message handling logic here
+//    console.log("MIDI Message:", message.data);
+//}
+
+// Main MIDI connection manager
+class MidiConnection {
+    constructor() {
+        this.checkInterval = null;
+    }
+
+    // Set callback functions
+    setCallbacks(successCb, failCb, disconnectCb) {
+        onConnectSuccess = successCb || onConnectSuccess;
+        onConnectFail = failCb || onConnectFail;
+        onDisconnect = disconnectCb || onDisconnect;
+    }
+
+    // Initialize MIDI access (called once)
+    async init() {
+        if (!midiAccess) {
+            try {
+                midiAccess = await navigator.requestMIDIAccess();
+                console.log("MIDI Access Granted");
+                this.startMonitoring();
+            } catch (err) {
+                console.error("MIDI Access Failed:", err);
+                onConnectFail(err);
+            }
+        }
+    }
+
+    // Check for vFlex device and connect
+    async tryConnect() {
+        if (isConnecting || connected || !midiAccess) return;
+
+        isConnecting = true;
+        try {
+            // Find output
+            midiOutput = null;
+            for (let out of midiAccess.outputs.values()) {
+                if (out.name.includes("vFlex")) {
+                    midiOutput = out;
+                    break;
+                }
+            }
+
+            // Find input
+            midiInput = null;
+            for (let inPort of midiAccess.inputs.values()) {
+                if (inPort.name.includes("vFlex")) {
+                    midiInput = inPort;
+                    midiInput.onmidimessage = handleMidiMessage;
+                    break;
+                }
+            }
+
+            if (midiInput && midiOutput) {
+                // Set up port wrapper
+                port = {
+                    send: async function(data) {
+                        if (!midiOutput) {
+                            console.error("No MIDI output connected!");
+                            return;
+                        }
+                        midiOutput.send([0x80, 0, 0]);
+                        await Delay(20);
+
+                        for (let i = 0; i < data.length; i++) {
+                            const byte = data[i];
+                            const highNibble = (byte >> 4) & 0x0F;
+                            const lowNibble = byte & 0x0F;
+                            midiOutput.send([0x90, highNibble, lowNibble]);
+                            await Delay(20);
+                        }
+
+                        midiOutput.send([0xA0, 0, 0]);
+                    }
+                };
+
+                connected = true;
+                setConnected(connected);
+                console.log("Connected to:", midiInput.name, midiOutput.name);
+                onConnectSuccess();
+            } else {
+                throw new Error("No vFlex device found");
+            }
+        } catch (err) {
+            console.log("Connection attempt failed:", err);
+            onConnectFail(err);
+        } finally {
+            isConnecting = false;
+        }
+    }
+
+    // Disconnect MIDI
+    disconnect() {
+        if (!connected) return;
+
+        if (midiInput) {
+            midiInput.onmidimessage = null;
+            console.log("Input listener removed:", midiInput.name);
+        }
+        midiOutput = null;
+        midiInput = null;
+        port = null;
+        connected = false;
+        setConnected(connected);
+        console.log("Disconnected");
+        onDisconnect();
+    }
+
+    // Monitor device state
+    startMonitoring() {
+        // Listen for device state changes
+        midiAccess.onstatechange = (e) => {
+            console.log("MIDI state change:", e.port.state, e.port.name);
+            if (e.port.name.includes("vFlex")) {
+                if (e.port.state === "disconnected" && connected) {
+                    this.disconnect();
+                }
+                // Connection attempt will be handled by interval check
+            }
+        };
+
+        // Periodic check for available devices
+        this.checkInterval = setInterval(() => {
+            if (!connected) {
+                this.tryConnect();
+            }
+        }, 1000);
+    }
+
+    // Cleanup
+    destroy() {
+        if (this.checkInterval) {
+            clearInterval(this.checkInterval);
+        }
+        this.disconnect();
+        midiAccess.onstatechange = null;
+    }
+}
+
+// Usage example:
+//const midi = new MidiConnection();
+
+// Set your callbacks
+//midi.setCallbacks(
+//    () => console.log("Successfully connected!"),
+//    (err) => console.log("Connection failed:", err),
+//    () => console.log("Disconnected!")
+//);
+
+// Start the MIDI system
+//midi.init();
+
+// To send MIDI data when connected:
+//async function sendMidiData(data) {
+//    if (port) {
+//        await port.send(data);
+//    }
+//
