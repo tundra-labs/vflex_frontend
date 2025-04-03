@@ -2,9 +2,6 @@
     'use strict';
   
     document.addEventListener('DOMContentLoaded', event => {
-        const connectButton = document.querySelector("#connectButton");
-        const test_button = document.querySelector("#testbutton");
-
         const statusDisplay = document.querySelector('#voltageStatus');
         const controls = document.querySelector("#controls"); // Assuming this contains the voltage select and program button
         const voltageSelect = document.querySelector("#voltage_select");
@@ -61,37 +58,47 @@
             }, 200);
           });
 
-        test_button.addEventListener('click', function(e) {
-              setVoltage(port, 9000);
-        });
-
+        async function waitForValue(propertyName) { // wait for 'calibration values'
+            return new Promise((resolve) => {
+                const interval = setInterval(() => {
+                    if (calibration_values[propertyName] !== null && calibration_values[propertyName] !== undefined && calibration_values[propertyName] !== '') {
+                        clearInterval(interval);
+                        resolve();
+                    }
+                }, 25);
+            });
+        }
 
 
         //Checking to see if variable connected from werewolf_connect.js changes
         window.addEventListener('connectedChange', async function(event) {
             const isConnected = event.detail;
             if (isConnected && window.getComputedStyle(popupBox).display === 'none') {
-                console.log(calibration_values.fw_id.value);
-                console.log(calibration_values.voltage.value);
-                connectButton.textContent = 'Disconnect';
-                connectButton.classList.add('deactive');
+                document.getElementById('connectMessage').style.display = 'none'; // todo: remove midi error field?
+                //console.log(calibration_values.fw_id.value);
+                //console.log(calibration_values.voltage.value);
                 controls.style.display = 'block';
                 troubleConnectingBtn.style.display = 'none';
 
                 document.getElementById('voltage_pps').disabled = true;
 
-                await waitForFirmware();
-
-                if(fw_id.value === currentFW){
-                    fw_version.textContent = 'Firmware Version:  ' + fw_id.value;
-                } else {
-                    newFirmware();
-                }
-                
-                await waitForVoltageChange();
-                
-                let fInput = programmed_voltage.value/1000;
+                getVoltage(port);
+                await waitForValue('voltage');
+                let fInput = calibration_values.voltage/1000;
                 voltage_pps.value = fInput.toFixed(2);
+
+                //await waitForFirmware();
+
+                //if(fw_id.value === currentFW){
+                //    fw_version.textContent = 'Firmware Version:  ' + fw_id.value;
+                //} else {
+                //    newFirmware();
+                //}
+                //
+                //await waitForVoltageChange();
+                //
+                //let fInput = programmed_voltage.value/1000;
+                //voltage_pps.value = fInput.toFixed(2);
 
                 disable_leds_operation_fn(port, 1, 0);
                 setTimeout(() => {
@@ -102,8 +109,6 @@
                 
 
             } else {
-                connectButton.textContent = 'Connect';
-                connectButton.classList.remove('deactive');
                 fw_version.textContent = '';
                 troubleConnectingBtn.style.display = 'block';
                 controls.style.display = 'none';
@@ -115,15 +120,6 @@
         });
         
         
-        // Clicking Connect Button
-        connectButton.addEventListener('click', function() {
-            if(connected){
-                port.disconnect();
-            } else {
-                werewolf_manual_connect();
-            }
-        });
-
         edit_voltage.addEventListener('click', function(){
             document.getElementById('voltage_pps').disabled = false;
             edit_voltage.style.display = 'none';
@@ -160,7 +156,7 @@
             // Wait for calibration_values.voltage.value to be updated before proceeding
             await waitForVoltageChange();
         
-            let fInput = programmed_voltage.value/1000;
+            let fInput = calibration_values.voltage/1000;
             voltage_pps.value = fInput.toFixed(2);
 
             edit_voltage.style.display = 'block';
@@ -305,7 +301,8 @@
         function waitForVoltageChange() {
             return new Promise((resolve) => {
                 const interval = setInterval(() => {
-                    if (calibration_values.voltage.value !== null && calibration_values.voltage.value !== '') { // Change condition based on your use case
+                    //if (calibration_values.voltage.value !== null && calibration_values.voltage.value !== '') { // Change condition based on your use case
+                    if (calibration_values.voltage !== null && calibration_values.voltage !== '') { // Change condition based on your use case
                         clearInterval(interval);  // Stop the interval when the value is updated
                         resolve();  // Resolve the promise
                     }

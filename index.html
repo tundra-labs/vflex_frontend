@@ -39,9 +39,14 @@
           <div id="extendedMode" class="modes">Extended</div>
         </div>
 
+
         <script>
 
           const inputField = document.getElementById('voltage_pps');
+
+          document.addEventListener('DOMContentLoaded', event => {
+            werewolf_auto_connect();
+          });
 
           inputField.addEventListener('input', function (e) {
             // Remove anything that's not a digit, decimal point, or comma
@@ -199,9 +204,6 @@
       <span id="fw_version"></span>
     </div>
 
-    <div><button id="connectButton" type="button">Connect</button></div>
-    <div><button id="testbutton" type="button">test</button></div>
-    
     <p id="troubleConnectingLink">Trouble Connecting?</p>
     <div id="popupBox" class="popup">
       <div class="popup-content">
@@ -213,6 +215,8 @@
           </div>
       </div>
     </div>
+
+    <div><input id="connectMessage" placeholder="waiting for midi"></div>
     
       <div id="hidden_settings">
         <div class="command-line">firmware id <input id="fw_id" class="command-line" placeholder="" /> </div>
