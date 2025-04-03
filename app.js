@@ -74,7 +74,7 @@
         window.addEventListener('connectedChange', async function(event) {
             const isConnected = event.detail;
             if (isConnected && window.getComputedStyle(popupBox).display === 'none') {
-                document.getElementById('connectMessage').disabled = true; // todo: remove midi error field?
+                document.getElementById('connectMessage').style.display = 'none'; // todo: remove midi error field?
                 //console.log(calibration_values.fw_id.value);
                 //console.log(calibration_values.voltage.value);
                 controls.style.display = 'block';
