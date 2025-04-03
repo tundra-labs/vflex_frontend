@@ -68,6 +68,20 @@
                 }, 25);
             });
         }
+        async function waitForMidiACK() { // wait for 'calibration values'
+            return new Promise((resolve) => {
+                const interval = setInterval(() => {
+                    if (ACK == 1) {
+                        ACK = 0;
+                      console.log(ACK);
+                        clearInterval(interval);
+                        resolve();
+                    }
+                }, 25);
+            });
+        }
+
+
 
 
         //Checking to see if variable connected from werewolf_connect.js changes
@@ -82,6 +96,7 @@
 
                 document.getElementById('voltage_pps').disabled = true;
 
+                calibration_values.voltage = ''; // clear
                 getVoltage(port);
                 await waitForValue('voltage');
                 let fInput = calibration_values.voltage/1000;
@@ -100,12 +115,12 @@
                 //let fInput = programmed_voltage.value/1000;
                 //voltage_pps.value = fInput.toFixed(2);
 
-                disable_leds_operation_fn(port, 1, 0);
-                setTimeout(() => {
-                    if(calibration_values.led_disable_during_operation === 0){
-                        toggleButton.checked = true;
-                    }
-                  }, 200);
+                //disable_leds_operation_fn(port, 1, 0);
+                //setTimeout(() => {
+                //    if(calibration_values.led_disable_during_operation === 0){
+                //        toggleButton.checked = true;
+                //    }
+                //  }, 200);
                 
 
             } else {
@@ -145,16 +160,16 @@
         
             console.log(setting_mv);
             
-            if (connected) {
-                // Call setVoltage and wait for it to complete
-                await setVoltage(port, setting_mv);
-                pps_message.textContent = "";
-            }
+            ACK = 0;
+            await setVoltage(port, setting_mv);
+            pps_message.textContent = "";
+            await waitForMidiACK();
+            
             
             voltageStatus.textContent = "";
-        
-            // Wait for calibration_values.voltage.value to be updated before proceeding
-            await waitForVoltageChange();
+            ACK = 0;
+            getVoltage(port);
+            await waitForMidiACK();
         
             let fInput = calibration_values.voltage/1000;
             voltage_pps.value = fInput.toFixed(2);
