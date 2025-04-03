@@ -270,7 +270,7 @@ function setConnected(newValue){
       const start = Date.now();
       while (Date.now() - start < ms) {}
     }
-    function connectMidi() {
+    function connectMidi(retry=false) {
       if (port) { // Disconnect
         console.log("Disconnecting MIDI...");
         if (midiInput) {
@@ -286,7 +286,7 @@ function setConnected(newValue){
 
       } else { // Connect
         navigator.requestMIDIAccess().then(midiAccess => {
-          console.log("MIDI Access Granted");
+          //console.log("MIDI Access Granted");
 
           // Find output
           for (let out of midiAccess.outputs.values()) {
@@ -296,8 +296,7 @@ function setConnected(newValue){
               break;
             }
           }
-          if (!midiOutput) throw new Error("No MIDI output found!");
-          console.log("Selected Output:", midiOutput.name);
+          //if (!midiOutput) console.warn("No MIDI output found!");
 
           // Find input
           for (let inPort of midiAccess.inputs.values()) {
@@ -308,8 +307,18 @@ function setConnected(newValue){
               break;
             }
           }
-          if (!midiInput) console.warn("No MIDI input found!");
+          //if (!midiInput) console.warn("No MIDI input found!");
+
+          if (!midiInput || ! midiOutput) {
+            console.log('no midi, continue');
+            if(retry) {
+              document.getElementById('connectMessage').value = "no midi device found!";
+              setTimeout(connectMidi(true), 1000);
+            }
+            return;
+          }
           else console.log("Selected Input:", midiInput.name);
+          console.log("Selected Output:", midiOutput.name);
 
           // Set up port wrapper
           port = {
@@ -340,10 +349,16 @@ function setConnected(newValue){
 
           console.log("Connected: port set:", port);
 
-        }, err => console.error("MIDI Access Failed:", err));
+        }, err => {
+            console.error("MIDI Access Failed:", err)
+          }
+        );
       }
     }
 
+    function werewolf_auto_connect() {
+      connectMidi(true);
+    }
     function werewolf_manual_connect() {
       connectMidi();
       //if (port) {

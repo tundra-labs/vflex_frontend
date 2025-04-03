@@ -2,7 +2,6 @@
     'use strict';
   
     document.addEventListener('DOMContentLoaded', event => {
-        const connectButton = document.querySelector("#connectButton");
         const statusDisplay = document.querySelector('#voltageStatus');
         const controls = document.querySelector("#controls"); // Assuming this contains the voltage select and program button
         const voltageSelect = document.querySelector("#voltage_select");
@@ -75,10 +74,9 @@
         window.addEventListener('connectedChange', async function(event) {
             const isConnected = event.detail;
             if (isConnected && window.getComputedStyle(popupBox).display === 'none') {
+                document.getElementById('connectMessage').disabled = true; // todo: remove midi error field?
                 //console.log(calibration_values.fw_id.value);
                 //console.log(calibration_values.voltage.value);
-                connectButton.textContent = 'Disconnect';
-                connectButton.classList.add('deactive');
                 controls.style.display = 'block';
                 troubleConnectingBtn.style.display = 'none';
 
@@ -111,8 +109,6 @@
                 
 
             } else {
-                connectButton.textContent = 'Connect';
-                connectButton.classList.remove('deactive');
                 fw_version.textContent = '';
                 troubleConnectingBtn.style.display = 'block';
                 controls.style.display = 'none';
@@ -124,15 +120,6 @@
         });
         
         
-        // Clicking Connect Button
-        connectButton.addEventListener('click', function() {
-            if(connected){
-                port.disconnect();
-            } else {
-                werewolf_manual_connect();
-            }
-        });
-
         edit_voltage.addEventListener('click', function(){
             document.getElementById('voltage_pps').disabled = false;
             edit_voltage.style.display = 'none';
