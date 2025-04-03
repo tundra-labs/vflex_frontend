@@ -546,7 +546,7 @@ class MidiConnection {
             if (!connected) {
                 this.tryConnect();
             }
-        }, 1000);
+        }, 100);
     }
 
     // Cleanup

@@ -91,18 +91,34 @@
                 document.getElementById('connectMessage').style.display = 'none'; // todo: remove midi error field?
                 //console.log(calibration_values.fw_id.value);
                 //console.log(calibration_values.voltage.value);
-                controls.style.display = 'block';
-                troubleConnectingBtn.style.display = 'none';
 
                 document.getElementById('voltage_pps').disabled = true;
+                troubleConnectingBtn.value = "loading....";
+                ACK = 0;
+                get_ww_string(port, command_list.CMD_FWID);
+                await waitForMidiACK();
+                console.log('fwid:', calibration_values.fw_id);
+
+                
+                if (calibration_values.fw_id.match("BTL*")) {
+                  // todo: this should set a loading message
+                  console.log('btl connected!');
+                  //jump_to_app(port);
+
+                } else if (calibration_values.fw_id.match("APP*")) {
+                  console.log('app connected!');
+                  controls.style.display = 'block';
+                  //troubleConnectingBtn.style.display = 'none';
+                  // todoo: allow app visual here
+                } else {
+                  console.log('something bad happend');
+                }
 
                 calibration_values.voltage = ''; // clear
                 getVoltage(port);
                 await waitForValue('voltage');
                 let fInput = calibration_values.voltage/1000;
                 voltage_pps.value = fInput.toFixed(2);
-
-                //await waitForFirmware();
 
                 //if(fw_id.value === currentFW){
                 //    fw_version.textContent = 'Firmware Version:  ' + fw_id.value;
@@ -125,6 +141,8 @@
 
             } else {
                 fw_version.textContent = '';
+
+                troubleConnectingBtn.value = "Trouble Connecting?";
                 troubleConnectingBtn.style.display = 'block';
                 controls.style.display = 'none';
                 edit_voltage.style.display = 'block';
