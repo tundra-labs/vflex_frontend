@@ -238,12 +238,11 @@ function get_ww_string_scratchpad(port, string_command){
   send_ww_string(port, string_command, "", write, scratchpad);
 }
 
-function getVoltage (port, x) {
+function getVoltage (port) {
   var array = new Uint8Array(2);
   array[0] = 2; // msg len
   array[1] = command_list.CMD_VOLTAGE;
   port.send(array);
-  return true;
 }
 
 function setVoltage (port, setting_mv) {
@@ -344,35 +343,10 @@ function disable_leds_operation_fn(port, disable, write){
 
 
 function clear_pdo_log(port){ // data is of type "object" which is definitely a real type
-  //boot_message.textContent = "bootload in progress";
-  //var data = new Uint8Array(data_object); // completely necessary step javascript is great
-  //let code_len = data.byteLength; // todo: from file. todo: note this expects multiples of 256
-  let bootloader_preamble_len = 2; // Cmd, Len, Rev[2]; // todo: modify away rev, i believe it's redundant as we store a fw revision elsewhere
-  let max_packet_len = 64; // usb packet limit
-  //let max_packet_code_len = max_packet_len - bootloader_preamble_len; // max code size sent in one packet
-  var output_arr = new Uint8Array(2);
-  output_arr[0] = 2;
+  let arr_len = 2;
+  var output_arr = new Uint8Array(arr_len);
+  output_arr[0] = arr_len;
   output_arr[1] = command_list.CMD_PDO_LOG | 0x80; // set write bit for clear
-  //let index = 0;
-  //let packet_count = 0;
-  //while(index < code_len) {
-  //  let remaining = code_len - index;
-  //  let packet_code_len = Math.min(remaining, max_packet_code_len);
-  //  let packet_len = packet_code_len + bootloader_preamble_len;
-  //  var boot_arr = new Uint8Array(packet_len);
-  //  boot_arr[0] = packet_len;
-  //  boot_arr[1] = command_list.CMD_BOOTLOAD_PROM;
-  //
-  //  for (let i  = 0; i < packet_code_len; i++){
-
-  //    boot_arr[i + bootloader_preamble_len] = data[index++]
-  //  }
-  //  bootloader_packet_queue.push(boot_arr);
-  //  packet_count++
-
-  //}
-  //let first_packet = bootloader_packet_queue.shift();
-
   port.send(output_arr);
 }
 function get_pdo_log(port) {
@@ -384,6 +358,17 @@ function get_pdo_log(port) {
 
   port.send(output_arr);
 }
+function pdo_cmd(port, pdo_cmd) {
+  let packet_len = 3; // Cmd, Len, pdo_cmd; // todo: modify away rev, i believe it's redundant as we store a fw revision elsewhere
+  var output_arr = new Uint8Array(packet_len);
+  output_arr[0] = packet_len;
+  output_arr[1] = command_list.CMD_PDO_LOG; 
+  output_arr[2] = pdo_cmd; 
+
+  port.send(output_arr);
+}
+
+
 
 
 function jump_to_app(port) {

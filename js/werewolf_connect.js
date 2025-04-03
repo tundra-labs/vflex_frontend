@@ -55,6 +55,7 @@ function connect() {
               break;
 
            case command_list.CMD_PDO_LOG:
+              console.log('pdo ok');
               if (data.byteLength == 6) {
                 pdo_log_byte_queue.push(data.getUint8(2));
                 pdo_log_byte_queue.push(data.getUint8(3));
@@ -305,39 +306,59 @@ console.log('hwid!');
             break;
 
          case command_list.CMD_PDO_LOG:
-            if (data.byteLength == 6) {
-              pdo_log_byte_queue.push(data[2]);
-              pdo_log_byte_queue.push(data[3]);
-              pdo_log_byte_queue.push(data[4]);
-              pdo_log_byte_queue.push(data[5]);
-              get_pdo_log(port);
-            } else {
-              let n_pdos = pdo_log_byte_queue.length / 4;
-              for (let i = 0; i < n_pdos; i++) {
-                  var temp32 = (pdo_log_byte_queue[4*i + 3]<<24)>>>0;
-                  temp32 += (pdo_log_byte_queue[4*i + 2]<<16);
-                  temp32 += (pdo_log_byte_queue[4*i + 1]<<8);
-                  temp32 += (pdo_log_byte_queue[4*i + 0]<<0);
-                  if (temp32 == 0xFFFFFFFF || temp32 == 0xAAAAAAAA) { // skip empty log and delimiter
-                  } else if (temp32 & 0xC0000000) { // variable pdo
-                    let max_current_50_ma = ((temp32 & 0x7F)) * 50;
-                    let min_voltage_100mv = ((temp32 & 0x0000FF00)>>8) * 100;
-                    let max_voltage_100mv = ((temp32 & 0x01FE0000)>>17) * 100;
-                    console.log("variable / augmented pps supply. max_current_50_ma:", max_current_50_ma , "min_voltage_100mv:", min_voltage_100mv, "max_voltage_100mv:", max_voltage_100mv);
+            if (data.length ==3 ) {
+              calibration_values.pdo_len = data[2];
+              console.log("got pdo length!", calibration_values.pdo_len);
+              calibration_values.pdo_payload = []; // resets
+            } else if (data.length == 6){
+              console.log("got pdo response!");
+              //calibration_values.pdo_payload append response
+              let new_pdo = [];
+              new_pdo.push(data[2]);
+              new_pdo.push(data[3]);
+              new_pdo.push(data[4]);
+              new_pdo.push(data[5]);
+
+              calibration_values.pdo_payload.push(new_pdo);
+            }
+            calibration_values.pdo_ack = true;
+
+            //if (data.length == 2) {
+            //  console.log(data, data.length);
+            //  pdo_log_byte_queue.push(data[2]);
+            //  pdo_log_byte_queue.push(data[3]);
+            //  pdo_log_byte_queue.push(data[4]);
+            //  pdo_log_byte_queue.push(data[5]);
+            //  get_pdo_log(port);
+            ////} else {
+            //}else if (data.length == 6) {
+            //  let n_pdos = pdo_log_byte_queue.length / 4;
+            //  for (let i = 0; i < n_pdos; i++) {
+            //      var temp32 = (pdo_log_byte_queue[4*i + 3]<<24)>>>0;
+            //      temp32 += (pdo_log_byte_queue[4*i + 2]<<16);
+            //      temp32 += (pdo_log_byte_queue[4*i + 1]<<8);
+            //      temp32 += (pdo_log_byte_queue[4*i + 0]<<0);
+            //      if (temp32 == 0xFFFFFFFF || temp32 == 0xAAAAAAAA) { // skip empty log and delimiter
+            //      } else if (temp32 & 0xC0000000) { // variable pdo
+            //        let max_current_50_ma = ((temp32 & 0x7F)) * 50;
+            //        let min_voltage_100mv = ((temp32 & 0x0000FF00)>>8) * 100;
+            //        let max_voltage_100mv = ((temp32 & 0x01FE0000)>>17) * 100;
+            //        console.log("variable / augmented pps supply. max_current_50_ma:", max_current_50_ma , "min_voltage_100mv:", min_voltage_100mv, "max_voltage_100mv:", max_voltage_100mv);
 
 
-                  } else { // fixed pdo
-                    let current = ( temp32 & 0x000003FF ) * 10;
-                    temp32 = temp32 >> 10;
-                    let voltage = ( temp32 & 0x000003FF ) * 50;
-                    console.log("fixed supply. v= ", voltage, ", i=", current);
-                  }
-
-              }
+            //      } else { // fixed pdo
+            //        let current = ( temp32 & 0x000003FF ) * 10;
+            //        temp32 = temp32 >> 10;
+            //        let voltage = ( temp32 & 0x000003FF ) * 50;
+            //        console.log("fixed supply. v= ", voltage, ", i=", current);
+            //      }
+            //  }
 
               //for (int i = 0; i < pdo_log_byte_que
-              pdo_log_byte_queue = [];
-            }
+              //pdo_log_byte_queue = [];
+            //} else {
+             // console.log("pdo error!");
+            //}
             break;
           case command_list.CMD_ENCRYPT_MSG:
             var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
