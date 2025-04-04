@@ -83,6 +83,7 @@
 
 
 
+        let transitioningtoApp = false;
 
         //Checking to see if variable connected from werewolf_connect.js changes
         window.addEventListener('connectedChange', async function(event) {
@@ -93,7 +94,6 @@
                 //console.log(calibration_values.voltage.value);
 
                 document.getElementById('voltage_pps').disabled = true;
-                troubleConnectingBtn.value = "loading....";
                 ACK = 0;
                 get_ww_string(port, command_list.CMD_FWID);
                 await waitForMidiACK();
@@ -103,12 +103,15 @@
                 if (calibration_values.fw_id.match("BTL*")) {
                   // todo: this should set a loading message
                   console.log('btl connected!');
+                  troubleConnectingBtn.textContent = "Loading....";
+                  transitioningtoApp= true;
                   //jump_to_app(port);
 
                 } else if (calibration_values.fw_id.match("APP*")) {
                   console.log('app connected!');
                   controls.style.display = 'block';
-                  //troubleConnectingBtn.style.display = 'none';
+                  troubleConnectingBtn.style.display = 'none';
+                  transitioningtoApp = false;
                   // todoo: allow app visual here
                 } else {
                   console.log('something bad happend');
@@ -140,15 +143,17 @@
                 
 
             } else {
-                fw_version.textContent = '';
-
-                troubleConnectingBtn.value = "Trouble Connecting?";
-                troubleConnectingBtn.style.display = 'block';
-                controls.style.display = 'none';
-                edit_voltage.style.display = 'block';
-                set_voltage.style.display = 'none';
-                cancel_voltage.style.display = 'none';
-                document.getElementById('voltage_pps').disabled = true;
+                if (!transitioningtoApp){
+                    fw_version.textContent = '';
+                    troubleConnectingBtn.textContent = "Trouble Connecting?";
+                    troubleConnectingBtn.style.display = 'block';
+                    controls.style.display = 'none';
+                    edit_voltage.style.display = 'block';
+                    set_voltage.style.display = 'none';
+                    cancel_voltage.style.display = 'none';
+                    document.getElementById('voltage_pps').disabled = true;   
+                    document.getElementById('connectMessage').style.display = 'block';
+                }  
             }
         });
         
