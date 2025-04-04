@@ -145,8 +145,8 @@
             } else {
                 if (!transitioningtoApp){
                     fw_version.textContent = '';
-                    troubleConnectingBtn.textContent = "Trouble Connecting?";
-                    troubleConnectingBtn.style.display = 'block';
+                    //troubleConnectingBtn.textContent = "Trouble Connecting?";
+                    //troubleConnectingBtn.style.display = 'block';
                     controls.style.display = 'none';
                     edit_voltage.style.display = 'block';
                     set_voltage.style.display = 'none';
