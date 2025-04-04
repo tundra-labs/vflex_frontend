@@ -103,7 +103,7 @@
                 if (calibration_values.fw_id.match("BTL*")) {
                   // todo: this should set a loading message
                   console.log('btl connected!');
-                  troubleConnectingBtn.textContent = "Loading....";
+                  troubleConnectingBtn.textContent = "Connecting....";
                   transitioningtoApp= true;
                   //jump_to_app(port);
 
