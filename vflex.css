@@ -4,7 +4,6 @@
   }
   
 .vflexbody {
-  font-family: 'Neuelis', sans-serif;
   background-color: #FFFFFF;
   margin: 0;
   padding: 0;
@@ -28,7 +27,7 @@ h1 {
 
 #voltage_select {
   width: 100%;
-  max-width: 400px;
+  max-width: 350px;
   text-align: center;
 }
 
@@ -36,7 +35,7 @@ h1 {
   background-color: #2B303B; /* Green */
   color: white;
   border: 2px solid transparent;
-  width: 400px;
+  width: 350px;
   padding: 10px;
   margin: 5px;
   cursor: pointer;
@@ -81,7 +80,6 @@ h1 {
 
 #voltageStatus {
     font-size: 15px;
-    font-family: "Roboto", sans-serif;
     font-weight: 600;
     text-align: center;
     margin-bottom: 10px;
@@ -92,7 +90,7 @@ h1 {
   background-color: #2B303B; /* Green */
   color: white;
   border: 2px solid transparent;
-  width: 400px;
+  width: 350px;
   padding: 10px;
   margin: 5px;
   cursor: pointer;
@@ -103,7 +101,7 @@ h1 {
   background-color: white;       /* Set the interior to white */
   color: black;                  /* Set text color to black */
   border: 2px solid #2B303B;       /* Black outline */
-  width: 400px;
+  width: 350px;
   padding: 10px;
   margin: 5px;
   cursor: pointer;
@@ -125,7 +123,6 @@ h1 {
 }
 
 .main-content {
-  font-family: 'Neuelis', sans-serif;
   background-color: #FFFFFF;
   margin: 0;
   padding: 0;
@@ -136,7 +133,7 @@ h1 {
 }
 
 #pps_message {
-  width: 400px;
+  width: 350px;
   height: 15px;
   color: black;
   text-align: center;
@@ -151,7 +148,7 @@ h1 {
 .input-wrapper {
   display: inline-block;
   position: relative; /* Allows absolute positioning of the label */
-  width: 400px; /* Set width to match the input */
+  width: 350px; /* Set width to match the input */
 }
 
 input {
@@ -159,7 +156,7 @@ input {
   border-bottom: 2px solid black;
   outline: none;
   font-size: 24px;
-  width: 400px;
+  width: 350px;
   text-align: center;
 }
 
@@ -219,7 +216,7 @@ margin: 15% auto;
 padding: 20px;
 border: 1px solid #888;
 width: 500px;
-height: 400px;
+height: 350px;
 text-align: center;
 align-content: center;
 border-radius: 8px;
@@ -335,5 +332,19 @@ input:checked + .slider:before {
 }
   
 #connectMessage {
-  font-size: 30px;
+  font-size: 22px;
+}
+
+h1, h2, h3 {
+  font-family: 'Neuelis', sans-serif;
+}
+
+body, p, input, button {
+  font-family: 'Nunito Sans', sans-serif;
+}
+
+.vflex-logo {
+  width: 350px;
+  height: auto; /* Keeps the aspect ratio */
+  margin-bottom: 20px; /* Optional spacing below */
 }
