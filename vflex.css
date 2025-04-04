@@ -167,7 +167,7 @@ input {
   transform: translateY(-50%);  /* Vertically center the text */
   pointer-events: none;  /* Make sure the text doesn't interfere with input clicks */
   color: #2B303B;
-  font-size: 48px;
+  font-size: 28px;
 }
 
 #fw_version {
@@ -348,4 +348,8 @@ body, p, input, button {
   width: 350px;
   height: auto; /* Keeps the aspect ratio */
   margin-bottom: 20px; /* Optional spacing below */
+}
+
+#voltage_pps{
+  font-size: 36px;
 }
