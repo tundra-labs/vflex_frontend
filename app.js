@@ -104,7 +104,6 @@
                   // todo: this should set a loading message
                   console.log('btl connected!');
                   document.getElementById('connectMessage').textContent = "Connecting...";
-                  document.getElementById('connectMessage').style.display = 'block';
                   transitioningtoApp= true;
                   //jump_to_app(port);
 
