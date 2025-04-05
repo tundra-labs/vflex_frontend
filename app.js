@@ -152,6 +152,7 @@
                     set_voltage.style.display = 'none';
                     cancel_voltage.style.display = 'none';
                     document.getElementById('voltage_pps').disabled = true;   
+                    document.getElementById('connectMessage').textContent = "Please connect device...";
                     document.getElementById('connectMessage').style.display = 'block';
                 }  
             }
