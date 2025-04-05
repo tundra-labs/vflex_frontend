@@ -54,7 +54,7 @@ h1 {
   color: white;
   border: 2px solid transparent;
   width: 165px;
-  margin-top: 10px; /* Add some space between input and button */
+  margin-top: 0px; /* Add some space between input and button (removed for mobile app) */
   text-align: center;
   cursor: pointer;
   padding: 10px;
