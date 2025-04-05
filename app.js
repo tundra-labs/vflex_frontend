@@ -89,9 +89,7 @@
         window.addEventListener('connectedChange', async function(event) {
             const isConnected = event.detail;
             if (isConnected && window.getComputedStyle(popupBox).display === 'none') {
-                if (!calibration_values.fw_id.match("BTL*")) { // make sure this element stays visible if in Bootloader state of connection
-                    document.getElementById('connectMessage').style.display = 'none'; // todo: remove midi error field?
-                }
+                document.getElementById('connectMessage').style.display = 'none'; // todo: remove midi error field?
                 //console.log(calibration_values.fw_id.value);
                 //console.log(calibration_values.voltage.value);
 
@@ -106,6 +104,7 @@
                   // todo: this should set a loading message
                   console.log('btl connected!');
                   document.getElementById('connectMessage').textContent = "Connecting...";
+                  document.getElementById('connectMessage').style.display = 'block';
                   transitioningtoApp= true;
                   //jump_to_app(port);
 
