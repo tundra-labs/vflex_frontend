@@ -89,7 +89,6 @@
         window.addEventListener('connectedChange', async function(event) {
             const isConnected = event.detail;
             if (isConnected && window.getComputedStyle(popupBox).display === 'none') {
-                document.getElementById('connectMessage').style.display = 'none'; // todo: remove midi error field?
                 //console.log(calibration_values.fw_id.value);
                 //console.log(calibration_values.voltage.value);
 
@@ -108,8 +107,10 @@
                   //jump_to_app(port);
 
                 } else if (calibration_values.fw_id.match("APP*")) {
+                  document.getElementById('connectMessage').textContent = "Please connect device...";
                   console.log('app connected!');
                   controls.style.display = 'block';
+                  document.getElementById('connectMessage').style.display = 'none'; // todo: remove midi error field?
                   troubleConnectingBtn.style.display = 'none';
                   transitioningtoApp = false;
                   // todoo: allow app visual here

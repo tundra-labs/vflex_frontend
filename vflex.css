@@ -347,7 +347,7 @@ body, p, input, button {
 .vflex-logo {
   width: 350px;
   height: auto; /* Keeps the aspect ratio */
-  margin-bottom: 20px; /* Optional spacing below */
+  margin-bottom: 0px; /* Optional spacing below (removed to get space for mobile keypad) */
 }
 
 #voltage_pps{
