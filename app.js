@@ -162,6 +162,8 @@
         
         edit_voltage.addEventListener('click', function(){
             document.getElementById('voltage_pps').disabled = false;
+            voltage_pps.focus();
+            voltage_pps.select();
             edit_voltage.style.display = 'none';
             set_voltage.style.display = 'block';
             cancel_voltage.style.display = 'block';
