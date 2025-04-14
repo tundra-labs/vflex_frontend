@@ -29,6 +29,7 @@ function connect() {
           let command_code = data.getUint8(1);
           let next_packet;
           let response;
+          ACK = 1;
           switch(command_code) {
             case command_list.CMD_DISABLE_LED_DURING_OPERATION:
               let disabled = data.getUint8(2);
