@@ -7,11 +7,63 @@
     <script src="./js/werewolf_serial_connect.js"></script>
     <script src="./js/werewolf_app_image.js"></script>
     <script src="./js/serial.js"></script>
-    <script src="./production_app.js"></script>
+    <!--<script src="./production_app.js"></script>-->
 		<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
 <body>
     <script>
+
+      document.addEventListener('DOMContentLoaded', event => {
+        function waitForACK(){
+            return new Promise((resolve) => {
+                const interval = setInterval(() => {
+                    if(ACK) {
+                        ACK = 0;
+                        clearInterval(interval);
+                        resolve();
+                    }
+                }, 25);
+            });
+        }
+
+        connectButton.addEventListener('click', function() {
+          werewolf_manual_connect();
+        });
+
+        send_encrypted_msg.addEventListener('click', async function(e) {
+            get_ww_string(port, command_list.CMD_WW_SERIAL);
+            //await waitForSerial();
+            await waitForACK();
+            try {ws.send(serial_num);} // send serial number to server, server responds with encrypted bootload packets
+            catch (error) {console.log('err');}
+            await waitForEncryptedMsg();
+            console.log('encrypto?');
+            let encrypted_app = encrypted_msg.app_bin;
+            let app_crc = encrypted_msg.crc;
+            let nonce = encrypted_msg.nonce;
+
+            console.log('len en msg',encrypted_app.length, ', crc = ', app_crc);
+            for (let i = 0; i < encrypted_app.length; i++) {
+              for (let j = 0; j < 8; j++) {
+                console.log(encrypted_app[i].chunks[j]);
+                fn_send_bootloader_chunk_encrypted(port, encrypted_app[i].chunks[j], encrypted_app[i].pg_id, j)
+                await waitForACK();
+              }
+              fn_commit_bootloader_page(port);
+              await waitForACK();
+              //fn_send_bootloader_chunk_encrypted(port, encrypted_msg[i].second_half_encrypted, encrypted_msg[i].pg_id, 1);
+              //await waitForACK();
+            }
+            //fn_verify_bootloader(port);
+            //await waitForAck();
+            console.log('done', encrypted_app.length);
+            //fn_verify_bootloader(port,encrypted_msg.length);
+            fn_verify_bootloader(port);
+            await waitForAck();
+        });
+      });
+
+
     </script>
     <div><input id="connectButton" type="button" value="connect"/></div>
     <div><input id="send_encrypted_msg" type="button" value="bootload secure"/></div>
