@@ -2,10 +2,9 @@
 <head>
     <title>Production server</title>
     <script src="./js/werewolf_comms.js"></script>
-    <script src="./js/werewolf_comms_leds.js"></script>
     <script src="./js/werewolf_util.js"></script>
     <script src="./js/werewolf_serial_connect.js"></script>
-    <script src="./js/werewolf_app_image.js"></script>
+    <script src="./js/werewolf_connect.js"></script>
     <script src="./js/serial.js"></script>
     <!--<script src="./production_app.js"></script>-->
 		<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
@@ -48,10 +47,23 @@
         jump_app.addEventListener('click', async function(e) {
           jump_to_app(port);
         });
+        jump_bootloader.addEventListener('click', async function(e) {
+          jump_to_bootloader(port);
+          setTimeout(() => {
+            werewolf_serial_manual_connect();
+          }, 10);
+        });
+
+
 
         connectButton.addEventListener('click', function() {
-          werewolf_manual_connect();
+          werewolf_manual_connect(); // app connect
         });
+        connectSerialButton.addEventListener('click', function() {
+          werewolf_serial_manual_connect(); // app connect
+        });
+
+
 
         send_encrypted_msg.addEventListener('click', async function(e) {
             get_ww_string(port, command_list.CMD_WW_SERIAL);
@@ -87,9 +99,12 @@
 
 
     </script>
-    <div><input id="connectButton" type="button" value="connect"/></div>
+    <div><input id="connectButton" type="button" value="connect to app"/></div>
+    <div><input id="jump_bootloader" type="button" value="exit app to bootloader"/></div>
+    <div><input id="connectSerialButton" type="button" value="connect bootloader"/></div>
     <div><input id="send_encrypted_msg" type="button" value="bootload secure"/></div>
     <div><input id="verify_encrypted_msg" type="button" value="bootload veirfy"/></div>
     <div><input id="jump_app" type="button" value="exit bootloader to app"/></div>
+
 </body>
 </html>

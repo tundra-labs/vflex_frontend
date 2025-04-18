@@ -1,12 +1,12 @@
-let port;
-let connected = false;
-let bootloader_mode = 0; // todo: from html
-let serial_num = 0;
-let ACK = 0;
+//let port;
+//let connected = false;
+//let bootloader_mode = 0; // todo: from html
+//let serial_num = 0;
+//let ACK = 0;
 
-var calibration_values = {}; // assigned at import level to user defined html fields. messages populated iff they're defined.
+//var calibration_values = {}; // assigned at import level to user defined html fields. messages populated iff they're defined.
 
-let pdo_log_byte_queue = []; // todo: this could be a generic packet queue for connect function
+//let pdo_log_byte_queue = []; // todo: this could be a generic packet queue for connect function
 
 function setConnected(newValue){
   connected = newValue;
@@ -270,9 +270,16 @@ function connect() {
       });
     }
 
-    function werewolf_manual_connect() {
+    function werewolf_serial_manual_connect() {
       if (port) {
+        try {
         port.disconnect();
+        } catch {
+        }
+        try {
+          delete port;
+        } catch {
+        }
         //connectButton.textContent = 'Connect';
         port = null;
       } else {
