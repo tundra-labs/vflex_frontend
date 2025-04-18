@@ -47,7 +47,7 @@ function connect() {
               break;
 
             case command_list.CMD_SB_VERIFY:
-              console.log("verify");
+              console.log("verify", data.getUint8(2));
               break;
 
            case command_list.CMD_PDO_LOG:
