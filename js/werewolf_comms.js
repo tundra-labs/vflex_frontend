@@ -159,7 +159,8 @@ function fn_send_encrypted_message (port, msg) { // msg is a string
  output_array[0] = output_array_len; // msg len
  output_array[1] = command_list.CMD_ENCRYPT_MSG | 0x80;
  for (let i = 0; i < msg.length; i++) {
-   output_array[i+preamble_len] = msg[i];
+   output_array[i+preamble_len] = msg.charCodeAt(i);
+   console.log(msg[i], output_array[i+preamble_len]);
  }
  console.log("output_array", output_array);
  port.send(output_array);

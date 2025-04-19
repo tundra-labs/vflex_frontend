@@ -100,14 +100,12 @@
           await waitForACK();
           console.log(calibration_values.serial_num);
           //let timestamp = "018APR25"; // todo
-          let timestamp = "012APR25"; // todo
+          let timestamp = String(Date.now());
           ACK = 0;
           fn_send_encrypted_message(port, timestamp); // 
           await waitForACK();
-          console.log(calibration_values.secretsecrets, calibration_values.secretsecrets.length);
           
-          // setup connection to legit server
-         // send certificate of authenticity
+          // send certificate of authenticity
           let certificate_of_authenticity =JSON.stringify({ serial_num: calibration_values.serial_num, timestamp: timestamp, secret: Array.from(calibration_values.secretsecrets) });
           console.log(certificate_of_authenticity);
           try {legit_ws.send(certificate_of_authenticity);}
