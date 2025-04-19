@@ -43,15 +43,28 @@
 
         <script>
 
+          function waitForACK(){
+              return new Promise((resolve) => {
+                  const interval = setInterval(() => {
+                      if(ACK) {
+                          ACK = 0;
+                          clearInterval(interval);
+                          resolve();
+                      }
+                  }, 25);
+              });
+          }
+
           const inputField = document.getElementById('voltage_pps');
 
           document.addEventListener('DOMContentLoaded', event => {
-            //werewolf_auto_connect();
+           //werewolf_auto_connect();
             const midi = new MidiConnection();
             midi.setCallbacks(
                 () => {
                     // Handle successful connection
                     console.log("MIDI device ready!");
+
                 },
                 (err) => {
                     // Handle connection failure

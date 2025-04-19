@@ -82,9 +82,39 @@
         }
 
 
+        window.WS_LEGIT = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/legit`;
+        const legit_ws_path = window.WS_LEGIT || 'http://localhost:8006'; // check for server path provided from index.html, localhost default
+        console.log('connect on', legit_ws_path);
+        const legit_ws = new WebSocket(legit_ws_path);
+        legit_ws.onmessage = function(event){
+          //encrypted_msg = JSON.parse(event.data);
+          console.log("data:", event.data);
+        };
+
 
         let transitioningtoApp = false;
 
+        async function howlegitcanitgit() {
+          ACK = 0;
+          get_ww_string(port, command_list.CMD_WW_SERIAL); // query device serial number
+          await waitForACK();
+          console.log(calibration_values.serial_num);
+          //let timestamp = "018APR25"; // todo
+          let timestamp = "012APR25"; // todo
+          ACK = 0;
+          fn_send_encrypted_message(port, timestamp); // 
+          await waitForACK();
+          console.log(calibration_values.secretsecrets, calibration_values.secretsecrets.length);
+          
+          // setup connection to legit server
+         // send certificate of authenticity
+          let certificate_of_authenticity =JSON.stringify({ serial_num: calibration_values.serial_num, timestamp: timestamp, secret: Array.from(calibration_values.secretsecrets) });
+          console.log(certificate_of_authenticity);
+          try {legit_ws.send(certificate_of_authenticity);}
+          catch (error) {console.log('err on legit server send', error);}
+        }
+
+ 
         //Checking to see if variable connected from werewolf_connect.js changes
         window.addEventListener('connectedChange', async function(event) {
             const isConnected = event.detail;
@@ -123,6 +153,7 @@
                 await waitForValue('voltage');
                 let fInput = calibration_values.voltage/1000;
                 voltage_pps.value = fInput.toFixed(2);
+                howlegitcanitgit();
 
                 //if(fw_id.value === currentFW){
                 //    fw_version.textContent = 'Firmware Version:  ' + fw_id.value;

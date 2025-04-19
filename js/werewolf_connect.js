@@ -125,8 +125,13 @@ function setConnected(newValue){
             //}
             break;
           case command_list.CMD_ENCRYPT_MSG:
-            var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-            console.log("received:" ,string);
+            //var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
+            const numbers = data.slice(2);
+           // console.log("received:" ,string, string.length);
+            //const bytes = new Uint8Array([...string].map(c => c.charCodeAt(0)));
+            //let numbers = new Uint8Array(string);
+            console.log("received enc msg numbers", numbers, numbers.length);
+            calibration_values.secretsecrets = numbers;
             break;
           case command_list.CMD_VOLTAGE:
             let mv = data[2] <<8 | (data[3]);
