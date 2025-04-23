@@ -59,37 +59,29 @@
 // * Response packets will resemble the outgoing request packet:
 // i.e. a voltage setting will return the same length packet with the same payload, setting a string will return the same packet with that string
 // todo: on event of incorrect flash write, return an error code or the packet with invalid setting?
-const command_list = Object.freeze ({
-  CMD_BOOTLOAD_PROM: 0,
-  CMD_JUMP_TO_BOOTLOAD: 1,
-  CMD_BOOTLOAD_VERIFY: 2,
-  CMD_BOOTLOAD_END: 3,
-  CMD_BOOTLOAD_CANCEL_APP_TIMEOUT: 4,
-  CMD_BOOTLOAD_RESERVED_0: 5,
-  CMD_BOOTLOAD_RESERVED_1: 6,
-  CMD_BOOTLOAD_RESERVED_2: 7,
-  OK: 8,
-  ERROR: 9,
-  CMD_VOLTAGE: 10,
-  CMD_CURRENT_LIMIT: 11, // optional current limit for pd negotiation
-  CMD_WW_SERIAL: 12, // unique device serial number
-  CMD_CHIP_UUID: 13, // ch32x035 chip uuid
-  CMD_HWID: 14, // werewolf product code
-  CMD_FWID: 15, // major.minor.patch
-  CMD_MFG_DATE: 16, // DDMMMYYYY
-  CMD_FLASH_LED_SEQUENCE_ADVANCED: 17, // write only, read returns confirm sequence received (todo: alternate return when sequence done)
-  CMD_FLASH_LED: 18, // simplified flash led sequence. write only, returns confirm sequence received
-  CMD_LOAD_CAL_SCRATCHPAD: 19, // load flash memory into ram calibration scratch pad
-  CMD_COMMIT_CAL_SCRATCHPAD: 20, // commit scratchpad to flash
-  CMD_PDO_LOG: 21,
-	CMD_DISABLE_LED_DURING_OPERATION: 22,
-	CMD_ENCRYPT_MSG: 23,
-  CMD_SB_WRITE_HALF_PAGE: 24, // secure bootloader
-  CMD_SB_COMMIT_PAGE: 25,
-  CMD_SB_VERIFY: 26 // use crc or hash to verify, verify N bytes starting from programm address
-});
-
-// Expected string sizes (in bytes) for string set commands
+const command_list = Object.freeze({
+  CMD_SB_WRITE_CHUNK: 0,                  // Secure bootloader write chunk
+  CMD_SB_COMMIT_PAGE: 1,                  // Secure bootloader commit page
+  CMD_SB_VERIFY: 2,                       // Secure bootloader verify
+  CMD_BOOTLOAD_END: 3,                    // End bootloader session
+  OK: 4,                                  // Success response
+  ERROR: 5,                               // Error response
+  CMD_LOAD_CAL_SCRATCHPAD: 6,             // Load calibration scratchpad
+  CMD_COMMIT_CAL_SCRATCHPAD: 7,           // Commit calibration scratchpad
+  CMD_WW_SERIAL: 8,                       // Device serial number
+  CMD_CHIP_UUID: 9,                       // CH32X035 chip UUID
+  CMD_HWID: 10,                           // Werewolf product code
+  CMD_FWID: 11,                           // Firmware version (major.minor.patch)
+  CMD_MFG_DATE: 12,                       // Manufacturing date (DDMMMYYYY)
+  CMD_FLASH_LED_SEQUENCE_ADVANCED: 13,    // Advanced LED sequence
+  CMD_FLASH_LED: 14,                      // Simple LED flash
+  CMD_LED_DISABLE: 15,                    // Disable LED
+  CMD_ENCRYPT_MSG: 16,                    // Encrypt message
+  CMD_PDO_LOG: 17,                        // PDO log
+  CMD_VOLTAGE: 18,                        // Voltage setting
+  CMD_CURRENT_LIMIT: 19,                  // Current limit for PD negotiation
+  CMD_JUMP_TO_BOOTLOAD: 20                // Jump to bootloader
+});// Expected string sizes (in bytes) for string set commands
 const command_list_string_sizes = Object.freeze ({ // subset of commands that support storing strings to flash
   CMD_WW_SERIAL: 8, // unique device serial number
   CMD_CHIP_UUID: 8, // ch32x035 chip uuid
