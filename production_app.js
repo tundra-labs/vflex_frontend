@@ -49,50 +49,10 @@ async function waitForSerial(){
           encrypted_msg = JSON.parse(event.data);
           console.log("data:", encrypted_msg);
         };
-        send_encrypted_msg.addEventListener('click', async function(e) {
-          encrypted_msg = 0; // reset
-          jump_to_bootloader(port);
 
-          setTimeout(async () => {
-            get_ww_string(port, command_list.CMD_WW_SERIAL);
-            //await waitForSerial();
-            await waitForACK();
-            try {ws.send(serial_num);} // send serial number to server, server responds with encrypted bootload packets
-            catch (error) {console.log('err');}
-            await waitForEncryptedMsg();
-            console.log('encrypto?');
-            let encrypted_app = encrypted_msg.app_bin;
-            let app_crc = encrypted_msg.crc;
-            let nonce = encrypted_msg.nonce;
-
-            console.log('len en msg',encrypted_app.length, ', crc = ', app_crc);
-            for (let i = 0; i < encrypted_app.length; i++) {
-              for (let j = 0; j < 8; j++) {
-                console.log(encrypted_app[i].chunks[j]);
-                fn_send_bootloader_chunk_encrypted(port, encrypted_app[i].chunks[j], encrypted_app[i].pg_id, j)
-                await waitForACK();
-              }
-              fn_commit_bootloader_page(port);
-              await waitForACK();
-              //fn_send_bootloader_chunk_encrypted(port, encrypted_msg[i].second_half_encrypted, encrypted_msg[i].pg_id, 1);
-              //await waitForACK();
-            }
-            //fn_verify_bootloader(port);
-            //await waitForAck();
-            console.log('done', encrypted_app.length);
-            //fn_verify_bootloader(port,encrypted_msg.length);
-            fn_verify_bootloader(port);
-            await waitForAck();
-
-          }, 1000);
-        });
-
-        verify_encrypted_msg.addEventListener('click', async function(e) {
-          fn_verify_bootloader(port);
-        });
-        jump_app.addEventListener('click', async function(e) {
-          jump_to_app(port);
-        });
+        //jump_app.addEventListener('click', async function(e) {
+        //  jump_to_app(port);
+        //});
 
         //const commission_ws = new WebSocket("ws://127.0.0.1:8002/");
 
