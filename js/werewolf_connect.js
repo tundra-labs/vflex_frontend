@@ -182,16 +182,13 @@ function setConnected(newValue){
 
     function handleMidiMessage(event) {
       const [status, data1, data2] = event.data;
-      //console.log(`Raw MIDI @ ${event.timeStamp}: ${status.toString(16)} ${data1.toString(16)} ${data2.toString(16)}`);
       if (status === 0x80) {
         receiveBuffer = [];
         receiveComplete = false;
-        //console.log("Buffer cleared");
       } else if (status === 0x90) {
         if (receiveBuffer.length < 64) {
           const byte = (data1 << 4) | data2;
           receiveBuffer.push(byte);
-          //console.log(`Added: ${byte.toString(16)} | Buffer size: ${receiveBuffer.length}`);
         }
       } else if (status === 0xA0) {
         receiveComplete = true;
@@ -220,9 +217,6 @@ function setConnected(newValue){
 
       } else { // Connect
         navigator.requestMIDIAccess().then(midiAccess => {
-          //console.log("MIDI Access Granted");
-
-          // Find output
           for (let out of midiAccess.outputs.values()) {
             console.log(`Output: ${out.name} (ID: ${out.id})`);
             if (out.name.includes("vFlex")) {
@@ -230,9 +224,6 @@ function setConnected(newValue){
               break;
             }
           }
-          //if (!midiOutput) console.warn("No MIDI output found!");
-
-          // Find input
           for (let inPort of midiAccess.inputs.values()) {
             //console.log(`Input: ${inPort.name} (ID: ${inPort.id})`);
             if (inPort.name.includes("vFlex")) {
@@ -241,8 +232,6 @@ function setConnected(newValue){
               break;
             }
           }
-          //if (!midiInput) console.warn("No MIDI input found!");
-
           if (!midiInput || ! midiOutput) {
             console.log('no midi, continue');
             if(retry) {
@@ -253,8 +242,6 @@ function setConnected(newValue){
           }
           else console.log("Selected Input:", midiInput.name);
           console.log("Selected Output:", midiOutput.name);
-
-          // Set up port wrapper
           port = {
             send: function(data) {
               if (!midiOutput) {
@@ -270,7 +257,6 @@ function setConnected(newValue){
                 const highNibble = (byte >> 4) & 0x0F;
                 const lowNibble = byte & 0x0F;
                 midiOutput.send([0x90, highNibble, lowNibble]);
-                //console.log(`Sent: [90 ${highNibble.toString(16)} ${lowNibble.toString(16)}]`);
                 Delay(20);
               }
 
@@ -295,18 +281,6 @@ function setConnected(newValue){
     }
     function werewolf_manual_connect() {
       connectMidi();
-      //if (port) {
-        //port.disconnect();
-        ////connectButton.textContent = 'Connect';
-        //port = null;
-      //} else {
-        //serial.requestPort().then(selectedPort => {
-          //port = selectedPort;
-          //connect();
-        //}).catch(error => {
-          //console.log(error);
-        //});
-      //}
     }
 
     function werewolf_attempt_connect() {
