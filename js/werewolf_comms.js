@@ -82,6 +82,7 @@ const command_list = Object.freeze({
   CMD_CURRENT_LIMIT: 19,                  // Current limit for PD negotiation
   CMD_JUMP_TO_BOOTLOAD: 20                // Jump to bootloader
 });// Expected string sizes (in bytes) for string set commands
+
 const command_list_string_sizes = Object.freeze ({ // subset of commands that support storing strings to flash
   CMD_WW_SERIAL: 8, // unique device serial number
   CMD_CHIP_UUID: 8, // ch32x035 chip uuid
@@ -105,6 +106,7 @@ function command_to_string_length(command) { // return string size of desired co
 function extract_key_from_list(command){
   return Object.keys(command_list)[command];
 }
+
 function send_ww_string(port, string_command, str, write,scratchpad){
   let command = extract_key_from_list(string_command);
   let expected_str_len = command_to_string_length(command);
@@ -158,7 +160,6 @@ function fn_send_encrypted_message (port, msg) { // msg is a string
  port.send(output_array);
 }
 
-// packet format(size): len(1) cmd(1) pg_msb(1) pg_lsb(1) which_half(1) data(32)
 function fn_send_bootloader_chunk_encrypted(port, msg, pg_id, chunk_id) {
   let preamble_len = 2;
   let data_start_pos = 5;
@@ -176,7 +177,6 @@ function fn_send_bootloader_chunk_encrypted(port, msg, pg_id, chunk_id) {
   for (let i = 0; i < msg.length; i++) {
    output_array[i+data_start_pos] = msg[i];
   }
-  console.log("output_array", output_array);
   port.send(output_array);
 }
 function fn_verify_bootloader(port) {
@@ -197,17 +197,6 @@ function fn_commit_bootloader_page(port) {
   output_array[1] = command_list.CMD_SB_COMMIT_PAGE | 0x80;
   port.send(output_array);
 }
-//function fn_send_encrypted_message (port, msg) { // msg is a string
-// let preamble_len = 2;
-// let output_array_len = msg.length + preamble_len;
-// var output_array = new Uint8Array(output_array_len);
-// output_array[0] = output_array_len; // msg len
-// output_array[1] = command_list.CMD_ENCRYPT_MSG | 0x80;
-// for (let i = preamble_len; i < output_array_len; i++) {
-//   output_array[i] = msg[i-preamble_len].charCodeAt(0);
-// }
-// port.send(output_array);
-//}//
 
 function set_ww_string(port, string_command, str){
   let write = 1;
@@ -215,7 +204,6 @@ function set_ww_string(port, string_command, str){
   send_ww_string(port, string_command, str, write, scratchpad);
 }
 function set_ww_string_scratchpad(port, string_command, str){
-  //console.log(string_command);
   let write = 1;
   let scratchpad = 1;
   send_ww_string(port, string_command, str, write, scratchpad);
@@ -243,7 +231,6 @@ function setVoltage (port, setting_mv) {
   array[0] = 4; // msg len
   array[1] = command_list.CMD_VOLTAGE | 0x80;
 
-  //let setting_mv = radioArray.value;
   let setting_mv_msb = (setting_mv >> 8)&0xFF;
   let setting_mv_lsb = setting_mv & 0xFF;
   array[2] = setting_mv_msb;
@@ -284,11 +271,8 @@ function commit_flash(port) {
   port.send(arr);
 }
 
-
-
 let bootloader_packet_queue = []; // todo: this could be a generic packet queue for connect function
 function bootload_prom_function(port, data_object){ // data is of type "object" which is definitely a real type
-  //boot_message.textContent = "bootload in progress";
   var data = new Uint8Array(data_object); // completely necessary step javascript is great
   let code_len = data.byteLength; // todo: from file. todo: note this expects multiples of 256
   let bootloader_preamble_len = 4; // Cmd, Len, Rev[2]; // todo: modify away rev, i believe it's redundant as we store a fw revision elsewhere
@@ -305,7 +289,6 @@ function bootload_prom_function(port, data_object){ // data is of type "object" 
     boot_arr[1] = command_list.CMD_BOOTLOAD_PROM;
   
     for (let i  = 0; i < packet_code_len; i++){
-
       boot_arr[i + bootloader_preamble_len] = data[index++]
     }
     bootloader_packet_queue.push(boot_arr);
@@ -317,7 +300,6 @@ function bootload_prom_function(port, data_object){ // data is of type "object" 
   ledBlink(port, 100, bootloaderBlink);
   setTimeout(() => { port.send(first_packet); }, 200);
 }
-
 
 function disable_leds_operation_fn(port, disable, write){
   let bootloader_preamble_len = 2; // Cmd, Len, Rev[2]; // todo: modify away rev, i believe it's redundant as we store a fw revision elsewhere
@@ -333,7 +315,6 @@ function disable_leds_operation_fn(port, disable, write){
   }
   port.send(output_arr);
 }
-
 
 function clear_pdo_log(port){ // data is of type "object" which is definitely a real type
   let arr_len = 2;
@@ -360,9 +341,6 @@ function pdo_cmd(port, pdo_cmd) {
 
   port.send(output_arr);
 }
-
-
-
 
 function jump_to_app(port) {
     var arr = new Uint8Array(2);
@@ -416,7 +394,6 @@ function bootload_cancel_app_timeout(port) {
 function process_midi_return(data) {
     let data_u8a = new Uint8Array(data); 
     let preamble_len = 2;
-    //let textDecoder = new TextDecoder();
     let command_code = data[1];
     let next_packet;
     let response;
@@ -551,26 +528,22 @@ function process_midi_return(data) {
 
 }
 
-
-    function handleMidiMessage(event) {
-      const [status, data1, data2] = event.data;
-      if (status === 0x80) {
-        receiveBuffer = [];
-        receiveComplete = false;
-      } else if (status === 0x90) {
-        if (receiveBuffer.length < 64) {
-          const byte = (data1 << 4) | data2;
-          receiveBuffer.push(byte);
-        }
-      } else if (status === 0xA0) {
-        receiveComplete = true;
-        console.log("Payload received:", receiveBuffer.map(b => b.toString(16).padStart(2, '0')));
-        process_midi_return(receiveBuffer);
-      }
+function handleMidiMessage(event) {
+  const [status, data1, data2] = event.data;
+  if (status === 0x80) {
+    receiveBuffer = [];
+    receiveComplete = false;
+  } else if (status === 0x90) {
+    if (receiveBuffer.length < 64) {
+      const byte = (data1 << 4) | data2;
+      receiveBuffer.push(byte);
     }
-
-
-
+  } else if (status === 0xA0) {
+    receiveComplete = true;
+    console.log("Payload received:", receiveBuffer.map(b => b.toString(16).padStart(2, '0')));
+    process_midi_return(receiveBuffer);
+  }
+}
 
 (function() {
   'use strict';
