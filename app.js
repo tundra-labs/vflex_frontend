@@ -112,7 +112,7 @@
           catch (error) {console.log('err on legit server send', error);}
         }
 
-        midi.override_connection_change_callback(
+        midi.register_connection_change_callback(
                   async () => {
                     if (midi.connected && window.getComputedStyle(popupBox).display === 'none') {
                         //console.log(calibration_values.fw_id.value);

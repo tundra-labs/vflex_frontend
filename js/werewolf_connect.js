@@ -34,20 +34,19 @@ class MidiConnection {
         this.onDisconnect = () => {};
         this.onConnectionChange= () => {};
         this.connected = false;
-        this.eventListeners = new Map([['connection_change_event', []]]); // Initialize connection_change_event
     }
 
 
+    register_connection_callback(successCb) { this.onConnectSuccess = successCb || this.onConnectSuccess; }
+    register_fail_connection_callback(failCb){ this.onConnectFail = failCb || this.onConnectFail; }
+    register_disconnect_callback(disconnectCb) { this.onDisconnect = disconnectCb || this.onDisconnect;}
+    register_connection_change_callback(changeCb) { this.onConnectionChange = changeCb|| this.onConnectionChange; }
     setCallbacks(successCb, failCb, disconnectCb, changeCb) {
-        this.onConnectSuccess = successCb || this.onConnectSuccess;
-        this.onConnectFail = failCb || this.onConnectFail;
-        this.onDisconnect = disconnectCb || this.onDisconnect;
-        this.onConnectionChange = changeCb|| this.onConnectionChange;
+        this.register_connection_callback(successCb);
+        this.register_fail_connection_callback(failCb);
+        this.register_disconnect_callback(disconnectCb);
+        this.register_connection_change_callback(changeCb);
     }
-    override_connection_change_callback(changeCb) {
-        this.onConnectionChange = changeCb|| this.onConnectionChange;
-    }
-
 
     async init() { // Initialize MIDI access (called once)
         if (!this.midiAccess) {
