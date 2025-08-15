@@ -413,6 +413,163 @@ function bootload_cancel_app_timeout(port) {
     port.send(arr);
 }
 
+function process_midi_return(data) {
+    let data_u8a = new Uint8Array(data); 
+    let preamble_len = 2;
+    //let textDecoder = new TextDecoder();
+    let command_code = data[1];
+    let next_packet;
+    let response;
+    ACK = 1;
+    // todo: check if calibration_values.led exists here?
+    switch(command_code) {
+      case command_list.CMD_DISABLE_LED_DURING_OPERATION:
+        let disabled = data[2];
+        calibration_values.led_disable_during_operation = disabled;
+        break;
+      case command_list.CMD_SB_WRITE_HALF_PAGE:
+        break;
+      case command_list.CMD_SB_COMMIT_PAGE:
+        break;
+      case command_list.CMD_SB_VERIFY:
+        console.log("verify");
+        break;
+     case command_list.CMD_PDO_LOG:
+        if (data.length ==3 ) {
+          calibration_values.pdo_len = data[2];
+          calibration_values.pdo_payload = []; // resets
+        } else if (data.length == 6){
+          let new_pdo = [];
+          new_pdo.push(data[2]);
+          new_pdo.push(data[3]);
+          new_pdo.push(data[4]);
+          new_pdo.push(data[5]);
+          calibration_values.pdo_payload.push(new_pdo);
+        }
+        calibration_values.pdo_ack = true;
+        break;
+      case command_list.CMD_ENCRYPT_MSG:
+        const numbers = data.slice(2);
+        calibration_values.secretsecrets = numbers;
+        break;
+      case command_list.CMD_VOLTAGE:
+        let mv = data[2] <<8 | (data[3]);
+        calibration_values.voltage = mv;
+        break;
+      case command_list.CMD_CURRENT_LIMIT:
+        break;
+      case command_list.CMD_WW_SERIAL:
+        var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
+        console.log(string);
+        calibration_values.serial_num = string;
+        serial_num = string;
+        break;
+      case command_list.CMD_CHIP_UUID:
+        var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
+        calibration_values.uuid = string;
+        break;
+      case command_list.CMD_HWID:
+        console.log('got hwid');
+        var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
+        calibration_values.hw_id = string;
+        break;
+      case command_list.CMD_FWID:
+        var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
+        calibration_values.fw_id = string;
+        break;
+      case command_list.CMD_MFG_DATE:
+        var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
+        calibration_values.mfg_date = string;
+        break;
+      case command_list.CMD_FLASH_LED_SEQUENCE_ADVANCED:
+        break;
+      case command_list.CMD_FLASH_LED:
+        break;
+      case command_list.CMD_LOAD_CAL_SCRATCHPAD:
+        break;
+      case command_list.CMD_COMMIT_CAL_SCRATCHPAD:
+        break;
+      case command_list.OK:
+        break;
+      case command_list.ERROR:
+        break;
+      case command_list.CMD_BOOTLOAD_PROM:
+        response = data[2];
+        if (response == 0) { //proceed
+        } else {
+          // leave error for verification stage
+        }
+        next_packet = bootloader_packet_queue.shift();
+        if(next_packet) {
+          port.send(next_packet);
+        } else {
+          boot_message.textContent = "bootload complete";
+          setTimeout(function() {boot_message.textContent = "bootloader verifying";}, 200);
+          calibration_values.bootload_enable.value = "disabled";
+          setTimeout(() => { bootload_verify_function(port, app_bin_data['data']); }, 200);
+        }
+
+
+        break;
+      case command_list.CMD_BOOTLOAD_VERIFY:
+        response = data[2];
+        if(response){
+          if (bootloader_packet_queue.length == 0) {
+            boot_message.textContent = "bootloader verify succesful!";
+            setTimeout(() => {boot_message.textContent = "exiting bootloader!";}, 200);
+            setTimeout(() => {ledBlink (port, 5, confBlink); }, 100);
+            setTimeout(() => {jump_to_app(port);}, 4000);
+
+          }
+          // validated packet
+        } else {
+          boot_message.textContent = "bootloader verify detected error";
+          bootloader_packet_queue = [];
+        }
+        next_packet = bootloader_packet_queue.shift();
+        if(next_packet) {
+          port.send(next_packet);
+        }
+
+        break;
+      case command_list.CMD_BOOTLOAD_CANCEL_APP_TIMEOUT:
+        console.log("confirm bootloader mode");
+        boot_message.textContent = "bootloader connected";
+        if(app_bin_data['data']) {
+          setTimeout(function() {boot_message.textContent = "bootloader in progress";}, 500);
+          setTimeout(() => { bootload_prom_function(port, app_bin_data['data']); }, 200);
+        }
+
+        break;
+
+      case command_list.CMD_BOOTLOAD_CANCEL_APP_TIMEOUT:
+        console.log("jumping to bootloader");
+
+      default:
+        console.log("invalid usb incoming message. unexpected command code",command_code );
+    }
+
+}
+
+
+    function handleMidiMessage(event) {
+      const [status, data1, data2] = event.data;
+      if (status === 0x80) {
+        receiveBuffer = [];
+        receiveComplete = false;
+      } else if (status === 0x90) {
+        if (receiveBuffer.length < 64) {
+          const byte = (data1 << 4) | data2;
+          receiveBuffer.push(byte);
+        }
+      } else if (status === 0xA0) {
+        receiveComplete = true;
+        console.log("Payload received:", receiveBuffer.map(b => b.toString(16).padStart(2, '0')));
+        process_midi_return(receiveBuffer);
+      }
+    }
+
+
 
 
 (function() {
