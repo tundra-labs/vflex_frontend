@@ -54,7 +54,7 @@
             setTimeout(() => {
               console.log(calibration_values.led_disable_during_operation);
               let toggled = calibration_values.led_disable_during_operation == 0 ? 1 : 0;
-              disable_leds_operation_fn(port, toggled, 1); // write
+              vflex.disable_leds_operation(port, toggled, 1); // write
             }, 200);
           });
 
@@ -96,13 +96,13 @@
 
         async function howlegitcanitgit() {
           ACK = 0;
-          get_ww_string(port, command_list.CMD_WW_SERIAL); // query device serial number
+          vflex.get_ww_string(port, command_list.CMD_WW_SERIAL); // query device serial number
           await waitForACK();
           console.log(calibration_values.serial_num);
           //let timestamp = "018APR25"; // todo
           let timestamp = String(Date.now());
           ACK = 0;
-          fn_send_encrypted_message(port, timestamp); // 
+          vflex.send_encrypted_message(port, timestamp); // 
           await waitForACK();
           
           // send certificate of authenticity
@@ -112,82 +112,80 @@
           catch (error) {console.log('err on legit server send', error);}
         }
 
- 
-        //Checking to see if variable connected from werewolf_connect.js changes
-        window.addEventListener('connectedChange', async function(event) {
-            const isConnected = event.detail;
-            if (isConnected && window.getComputedStyle(popupBox).display === 'none') {
-                //console.log(calibration_values.fw_id.value);
-                //console.log(calibration_values.voltage.value);
+        midi.override_connection_change_callback(
+                  async () => {
+                    if (midi.connected && window.getComputedStyle(popupBox).display === 'none') {
+                        //console.log(calibration_values.fw_id.value);
+                        //console.log(calibration_values.voltage.value);
 
-                document.getElementById('voltage_pps').disabled = true;
-                ACK = 0;
-                get_ww_string(port, command_list.CMD_FWID);
-                await waitForMidiACK();
-                console.log('fwid:', calibration_values.fw_id);
+                        document.getElementById('voltage_pps').disabled = true;
+                        ACK = 0;
+                        vflex.get_ww_string(port, command_list.CMD_FWID);
+                        await waitForMidiACK();
+                        console.log('fwid:', calibration_values.fw_id);
 
-                
-                if (calibration_values.fw_id.match("BTL*")) {
-                  // todo: this should set a loading message
-                  console.log('btl connected!');
-                  document.getElementById('connectMessage').textContent = "Connecting...";
-                  transitioningtoApp= true;
-                  //jump_to_app(port);
+                        
+                        if (calibration_values.fw_id.match("BTL*")) {
+                          // todo: this should set a loading message
+                          console.log('btl connected!');
+                          document.getElementById('connectMessage').textContent = "Connecting...";
+                          transitioningtoApp= true;
+                          //jump_to_app(port);
 
-                } else if (calibration_values.fw_id.match("APP*")) {
-                  document.getElementById('connectMessage').textContent = "Please connect device...";
-                  console.log('app connected!');
-                  controls.style.display = 'block';
-                  document.getElementById('connectMessage').style.display = 'none'; // todo: remove midi error field?
-                  troubleConnectingBtn.style.display = 'none';
-                  transitioningtoApp = false;
-                  // todoo: allow app visual here
-                } else {
-                  console.log('something bad happend');
-                }
+                        } else if (calibration_values.fw_id.match("APP*")) {
+                          document.getElementById('connectMessage').textContent = "Please connect device...";
+                          console.log('app connected!');
+                          controls.style.display = 'block';
+                          document.getElementById('connectMessage').style.display = 'none'; // todo: remove midi error field?
+                          troubleConnectingBtn.style.display = 'none';
+                          transitioningtoApp = false;
+                          // todoo: allow app visual here
+                        } else {
+                          console.log('something bad happend');
+                        }
 
-                calibration_values.voltage = ''; // clear
-                getVoltage(port);
-                await waitForValue('voltage');
-                let fInput = calibration_values.voltage/1000;
-                voltage_pps.value = fInput.toFixed(2);
-                howlegitcanitgit();
+                        calibration_values.voltage = ''; // clear
+                        vflex.get_voltage(port);
+                        await waitForValue('voltage');
+                        let fInput = calibration_values.voltage/1000;
+                        voltage_pps.value = fInput.toFixed(2);
+                        howlegitcanitgit();
 
-                //if(fw_id.value === currentFW){
-                //    fw_version.textContent = 'Firmware Version:  ' + fw_id.value;
-                //} else {
-                //    newFirmware();
-                //}
-                //
-                //await waitForVoltageChange();
-                //
-                //let fInput = programmed_voltage.value/1000;
-                //voltage_pps.value = fInput.toFixed(2);
+                        //if(fw_id.value === currentFW){
+                        //    fw_version.textContent = 'Firmware Version:  ' + fw_id.value;
+                        //} else {
+                        //    newFirmware();
+                        //}
+                        //
+                        //await waitForVoltageChange();
+                        //
+                        //let fInput = programmed_voltage.value/1000;
+                        //voltage_pps.value = fInput.toFixed(2);
 
-                //disable_leds_operation_fn(port, 1, 0);
-                //setTimeout(() => {
-                //    if(calibration_values.led_disable_during_operation === 0){
-                //        toggleButton.checked = true;
-                //    }
-                //  }, 200);
-                
+                        //disable_leds_operation_fn(port, 1, 0);
+                        //setTimeout(() => {
+                        //    if(calibration_values.led_disable_during_operation === 0){
+                        //        toggleButton.checked = true;
+                        //    }
+                        //  }, 200);
+                        
 
-            } else {
-                if (!transitioningtoApp){
-                    fw_version.textContent = '';
-                    //troubleConnectingBtn.textContent = "Trouble Connecting?";
-                    //troubleConnectingBtn.style.display = 'block';
-                    controls.style.display = 'none';
-                    edit_voltage.style.display = 'block';
-                    set_voltage.style.display = 'none';
-                    cancel_voltage.style.display = 'none';
-                    document.getElementById('voltage_pps').disabled = true;   
-                    document.getElementById('connectMessage').textContent = "Please connect device...";
-                    document.getElementById('connectMessage').style.display = 'block';
-                }  
-            }
+                    } else {
+                        if (!transitioningtoApp){
+                            fw_version.textContent = '';
+                            //troubleConnectingBtn.textContent = "Trouble Connecting?";
+                            //troubleConnectingBtn.style.display = 'block';
+                            controls.style.display = 'none';
+                            edit_voltage.style.display = 'block';
+                            set_voltage.style.display = 'none';
+                            cancel_voltage.style.display = 'none';
+                            document.getElementById('voltage_pps').disabled = true;   
+                            document.getElementById('connectMessage').textContent = "Please connect device...";
+                            document.getElementById('connectMessage').style.display = 'block';
+                        }  
+                    }
         });
-        
+
         
         edit_voltage.addEventListener('click', function(){
             document.getElementById('voltage_pps').disabled = false;
@@ -217,14 +215,14 @@
             console.log(setting_mv);
             
             ACK = 0;
-            await setVoltage(port, setting_mv);
+            await vflex.set_voltage(port, setting_mv);
             pps_message.textContent = "";
             await waitForMidiACK();
             
             
             voltageStatus.textContent = "";
             ACK = 0;
-            getVoltage(port);
+            vflex.get_voltage(port);
             await waitForMidiACK();
         
             let fInput = calibration_values.voltage/1000;
@@ -280,7 +278,7 @@
                         await delay(1500);  // 5 seconds delay for the verification step
                         
                         await updateProgressBar(75, 100); // Update progress from 75 to 100
-                        if (connected) {
+                        if (midi.connected) {
                             recovery_msg.textContent = "Device has been Restored!";
                         }
                         else {

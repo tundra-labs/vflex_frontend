@@ -93,10 +93,8 @@ const command_list_string_sizes = Object.freeze ({ // subset of commands that su
 
 function command_to_string_length(command) { // return string size of desired command, return 0 if command isn't a string setting command
   var keys = [];
-  //console.log(command);
   for (const [key, value] of Object.entries(command_list_string_sizes)) { 
     if(key == command) {
-      //console.log(command_list_string_sizes[key]);
       return command_list_string_sizes[key];
     }
   }
@@ -108,6 +106,7 @@ function extract_key_from_list(command){
 }
 
 /// export
+var calibration_values = {}; // assigned at import level to user defined html fields. messages populated iff they're defined.
 class VFLEX {
   constructor() {
     this.device = null;
@@ -226,14 +225,14 @@ class VFLEX {
     this.send_ww_string(port, string_command, "", write, scratchpad);
   }
 
-  getVoltage (port) {
+  get_voltage (port) {
     var array = new Uint8Array(2);
     array[0] = 2; // msg len
     array[1] = command_list.CMD_VOLTAGE;
     port.send(array);
   }
 
-  setVoltage (port, setting_mv) {
+  set_voltage (port, setting_mv) {
     var array = new Uint8Array(4);
     array[0] = 4; // msg len
     array[1] = command_list.CMD_VOLTAGE | 0x80;
@@ -246,27 +245,24 @@ class VFLEX {
     port.send(array);
   }
 
-  getCurrent(port) {
+  get_max_current(port) {
     var array = new Uint8Array(2);
     array[0] = 2; // msg len
     array[1] = command_list.CMD_CURRENT;
     port.send(array);
-
   }
 
-  setCurrent (port, radioArray) {
+  set_max_current_ma(port, setting_ma) {
     var array = new Uint8Array(4);
     array[0] = 4; // msg len
     array[1] = command_list.CMD_CURRENT | 0x80;
-
-    let setting_mv = radioArray.value*1000;
-    let setting_mv_msb = (setting_mv >> 8)&0xFF;
-    let setting_mv_lsb = setting_mv & 0xFF;
-    array[2] = setting_mv_msb;
-    array[3] = setting_mv_lsb;
-
+    let setting_ma_msb = (setting_ma >> 8)&0xFF;
+    let setting_ma_lsb = setting_ma & 0xFF;
+    array[2] = setting_ma_msb;
+    array[3] = setting_ma_lsb;
     port.send(array);
   }
+
   load_flash(port) {
     var arr = new Uint8Array(2);
     arr[0] = 2;
@@ -309,7 +305,7 @@ class VFLEX {
     setTimeout(() => { port.send(first_packet); }, 200);
   }
 
-  disable_leds_operation_fn(port, disable, write){
+  disable_leds_operation(port, disable, write){
     let bootloader_preamble_len = 2; // Cmd, Len, Rev[2]; // todo: modify away rev, i believe it's redundant as we store a fw revision elsewhere
     if (write) {
       var output_arr = new Uint8Array(3);
@@ -364,7 +360,7 @@ class VFLEX {
       port.send(arr);
   }
   bootload_verify_function(port, data_object){
-    boot_message.textContent = "bootload verification in progress";
+    //boot_message.textContent = "bootload verification in progress";
     var data = new Uint8Array(data_object); // completely necessary step javascript is great
     let code_len = data.byteLength; // todo: from file. todo: note this expects multiples of 256
     let bootloader_preamble_len = 4; // Cmd, Len, Rev[2]; // todo: modify away rev, i believe it's redundant as we store a fw revision elsewhere
@@ -399,15 +395,13 @@ class VFLEX {
       port.send(arr);
   }
 
-
-  process_midi_return(data) {
+  process_response(data) {
     let data_u8a = new Uint8Array(data); 
     let preamble_len = 2;
     let command_code = data[1];
     let next_packet;
     let response;
     ACK = 1;
-    // todo: check if calibration_values.led exists here?
     switch(command_code) {
       case command_list.CMD_DISABLE_LED_DURING_OPERATION:
         let disabled = data[2];
@@ -489,7 +483,7 @@ class VFLEX {
         if(next_packet) {
           port.send(next_packet);
         } else {
-          boot_message.textContent = "bootload complete";
+          //boot_message.textContent = "bootload complete";
           setTimeout(function() {boot_message.textContent = "bootloader verifying";}, 200);
           calibration_values.bootload_enable.value = "disabled";
           setTimeout(() => { bootload_verify_function(port, app_bin_data['data']); }, 200);
@@ -501,7 +495,7 @@ class VFLEX {
         response = data[2];
         if(response){
           if (this.bootloader_packet_queue.length == 0) {
-            boot_message.textContent = "bootloader verify succesful!";
+            //boot_message.textContent = "bootloader verify succesful!";
             setTimeout(() => {boot_message.textContent = "exiting bootloader!";}, 200);
             setTimeout(() => {ledBlink (port, 5, confBlink); }, 100);
             setTimeout(() => {jump_to_app(port);}, 4000);
@@ -509,7 +503,7 @@ class VFLEX {
           }
           // validated packet
         } else {
-          boot_message.textContent = "bootloader verify detected error";
+          //boot_message.textContent = "bootloader verify detected error";
           this.bootloader_packet_queue = [];
         }
         next_packet = this.bootloader_packet_queue.shift();
@@ -520,9 +514,9 @@ class VFLEX {
         break;
       case command_list.CMD_BOOTLOAD_CANCEL_APP_TIMEOUT:
         console.log("confirm bootloader mode");
-        boot_message.textContent = "bootloader connected";
+        //boot_message.textContent = "bootloader connected";
         if(app_bin_data['data']) {
-          setTimeout(function() {boot_message.textContent = "bootloader in progress";}, 500);
+          //setTimeout(function() {boot_message.textContent = "bootloader in progress";}, 500);
           setTimeout(() => { bootload_prom_function(port, app_bin_data['data']); }, 200);
         }
 
@@ -554,7 +548,7 @@ function vflex_midi_packet_handler(event) {
   } else if (status === 0xA0) {
     receiveComplete = true;
     console.log("Payload received:", receiveBuffer.map(b => b.toString(16).padStart(2, '0')));
-    vflex.process_midi_return(receiveBuffer);
+    vflex.process_response(receiveBuffer);
   }
 }
 

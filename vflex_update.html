@@ -55,29 +55,7 @@
         });
 
         connectButton.addEventListener('click', function() {
-          //werewolf_manual_connect(); // app connect
-          const midi = new MidiConnection();
-          midi.setCallbacks(
-              () => {
-                  // Handle successful connection
-                  console.log("MIDI device ready!");
-
-              },
-              (err) => {
-                  // Handle connection failure
-                  console.error("MIDI connection failed:", err);
-              },
-              () => {
-                  // Handle disconnection
-                  console.log("MIDI device disconnected");
-              }
-          );
-
-          // Initialize
           midi.init();
-
-
-
         });
         connectSerialButton.addEventListener('click', function() {
           werewolf_serial_manual_connect(); // app connect

@@ -58,28 +58,7 @@
           const inputField = document.getElementById('voltage_pps');
 
           document.addEventListener('DOMContentLoaded', event => {
-           //werewolf_auto_connect();
-            const midi = new MidiConnection();
-            midi.setCallbacks(
-                () => {
-                    // Handle successful connection
-                    console.log("MIDI device ready!");
-
-                },
-                (err) => {
-                    // Handle connection failure
-                    console.error("MIDI connection failed:", err);
-                },
-                () => {
-                    // Handle disconnection
-                    console.log("MIDI device disconnected");
-                }
-            );
-
-            // Initialize
             midi.init();
-
-
           });
 
           inputField.addEventListener('input', function (e) {

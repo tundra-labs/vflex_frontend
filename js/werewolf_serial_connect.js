@@ -24,7 +24,7 @@ function connect() {
         let preamble_len = 2;
 
         port.onReceive = data => {
-          console.log('rx!');
+          console.log('rx!', data);
           let textDecoder = new TextDecoder();
           let command_code = data.getUint8(1);
           let next_packet;
