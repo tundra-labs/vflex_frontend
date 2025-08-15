@@ -45,16 +45,14 @@
           console.log("data:", encrypted_msg);
         };
         jump_app.addEventListener('click', async function(e) {
-          jump_to_app(port);
+          vflex.jump_to_app(port);
         });
         jump_bootloader.addEventListener('click', async function(e) {
-          jump_to_bootloader(port);
+          vflex.jump_to_bootloader(port);
           setTimeout(() => {
             werewolf_serial_manual_connect();
           }, 10);
         });
-
-
 
         connectButton.addEventListener('click', function() {
           //werewolf_manual_connect(); // app connect
@@ -88,7 +86,7 @@
 
 
         send_encrypted_msg.addEventListener('click', async function(e) {
-            get_ww_string(port, command_list.CMD_WW_SERIAL);
+            vflex.get_ww_string(port, command_list.CMD_WW_SERIAL);
             //await waitForSerial();
             await waitForACK();
             try {ws.send(serial_num);} // send serial number to server, server responds with encrypted bootload packets
@@ -102,19 +100,19 @@
             for (let i = 0; i < encrypted_app.length; i++) {
               for (let j = 0; j < 8; j++) {
                 console.log(encrypted_app[i].chunks[j]);
-                fn_send_bootloader_chunk_encrypted(port, encrypted_app[i].chunks[j], encrypted_app[i].pg_id, j)
+                vflex.send_bootloader_chunk_encrypted(port, encrypted_app[i].chunks[j], encrypted_app[i].pg_id, j)
                 await waitForACK();
               }
-              fn_commit_bootloader_page(port);
+              vflex.commit_bootloader_page(port);
               await waitForACK();
-              //fn_send_bootloader_chunk_encrypted(port, encrypted_msg[i].second_half_encrypted, encrypted_msg[i].pg_id, 1);
+              //send_bootloader_chunk_encrypted(port, encrypted_msg[i].second_half_encrypted, encrypted_msg[i].pg_id, 1);
               //await waitForACK();
             }
-            //fn_verify_bootloader(port);
+            //verify_bootloader(port);
             //await waitForAck();
             console.log('done', encrypted_app.length);
-            //fn_verify_bootloader(port,encrypted_msg.length);
-            fn_verify_bootloader(port);
+            //verify_bootloader(port,encrypted_msg.length);
+            vflex.verify_bootloader(port);
             await waitForACK();
         });
       });

@@ -50,7 +50,7 @@ function setConnected(newValue){
             //console.log(`Input: ${inPort.name} (ID: ${inPort.id})`);
             if (inPort.name.includes("vFlex")) {
               midiInput = inPort;
-              midiInput.onmidimessage = handleMidiMessage;
+              midiInput.onmidimessage = vflex_midi_packet_handler;
               break;
             }
           }
@@ -184,7 +184,7 @@ class MidiConnection {
             for (let inPort of midiAccess.inputs.values()) {
                 if (inPort.name.includes("vFlex")) {
                     midiInput = inPort;
-                    midiInput.onmidimessage = handleMidiMessage;
+                    midiInput.onmidimessage = vflex_midi_packet_handler;
                     break;
                 }
             }
