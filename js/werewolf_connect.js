@@ -49,96 +49,40 @@ function setConnected(newValue){
         let next_packet;
         let response;
         ACK = 1;
+        // todo: check if calibration_values.led exists here?
         switch(command_code) {
           case command_list.CMD_DISABLE_LED_DURING_OPERATION:
             let disabled = data[2];
-            // todo: check if calibration_values.led exists here?
             calibration_values.led_disable_during_operation = disabled;
-            console.log("led disabled?:", disabled);
             break;
           case command_list.CMD_SB_WRITE_HALF_PAGE:
-            //ACK = 1;
-            console.log("ACK");
             break;
           case command_list.CMD_SB_COMMIT_PAGE:
-            //ACK = 1;
-            console.log("ACK commit");
             break;
-
           case command_list.CMD_SB_VERIFY:
             console.log("verify");
             break;
-
          case command_list.CMD_PDO_LOG:
             if (data.length ==3 ) {
               calibration_values.pdo_len = data[2];
-              console.log("got pdo length!", calibration_values.pdo_len);
               calibration_values.pdo_payload = []; // resets
             } else if (data.length == 6){
-              console.log("got pdo response!");
-              //calibration_values.pdo_payload append response
               let new_pdo = [];
               new_pdo.push(data[2]);
               new_pdo.push(data[3]);
               new_pdo.push(data[4]);
               new_pdo.push(data[5]);
-
               calibration_values.pdo_payload.push(new_pdo);
             }
             calibration_values.pdo_ack = true;
-
-            //if (data.length == 2) {
-            //  console.log(data, data.length);
-            //  pdo_log_byte_queue.push(data[2]);
-            //  pdo_log_byte_queue.push(data[3]);
-            //  pdo_log_byte_queue.push(data[4]);
-            //  pdo_log_byte_queue.push(data[5]);
-            //  get_pdo_log(port);
-            ////} else {
-            //}else if (data.length == 6) {
-            //  let n_pdos = pdo_log_byte_queue.length / 4;
-            //  for (let i = 0; i < n_pdos; i++) {
-            //      var temp32 = (pdo_log_byte_queue[4*i + 3]<<24)>>>0;
-            //      temp32 += (pdo_log_byte_queue[4*i + 2]<<16);
-            //      temp32 += (pdo_log_byte_queue[4*i + 1]<<8);
-            //      temp32 += (pdo_log_byte_queue[4*i + 0]<<0);
-            //      if (temp32 == 0xFFFFFFFF || temp32 == 0xAAAAAAAA) { // skip empty log and delimiter
-            //      } else if (temp32 & 0xC0000000) { // variable pdo
-            //        let max_current_50_ma = ((temp32 & 0x7F)) * 50;
-            //        let min_voltage_100mv = ((temp32 & 0x0000FF00)>>8) * 100;
-            //        let max_voltage_100mv = ((temp32 & 0x01FE0000)>>17) * 100;
-            //        console.log("variable / augmented pps supply. max_current_50_ma:", max_current_50_ma , "min_voltage_100mv:", min_voltage_100mv, "max_voltage_100mv:", max_voltage_100mv);
-
-
-            //      } else { // fixed pdo
-            //        let current = ( temp32 & 0x000003FF ) * 10;
-            //        temp32 = temp32 >> 10;
-            //        let voltage = ( temp32 & 0x000003FF ) * 50;
-            //        console.log("fixed supply. v= ", voltage, ", i=", current);
-            //      }
-            //  }
-
-              //for (int i = 0; i < pdo_log_byte_que
-              //pdo_log_byte_queue = [];
-            //} else {
-             // console.log("pdo error!");
-            //}
             break;
           case command_list.CMD_ENCRYPT_MSG:
-            //var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
             const numbers = data.slice(2);
-           // console.log("received:" ,string, string.length);
-            //const bytes = new Uint8Array([...string].map(c => c.charCodeAt(0)));
-            //let numbers = new Uint8Array(string);
-            console.log("received enc msg numbers", numbers, numbers.length);
             calibration_values.secretsecrets = numbers;
             break;
           case command_list.CMD_VOLTAGE:
             let mv = data[2] <<8 | (data[3]);
-            //if(calibration_values.voltage) {
-              //console.log("received:" ,mv);
-              calibration_values.voltage = mv;
-            //}
+            calibration_values.voltage = mv;
             break;
           case command_list.CMD_CURRENT_LIMIT:
             break;
@@ -150,35 +94,20 @@ function setConnected(newValue){
             break;
           case command_list.CMD_CHIP_UUID:
             var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-            //if(calibration_values.uuid) {
-              calibration_values.uuid = string;
-            //}
+            calibration_values.uuid = string;
             break;
           case command_list.CMD_HWID:
 						console.log('got hwid');
             var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-            //if(calibration_values.hw_id) {
-              calibration_values.hw_id = string;
-            //}
+            calibration_values.hw_id = string;
             break;
           case command_list.CMD_FWID:
             var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-            //if(calibration_values.fw_id) {
-              //calibration_values.fw_id.value = string;
-              calibration_values.fw_id = string;
-              // if (string.match("APP*")) {
-              //   setTimeout(() => {
-              //     get_pdo_log(port);
-              //     console.log("APP connected, load pdo log:");
-              //   }, 100);
-              // }
-            //}
+            calibration_values.fw_id = string;
             break;
           case command_list.CMD_MFG_DATE:
             var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-            //if(calibration_values.mfg_date) {
-              calibration_values.mfg_date = string;
-            //}
+            calibration_values.mfg_date = string;
             break;
           case command_list.CMD_FLASH_LED_SEQUENCE_ADVANCED:
             break;
