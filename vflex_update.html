@@ -1,38 +1,17 @@
 <html>
 <head>
     <title>Production server</title>
-    <script src="./js/werewolf_comms.js"></script>
+    <!--<script src="./js/werewolf_comms.js"></script>
     <script src="./js/werewolf_util.js"></script>
     <script src="./js/werewolf_serial_connect.js"></script>
     <script src="./js/werewolf_connect.js"></script>
-    <script src="./js/serial.js"></script>
+    <script src="./js/serial.js"></script>-->
     <!--<script src="./production_app.js"></script>-->
 		<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
 </head>
 <body>
-    <script>
-
-      function waitForACK(){
-          return new Promise((resolve) => {
-              const interval = setInterval(() => {
-                  if(ACK) {
-                      ACK = 0;
-                      clearInterval(interval);
-                      resolve();
-                  }
-              }, 25);
-          });
-      }
-      async function waitForEncryptedMsg(){
-          return new Promise((resolve) => {
-              const interval = setInterval(() => {
-                  if(encrypted_msg) {
-                      clearInterval(interval);
-                      resolve();
-                  }
-              }, 25);
-          });
-      }
+    <script type="module">
+      import {VFLEX_COMMANDS,vflex, midi, vflex_cdc} from "./js/vflex_lib.js"
 
       var encrypted_msg = 0;
       document.addEventListener('DOMContentLoaded', event => {
@@ -45,12 +24,13 @@
           console.log("data:", encrypted_msg);
         };
         jump_app.addEventListener('click', async function(e) {
-          vflex.jump_to_app(port);
+          vflex_cdc.vflex.jump_to_app(vflex_cdc.port);
         });
         jump_bootloader.addEventListener('click', async function(e) {
-          vflex.jump_to_bootloader(port);
+          vflex.jump_to_bootloader(midi.port);
+          await vflex.await_response();
           setTimeout(() => {
-            werewolf_serial_manual_connect();
+            vflex_cdc.serial_manual_connect();
           }, 10);
         });
 
@@ -58,18 +38,19 @@
           midi.init();
         });
         connectSerialButton.addEventListener('click', function() {
-          werewolf_serial_manual_connect(); // app connect
+          midi.deinit();
+          vflex_cdc.serial_manual_connect(); // app connect
         });
 
 
 
         send_encrypted_msg.addEventListener('click', async function(e) {
-            vflex.get_ww_string(port, command_list.CMD_WW_SERIAL);
+            vflex.get_ww_string(vflex_cdc.port, command_list.CMD_WW_SERIAL);
             //await waitForSerial();
-            await waitForACK();
+            await vflex.await_response();
             try {ws.send(serial_num);} // send serial number to server, server responds with encrypted bootload packets
             catch (error) {console.log('err');}
-            await waitForEncryptedMsg();
+            await vflex.await_response();
             console.log('encrypto?');
             let encrypted_app = encrypted_msg.app_bin;
             let app_crc = encrypted_msg.crc;
@@ -78,11 +59,11 @@
             for (let i = 0; i < encrypted_app.length; i++) {
               for (let j = 0; j < 8; j++) {
                 console.log(encrypted_app[i].chunks[j]);
-                vflex.send_bootloader_chunk_encrypted(port, encrypted_app[i].chunks[j], encrypted_app[i].pg_id, j)
-                await waitForACK();
+                vflex_cdc.vflex.send_bootloader_chunk_encrypted(vflex_cdc.port, encrypted_app[i].chunks[j], encrypted_app[i].pg_id, j)
+                await vflex.await_response();
               }
-              vflex.commit_bootloader_page(port);
-              await waitForACK();
+              vflex_cdc.vflex.commit_bootloader_page(vflex_cdc.port);
+              await vflex.await_response();
               //send_bootloader_chunk_encrypted(port, encrypted_msg[i].second_half_encrypted, encrypted_msg[i].pg_id, 1);
               //await waitForACK();
             }
@@ -90,8 +71,8 @@
             //await waitForAck();
             console.log('done', encrypted_app.length);
             //verify_bootloader(port,encrypted_msg.length);
-            vflex.verify_bootloader(port);
-            await waitForACK();
+            vflex_cdc.vflex.verify_bootloader(vflex_cdc.port);
+            await vflex.await_response();
         });
       });
 

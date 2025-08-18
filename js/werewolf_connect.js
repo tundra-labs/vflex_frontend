@@ -40,6 +40,7 @@ export class VFLEX_MIDI{
         this.onConnectionChange= () => {};
         this.connected = false;
         this.port = null;
+
         this.midiInput = null;
     }
 
@@ -67,6 +68,10 @@ export class VFLEX_MIDI{
             }
         }
     }
+    async deinit() { // Initialize MIDI access (called once)
+      this.stopMonitoring();
+    }
+
 
     async tryConnect() { // Check for vFlex device and connect
         if (this.isConnecting || this.connected || !this.midiAccess) return;
@@ -162,6 +167,10 @@ export class VFLEX_MIDI{
                 this.tryConnect();
             }
         }, 100);
+    }
+    stopMonitoring() {
+      clearInterval(this.checkInterval);
+      this.disconnect();
     }
 
     // Cleanup
