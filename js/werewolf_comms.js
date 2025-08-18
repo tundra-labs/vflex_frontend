@@ -59,7 +59,7 @@
 // * Response packets will resemble the outgoing request packet:
 // i.e. a voltage setting will return the same length packet with the same payload, setting a string will return the same packet with that string
 // todo: on event of incorrect flash write, return an error code or the packet with invalid setting?
-const command_list = Object.freeze({
+export const command_list = Object.freeze({
   CMD_SB_WRITE_CHUNK: 0,                  // Secure bootloader write chunk
   CMD_SB_COMMIT_PAGE: 1,                  // Secure bootloader commit page
   CMD_SB_VERIFY: 2,                       // Secure bootloader verify
@@ -105,14 +105,15 @@ function extract_key_from_list(command){
   return Object.keys(command_list)[command];
 }
 
-/// export
-var calibration_values = {}; // assigned at import level to user defined html fields. messages populated iff they're defined.
-class VFLEX {
+export class VFLEX {
   constructor() {
     this.device = null;
     this.bootloader_packet_queue = []; // todo: this could be a generic packet queue for connect function
+    this.calibration_values = {}; // assigned at import level to user defined html fields. messages populated iff they're defined.
+    this.ACK = 0;
   }
   send_ww_string(port, string_command, str, write,scratchpad){
+    this.ACK = 0;
     let command = extract_key_from_list(string_command);
     let expected_str_len = command_to_string_length(command);
     //let serial_string_array = Uint8Array.from(str.value.split("").map(x => x.charCodeAt()));
@@ -150,7 +151,9 @@ class VFLEX {
   }
 
   send_encrypted_message (port, msg) { // msg is a string
-    console.log(msg, msg.length);
+   this.ACK = 0;
+   //let command = extract_key_from_list(string_command);
+   console.log(msg, msg.length);
    let preamble_len = 2;
    let output_array_len = msg.length + preamble_len;
    console.log("enc msg info", output_array_len, msg.length, preamble_len);
@@ -166,6 +169,7 @@ class VFLEX {
   }
 
   send_bootloader_chunk_encrypted(port, msg, pg_id, chunk_id) {
+    this.ACK = 0;
     let preamble_len = 2;
     let data_start_pos = 5;
     let pg_id_sz = 2;
@@ -186,6 +190,7 @@ class VFLEX {
   }
 
   verify_bootloader(port) {
+    this.ACK = 0;
     let preamble_len = 2;
     let output_array_len =  preamble_len;
     var output_array = new Uint8Array(output_array_len);
@@ -196,6 +201,7 @@ class VFLEX {
   }
 
   commit_bootloader_page(port) {
+    this.ACK = 0;
     let preamble_len = 2;
     let output_array_len =  preamble_len;
     var output_array = new Uint8Array(output_array_len);
@@ -205,27 +211,32 @@ class VFLEX {
   }
 
   set_ww_string(port, string_command, str){
+    this.ACK = 0;
     let write = 1;
     let scratchpad = 0;
     this.send_ww_string(port, string_command, str, write, scratchpad);
   }
   set_ww_string_scratchpad(port, string_command, str){
+    this.ACK = 0;
     let write = 1;
     let scratchpad = 1;
     this.send_ww_string(port, string_command, str, write, scratchpad);
   }
   get_ww_string(port, string_command){
+    this.ACK = 0;
     let write = 0;
     let scratchpad = 0;
     this.send_ww_string(port, string_command, "", write, scratchpad);
   }
   get_ww_string_scratchpad(port, string_command){
+    this.ACK = 0;
     let write = 0;
     let scratchpad = 1;
     this.send_ww_string(port, string_command, "", write, scratchpad);
   }
 
   get_voltage (port) {
+    this.ACK = 0;
     var array = new Uint8Array(2);
     array[0] = 2; // msg len
     array[1] = command_list.CMD_VOLTAGE;
@@ -233,6 +244,7 @@ class VFLEX {
   }
 
   set_voltage (port, setting_mv) {
+    this.ACK = 0;
     var array = new Uint8Array(4);
     array[0] = 4; // msg len
     array[1] = command_list.CMD_VOLTAGE | 0x80;
@@ -246,6 +258,7 @@ class VFLEX {
   }
 
   get_max_current(port) {
+    this.ACK = 0;
     var array = new Uint8Array(2);
     array[0] = 2; // msg len
     array[1] = command_list.CMD_CURRENT;
@@ -253,6 +266,7 @@ class VFLEX {
   }
 
   set_max_current_ma(port, setting_ma) {
+    this.ACK = 0;
     var array = new Uint8Array(4);
     array[0] = 4; // msg len
     array[1] = command_list.CMD_CURRENT | 0x80;
@@ -264,12 +278,14 @@ class VFLEX {
   }
 
   load_flash(port) {
+    this.ACK = 0;
     var arr = new Uint8Array(2);
     arr[0] = 2;
     arr[1] = command_list.CMD_LOAD_CAL_SCRATCHPAD | 0x40;
     port.send(arr);
   }
   commit_flash(port) {
+    this.ACK = 0;
     var arr = new Uint8Array(2);
     arr[0] = 2;
     arr[1] = command_list.CMD_COMMIT_CAL_SCRATCHPAD | 0x40;
@@ -277,6 +293,7 @@ class VFLEX {
   }
 
   bootload_prom_function(port, data_object){ // data is of type "object" which is definitely a real type
+    this.ACK = 0;
     var data = new Uint8Array(data_object); // completely necessary step javascript is great
     let code_len = data.byteLength; // todo: from file. todo: note this expects multiples of 256
     let bootloader_preamble_len = 4; // Cmd, Len, Rev[2]; // todo: modify away rev, i believe it's redundant as we store a fw revision elsewhere
@@ -306,6 +323,7 @@ class VFLEX {
   }
 
   disable_leds_operation(port, disable, write){
+    this.ACK = 0;
     let bootloader_preamble_len = 2; // Cmd, Len, Rev[2]; // todo: modify away rev, i believe it's redundant as we store a fw revision elsewhere
     if (write) {
       var output_arr = new Uint8Array(3);
@@ -321,6 +339,7 @@ class VFLEX {
   }
 
   clear_pdo_log(port){ // data is of type "object" which is definitely a real type
+    this.ACK = 0;
     let arr_len = 2;
     var output_arr = new Uint8Array(arr_len);
     output_arr[0] = arr_len;
@@ -328,6 +347,7 @@ class VFLEX {
     port.send(output_arr);
   }
   get_pdo_log(port) {
+    this.ACK = 0;
     let bootloader_preamble_len = 2; // Cmd, Len, Rev[2]; // todo: modify away rev, i believe it's redundant as we store a fw revision elsewhere
     let max_packet_len = 64; // usb packet limit
     var output_arr = new Uint8Array(2);
@@ -337,6 +357,7 @@ class VFLEX {
     port.send(output_arr);
   }
   pdo_cmd(port, pdo_cmd) {
+    this.ACK = 0;
     let packet_len = 3; // Cmd, Len, pdo_cmd; // todo: modify away rev, i believe it's redundant as we store a fw revision elsewhere
     var output_arr = new Uint8Array(packet_len);
     output_arr[0] = packet_len;
@@ -347,6 +368,8 @@ class VFLEX {
   }
 
   jump_to_app(port) {
+    this.ACK = 0;
+    let packet_len = 3; // Cmd, Len, pdo_cmd; // todo: modify away rev, i believe it's redundant as we store a fw revision elsewhere
       var arr = new Uint8Array(2);
       arr[0] = 2;
       arr[1] = command_list.CMD_BOOTLOAD_END;
@@ -354,12 +377,14 @@ class VFLEX {
   }
 
   jump_to_bootloader(port) {
-      var arr = new Uint8Array(2);
-      arr[0] = 2;
-      arr[1] = command_list.CMD_JUMP_TO_BOOTLOAD;
-      port.send(arr);
+     this.ACK = 0;
+     var arr = new Uint8Array(2);
+     arr[0] = 2;
+     arr[1] = command_list.CMD_JUMP_TO_BOOTLOAD;
+     port.send(arr);
   }
   bootload_verify_function(port, data_object){
+    this.ACK = 0;
     //boot_message.textContent = "bootload verification in progress";
     var data = new Uint8Array(data_object); // completely necessary step javascript is great
     let code_len = data.byteLength; // todo: from file. todo: note this expects multiples of 256
@@ -389,11 +414,24 @@ class VFLEX {
   }
 
   bootload_cancel_app_timeout(port) {
+      this.ACK = 0;
       var arr = new Uint8Array(2);
       arr[0] = 2;
       arr[1] = command_list.CMD_BOOTLOAD_CANCEL_APP_TIMEOUT;
       port.send(arr);
   }
+  async await_response() { // wait for 'calibration values'
+      return new Promise((resolve) => {
+          const interval = setInterval(() => {
+              if (this.ACK == 1) {
+                  this.ACK = 0;
+                  clearInterval(interval);
+                  resolve();
+              }
+          }, 25);
+      });
+  }
+
 
   process_response(data) {
     let data_u8a = new Uint8Array(data); 
@@ -401,11 +439,11 @@ class VFLEX {
     let command_code = data[1];
     let next_packet;
     let response;
-    ACK = 1;
+    this.ACK = 1;
     switch(command_code) {
       case command_list.CMD_DISABLE_LED_DURING_OPERATION:
         let disabled = data[2];
-        calibration_values.led_disable_during_operation = disabled;
+        this.calibration_values.led_disable_during_operation = disabled;
         break;
       case command_list.CMD_SB_WRITE_HALF_PAGE:
         break;
@@ -416,50 +454,50 @@ class VFLEX {
         break;
      case command_list.CMD_PDO_LOG:
         if (data.length ==3 ) {
-          calibration_values.pdo_len = data[2];
-          calibration_values.pdo_payload = []; // resets
+          this.calibration_values.pdo_len = data[2];
+          this.calibration_values.pdo_payload = []; // resets
         } else if (data.length == 6){
           let new_pdo = [];
           new_pdo.push(data[2]);
           new_pdo.push(data[3]);
           new_pdo.push(data[4]);
           new_pdo.push(data[5]);
-          calibration_values.pdo_payload.push(new_pdo);
+          this.calibration_values.pdo_payload.push(new_pdo);
         }
-        calibration_values.pdo_ack = true;
+        this.calibration_values.pdo_ack = true;
         break;
       case command_list.CMD_ENCRYPT_MSG:
         const numbers = data.slice(2);
-        calibration_values.secretsecrets = numbers;
+        this.calibration_values.secretsecrets = numbers;
         break;
       case command_list.CMD_VOLTAGE:
         let mv = data[2] <<8 | (data[3]);
-        calibration_values.voltage = mv;
+        this.calibration_values.voltage = mv;
         break;
       case command_list.CMD_CURRENT_LIMIT:
         break;
       case command_list.CMD_WW_SERIAL:
         var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
         console.log(string);
-        calibration_values.serial_num = string;
-        serial_num = string;
+        this.calibration_values.serial_num = string;
+        //serial_num = string;
         break;
       case command_list.CMD_CHIP_UUID:
         var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-        calibration_values.uuid = string;
+        this.calibration_values.uuid = string;
         break;
       case command_list.CMD_HWID:
         console.log('got hwid');
         var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-        calibration_values.hw_id = string;
+        this.calibration_values.hw_id = string;
         break;
       case command_list.CMD_FWID:
         var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-        calibration_values.fw_id = string;
+        this.calibration_values.fw_id = string;
         break;
       case command_list.CMD_MFG_DATE:
         var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-        calibration_values.mfg_date = string;
+        this.calibration_values.mfg_date = string;
         break;
       case command_list.CMD_FLASH_LED_SEQUENCE_ADVANCED:
         break;
@@ -485,7 +523,7 @@ class VFLEX {
         } else {
           //boot_message.textContent = "bootload complete";
           setTimeout(function() {boot_message.textContent = "bootloader verifying";}, 200);
-          calibration_values.bootload_enable.value = "disabled";
+          this.calibration_values.bootload_enable.value = "disabled";
           setTimeout(() => { bootload_verify_function(port, app_bin_data['data']); }, 200);
         }
 
@@ -531,26 +569,8 @@ class VFLEX {
 
   }
 }
-const vflex = new VFLEX();
-//export default VFLEX;
 
 
-function vflex_midi_packet_handler(event) {
-  const [status, data1, data2] = event.data;
-  if (status === 0x80) {
-    receiveBuffer = [];
-    receiveComplete = false;
-  } else if (status === 0x90) {
-    if (receiveBuffer.length < 64) {
-      const byte = (data1 << 4) | data2;
-      receiveBuffer.push(byte);
-    }
-  } else if (status === 0xA0) {
-    receiveComplete = true;
-    console.log("Payload received:", receiveBuffer.map(b => b.toString(16).padStart(2, '0')));
-    vflex.process_response(receiveBuffer);
-  }
-}
 
 (function() {
   'use strict';
@@ -558,3 +578,6 @@ function vflex_midi_packet_handler(event) {
   document.addEventListener('DOMContentLoaded', event => {
   });
 })();
+
+//const vflex = new VFLEX();
+

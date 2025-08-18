@@ -14,6 +14,9 @@ function setConnected(newValue){
   window.dispatchEvent(event);
 }
 
+// todo:
+// port.onreceive uses vflex.process_response
+// merge process_response with this bootloader
 function connect() {
       let boot_message = document.getElementById("boot_message");
       port.connect().then(() => {

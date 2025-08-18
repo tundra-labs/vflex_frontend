@@ -1,29 +1,42 @@
 let port = null;
 let midiOutput = null;
 let midiInput = null;
-let receiveBuffer = [];
-let receiveComplete = false;
 //let connected = false;
 let bootloader_mode = 0; // todo: from html
 let serial_num = 0;
-let ACK = 0;
 
 let pdo_log_byte_queue = []; // todo: this could be a generic packet queue for connect function
+//import {vflex_midi_packet_handler} from "./werewolf_comms.js"
+//
+import {VFLEX, command_list} from "./werewolf_comms.js"
+export const vflex = new VFLEX();
+export const COMMAND_LIST= command_list;
 
-//function setConnected(newValue){
-//  // emits event and sets 'connected'
-//  // todo: anywhere accessing connected uses vflex.connected
-//  // tod: event change uses new event
-//  connected = newValue;
-//  const event = new CustomEvent('connectedChange', { detail: connected });
-//  window.dispatchEvent(event);
-//}
+let receiveBuffer = [];
+let receiveComplete = false;
+export function vflex_midi_packet_handler(event) {
+  const [status, data1, data2] = event.data;
+  if (status === 0x80) {
+    receiveBuffer = [];
+    receiveComplete = false;
+  } else if (status === 0x90) {
+    if (receiveBuffer.length < 64) {
+      const byte = (data1 << 4) | data2;
+      receiveBuffer.push(byte);
+    }
+  } else if (status === 0xA0) {
+    receiveComplete = true;
+    console.log("Payload received:", receiveBuffer.map(b => b.toString(16).padStart(2, '0')));
+    vflex.process_response(receiveBuffer);
+  }
+}
+
 
 function Delay(ms) { // Utility delay function
     return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-class MidiConnection {
+export class VFLEX_MIDI{
     constructor() {
         this.checkInterval = null;
         this.midiAccess = null;
@@ -34,6 +47,7 @@ class MidiConnection {
         this.onDisconnect = () => {};
         this.onConnectionChange= () => {};
         this.connected = false;
+        this.port = null;
     }
 
 
@@ -87,7 +101,7 @@ class MidiConnection {
 
             if (midiInput && midiOutput) {
                 // Set up port wrapper
-                port = {
+                this.port = {
                     send: async function(data) {
                         if (!midiOutput) {
                             console.error("No MIDI output connected!");
@@ -132,7 +146,7 @@ class MidiConnection {
         }
         midiOutput = null;
         midiInput = null;
-        port = null;
+        this.port = null;
         this.connected = false;
         this.onConnectionChange();
         console.log("Disconnected");
@@ -166,26 +180,26 @@ class MidiConnection {
         this.midiAccess.onstatechange = null;
     }
 }
-const midi = new MidiConnection();
-midi.setCallbacks(
-    () => {
-        // Handle successful connection
-        console.log("MIDI device ready!");
 
-    },
-    (err) => {
-        // Handle connection failure
-        console.error("MIDI connection failed:", err);
-    },
-    () => {
-        // Handle disconnection
-        console.log("MIDI device disconnected");
-    },
-    () => {
-        // Handle connection change
-        console.log("MIDI device connection status changed");
-    }
-);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 // Usage example:

@@ -7,14 +7,7 @@
     <link href="vflex.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Nunito+Sans:wght@400;600;700&display=swap" rel="stylesheet">
     <title>vFlex Programmer</title>
-    <script src="js/werewolf_comms.js"></script>
-    <script src="js/werewolf_comms_leds.js"></script>
-    <script src="js/werewolf_util.js"></script>
-    <script src="js/werewolf_connect.js"></script>
-    <script src="js/werewolf_app_image.js"></script>
-    <script src="js/serial.js"></script>
-    <!-- <script src="js/bootload_app.js"></script> -->
-    <script src="app.js"></script>
+    <script type = "module" src="app.js"></script>
   </head>
   <body class="vflexbody">
     <script type="text/javascript">
@@ -58,7 +51,7 @@
           const inputField = document.getElementById('voltage_pps');
 
           document.addEventListener('DOMContentLoaded', event => {
-            midi.init();
+            //midi.init();
           });
 
           inputField.addEventListener('input', function (e) {

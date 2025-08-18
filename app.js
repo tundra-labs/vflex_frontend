@@ -1,7 +1,9 @@
+import {VFLEX_COMMANDS,vflex, midi} from "./js/vflex_lib.js"
 (function() {
     'use strict';
   
     document.addEventListener('DOMContentLoaded', event => {
+        midi.init(); // moved from index.html
         const statusDisplay = document.querySelector('#voltageStatus');
         const controls = document.querySelector("#controls"); // Assuming this contains the voltage select and program button
         const voltageSelect = document.querySelector("#voltage_select");
@@ -36,50 +38,50 @@
         const toggleStatus = document.getElementById('toggle-status');
         
 
-        calibration_values.voltage = programmed_voltage; // points to voltage elem
-        calibration_values.serial_num = serial_num;
-        calibration_values.uuid = uuid;
-        calibration_values.hw_id = hw_id;
-        calibration_values.fw_id = fw_id;
-        calibration_values.mfg_date = mfg_date;
-        calibration_values.bootload_enable = bootload_enable;
+        vflex.calibration_values.voltage = programmed_voltage; // points to voltage elem
+        vflex.calibration_values.serial_num = serial_num;
+        vflex.calibration_values.uuid = uuid;
+        vflex.calibration_values.hw_id = "vflex   ";
+        vflex.calibration_values.fw_id = fw_id;
+        vflex.calibration_values.mfg_date = mfg_date;
+        vflex.calibration_values.bootload_enable = bootload_enable;
         bootload_prom.addEventListener('click', function(e) {
-          bootload_prom_function(port, app_bin_data["data"]);
+          bootload_prom_function(midi.port, app_bin_data["data"]);
         });
 
-        // disable_leds_operation_fn(port, 1, 0);
+        // disable_leds_operation_fn(midi.port, 1, 0);
         // console.log(calibration_values.led_disable_during_operation);
 
         toggleButton.addEventListener('click', function(e) {
             setTimeout(() => {
-              console.log(calibration_values.led_disable_during_operation);
-              let toggled = calibration_values.led_disable_during_operation == 0 ? 1 : 0;
-              vflex.disable_leds_operation(port, toggled, 1); // write
+              console.log(vflex.calibration_values.led_disable_during_operation);
+              let toggled = vflex.calibration_values.led_disable_during_operation == 0 ? 1 : 0;
+              vflex.disable_leds_operation(midi.port, toggled, 1); // write
             }, 200);
           });
 
         async function waitForValue(propertyName) { // wait for 'calibration values'
             return new Promise((resolve) => {
                 const interval = setInterval(() => {
-                    if (calibration_values[propertyName] !== null && calibration_values[propertyName] !== undefined && calibration_values[propertyName] !== '') {
+                    if (vflex.calibration_values[propertyName] !== null && vflex.calibration_values[propertyName] !== undefined && vflex.calibration_values[propertyName] !== '') {
                         clearInterval(interval);
                         resolve();
                     }
                 }, 25);
             });
         }
-        async function waitForMidiACK() { // wait for 'calibration values'
-            return new Promise((resolve) => {
-                const interval = setInterval(() => {
-                    if (ACK == 1) {
-                        ACK = 0;
-                      console.log(ACK);
-                        clearInterval(interval);
-                        resolve();
-                    }
-                }, 25);
-            });
-        }
+        //async function waitForMidiACK() { // wait for 'calibration values'
+        //    return new Promise((resolve) => {
+        //        const interval = setInterval(() => {
+        //            if (ACK == 1) {
+        //                ACK = 0;
+        //              console.log(ACK);
+        //                clearInterval(interval);
+        //                resolve();
+        //            }
+        //        }, 25);
+        //    });
+        //}
 
 
         window.WS_LEGIT = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/legit`;
@@ -95,18 +97,16 @@
         let transitioningtoApp = false;
 
         async function howlegitcanitgit() {
-          ACK = 0;
-          vflex.get_ww_string(port, command_list.CMD_WW_SERIAL); // query device serial number
-          await waitForACK();
-          console.log(calibration_values.serial_num);
+          vflex.get_ww_string(midi.port, VFLEX_COMMANDS.CMD_WW_SERIAL); // query device serial number
+          await vflex.await_response();
+          console.log(vflex.calibration_values.serial_num);
           //let timestamp = "018APR25"; // todo
           let timestamp = String(Date.now());
-          ACK = 0;
-          vflex.send_encrypted_message(port, timestamp); // 
-          await waitForACK();
+          vflex.send_encrypted_message(midi.port, timestamp); // 
+          await vflex.await_response();
           
           // send certificate of authenticity
-          let certificate_of_authenticity =JSON.stringify({ serial_num: calibration_values.serial_num, timestamp: timestamp, secret: Array.from(calibration_values.secretsecrets) });
+          let certificate_of_authenticity =JSON.stringify({ serial_num: vflex.calibration_values.serial_num, timestamp: timestamp, secret: Array.from(vflex.calibration_values.secretsecrets) });
           console.log(certificate_of_authenticity);
           try {legit_ws.send(certificate_of_authenticity);}
           catch (error) {console.log('err on legit server send', error);}
@@ -119,20 +119,19 @@
                         //console.log(calibration_values.voltage.value);
 
                         document.getElementById('voltage_pps').disabled = true;
-                        ACK = 0;
-                        vflex.get_ww_string(port, command_list.CMD_FWID);
-                        await waitForMidiACK();
-                        console.log('fwid:', calibration_values.fw_id);
+                        vflex.get_ww_string(midi.port, VFLEX_COMMANDS.CMD_FWID);
+                        await vflex.await_response();
+                        console.log('fwid:', vflex.calibration_values.fw_id);
 
                         
-                        if (calibration_values.fw_id.match("BTL*")) {
+                        if (vflex.calibration_values.fw_id.match("BTL*")) {
                           // todo: this should set a loading message
                           console.log('btl connected!');
                           document.getElementById('connectMessage').textContent = "Connecting...";
                           transitioningtoApp= true;
-                          //jump_to_app(port);
+                          //jump_to_app(midi.port);
 
-                        } else if (calibration_values.fw_id.match("APP*")) {
+                        } else if (vflex.calibration_values.fw_id.match("APP*")) {
                           document.getElementById('connectMessage').textContent = "Please connect device...";
                           console.log('app connected!');
                           controls.style.display = 'block';
@@ -144,10 +143,10 @@
                           console.log('something bad happend');
                         }
 
-                        calibration_values.voltage = ''; // clear
-                        vflex.get_voltage(port);
+                        vflex.calibration_values.voltage = ''; // clear
+                        vflex.get_voltage(midi.port);
                         await waitForValue('voltage');
-                        let fInput = calibration_values.voltage/1000;
+                        let fInput = vflex.calibration_values.voltage/1000;
                         voltage_pps.value = fInput.toFixed(2);
                         howlegitcanitgit();
 
@@ -162,7 +161,7 @@
                         //let fInput = programmed_voltage.value/1000;
                         //voltage_pps.value = fInput.toFixed(2);
 
-                        //disable_leds_operation_fn(port, 1, 0);
+                        //disable_leds_operation_fn(midi.port, 1, 0);
                         //setTimeout(() => {
                         //    if(calibration_values.led_disable_during_operation === 0){
                         //        toggleButton.checked = true;
@@ -214,18 +213,17 @@
         
             console.log(setting_mv);
             
-            ACK = 0;
-            await vflex.set_voltage(port, setting_mv);
+            //await vflex.set_voltage(midi.port, setting_mv);
+            vflex.set_voltage(midi.port, setting_mv);
+            await vflex.await_response();
             pps_message.textContent = "";
-            await waitForMidiACK();
             
             
             voltageStatus.textContent = "";
-            ACK = 0;
-            vflex.get_voltage(port);
-            await waitForMidiACK();
+            vflex.get_voltage(midi.port);
+            await vflex.await_response();
         
-            let fInput = calibration_values.voltage/1000;
+            let fInput = vflex.calibration_values.voltage/1000;
             voltage_pps.value = fInput.toFixed(2);
 
             edit_voltage.style.display = 'block';
@@ -252,7 +250,7 @@
 
         // Button that initializes either the recovery mode or fw update
         nextBtn.addEventListener('click', async function() {
-            calibration_values.bootload_enable.value = "enabled";
+            vflex.calibration_values.bootload_enable.value = "enabled";
             
             let i = 0;
             nextBtn.style.display = 'none';
@@ -293,7 +291,7 @@
                 });
             } else if(fw_or_recover === 'fw'){
                 recovery_msg.innerHTML = '';
-                jump_to_bootloader(port);
+                jump_to_bootloader(midi.port);
                 setInterval(werewolf_attempt_connect, 200);
                 navigator.usb.addEventListener('connect', async (event) => {
                 
@@ -370,8 +368,8 @@
         function waitForVoltageChange() {
             return new Promise((resolve) => {
                 const interval = setInterval(() => {
-                    //if (calibration_values.voltage.value !== null && calibration_values.voltage.value !== '') { // Change condition based on your use case
-                    if (calibration_values.voltage !== null && calibration_values.voltage !== '') { // Change condition based on your use case
+                    //if (vflex.calibration_values.voltage.value !== null && calibration_values.voltage.value !== '') { // Change condition based on your use case
+                    if (vflex.calibration_values.voltage !== null && vflex.calibration_values.voltage !== '') { // Change condition based on your use case
                         clearInterval(interval);  // Stop the interval when the value is updated
                         resolve();  // Resolve the promise
                     }
@@ -382,7 +380,7 @@
         function waitForFirmware(){
             return new Promise((resolve) => {
                 const interval = setInterval(() => {
-                    if(calibration_values.fw_id.value !== '') {
+                    if(vflex.calibration_values.fw_id.value !== '') {
                         clearInterval(interval);
                         resolve();
                     }
