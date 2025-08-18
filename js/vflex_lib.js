@@ -4,6 +4,7 @@ import {VFLEX_MIDI, vflex as vflex_tmp, COMMAND_LIST} from "./werewolf_connect.j
 export const vflex = vflex_tmp;
 export const midi = new VFLEX_MIDI();
 export const VFLEX_COMMANDS = COMMAND_LIST;
+
 midi.setCallbacks(
     () => {
         // Handle successful connection

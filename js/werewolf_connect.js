@@ -1,12 +1,4 @@
-let port = null;
-let midiOutput = null;
-let midiInput = null;
-//let connected = false;
-let bootloader_mode = 0; // todo: from html
-let serial_num = 0;
-
-let pdo_log_byte_queue = []; // todo: this could be a generic packet queue for connect function
-//import {vflex_midi_packet_handler} from "./werewolf_comms.js"
+let midiOutput = null; // todo: moving this inside class messes everything up, but it should move
 //
 import {VFLEX, command_list} from "./werewolf_comms.js"
 export const vflex = new VFLEX();
@@ -48,6 +40,7 @@ export class VFLEX_MIDI{
         this.onConnectionChange= () => {};
         this.connected = false;
         this.port = null;
+        this.midiInput = null;
     }
 
 
@@ -90,16 +83,16 @@ export class VFLEX_MIDI{
             }
 
             // Find input
-            midiInput = null;
+            this.midiInput = null;
             for (let inPort of this.midiAccess.inputs.values()) {
                 if (inPort.name.includes("vFlex")) {
-                    midiInput = inPort;
-                    midiInput.onmidimessage = vflex_midi_packet_handler;
+                    this.midiInput = inPort;
+                    this.midiInput.onmidimessage = vflex_midi_packet_handler;
                     break;
                 }
             }
 
-            if (midiInput && midiOutput) {
+            if (this.midiInput && midiOutput) {
                 // Set up port wrapper
                 this.port = {
                     send: async function(data) {
@@ -124,7 +117,7 @@ export class VFLEX_MIDI{
 
                 this.connected = true;
                 this.onConnectionChange();
-                console.log("Connected to:", midiInput.name, midiOutput.name);
+                console.log("Connected to:", this.midiInput.name, midiOutput.name);
                 this.onConnectSuccess();
             } else {
                 throw new Error("No vFlex device found");
@@ -140,12 +133,12 @@ export class VFLEX_MIDI{
     disconnect() {
         if (!this.connected) return;
 
-        if (midiInput) {
-            midiInput.onmidimessage = null;
-            console.log("Input listener removed:", midiInput.name);
+        if (this.midiInput) {
+            this.midiInput.onmidimessage = null;
+            console.log("Input listener removed:", this.midiInput.name);
         }
         midiOutput = null;
-        midiInput = null;
+        this.midiInput = null;
         this.port = null;
         this.connected = false;
         this.onConnectionChange();
