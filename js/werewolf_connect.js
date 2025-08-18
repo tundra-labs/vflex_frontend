@@ -184,26 +184,6 @@ export class VFLEX_MIDI{
 }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 // Usage example:
 //const midi = new MidiConnection();
 
