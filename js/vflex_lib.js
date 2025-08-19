@@ -1,5 +1,4 @@
-import {serial} from "./serial.js";
-export const command_list = Object.freeze({
+const command_list = Object.freeze({
   CMD_BOOTLOADER_WRITE_CHUNK: 0,
   CMD_BOOTLOADER_COMMIT_PAGE: 1,
   CMD_BOOTLOADER_VERIFY: 2,
@@ -460,6 +459,81 @@ export class VFLEX_CDC_SERIAL {
     this.on_disconnect = () => {};
     this.on_connection_change = () => {};
     this.connected = false;
+    this.serial = {};
+    this.serial.get_ports = function() {
+      return navigator.usb.getDevices().then(devices => {
+        return devices.map(device => new this.serial.Port(device));
+      });
+    }.bind(this);
+    this.serial.request_port = function() {
+      const filters = [{ 'vendorId': 0x37bf }]; // tundra
+      return navigator.usb.requestDevice({ 'filters': filters }).then(
+        device => new this.serial.Port(device)
+      );
+    }.bind(this);
+    this.serial.Port = function(device) {
+      this.device_ = device;
+      this.interface_number = 0;
+      this.endpoint_in = 0;
+      this.endpoint_out = 0;
+    };
+    this.serial.Port.prototype.connect = function() {
+      let read_loop = () => {
+        this.device_.transferIn(this.endpoint_in, 64).then(result => {
+          this.onReceive(result.data);
+          read_loop();
+        }, error => {
+          this.onReceiveError(error);
+        });
+      };
+
+      return this.device_.open()
+        .then(() => {
+          if (this.device_.configuration === null) {
+            return this.device_.selectConfiguration(1);
+          }
+        })
+        .then(() => {
+          var interfaces = this.device_.configuration.interfaces;
+          interfaces.forEach(element => {
+            element.alternates.forEach(elementalt => {
+              if (elementalt.interfaceClass == 0xFF) {
+                this.interface_number = element.interfaceNumber;
+                elementalt.endpoints.forEach(elementendpoint => {
+                  if (elementendpoint.direction == "out") {
+                    this.endpoint_out = elementendpoint.endpointNumber;
+                  }
+                  if (elementendpoint.direction == "in") {
+                    this.endpoint_in = elementendpoint.endpointNumber;
+                  }
+                });
+              }
+            });
+          });
+        })
+        .then(() => this.device_.claimInterface(this.interface_number))
+        .then(() => this.device_.selectAlternateInterface(this.interface_number, 0))
+        .then(() => this.device_.controlTransferOut({
+          'requestType': 'class',
+          'recipient': 'interface',
+          'request': 0x22,
+          'value': 0x01,
+          'index': this.interface_number
+        }))
+        .then(() => {
+          read_loop();
+        });
+    };
+    this.serial.Port.prototype.disconnect = function() {
+      try {
+        this.device_.close();
+      } catch {
+        console.log("error closing device");
+      }
+    };
+    this.serial.Port.prototype.send = function(data) {
+      return this.device_.transferOut(this.endpoint_out, data);
+    };
   }
 
   async await_connected() {
@@ -481,7 +555,7 @@ export class VFLEX_CDC_SERIAL {
       this.port = null;
     }
     try {
-      const selected_port = await serial.requestPort();
+      const selected_port = await this.serial.request_port();
       this.port = selected_port;
       await this.port.connect();
       this.port.onReceive = data => { this.vflex.process_response(data.buffer); };
