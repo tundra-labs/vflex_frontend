@@ -754,119 +754,105 @@ export class VFLEX_API {
     this.connected = false;
   }
 
+  async protocol_wrap(fn) {
+    if (!this.port) throw new Error("No connection established");
+    const result = await fn(this.port);
+    await this.vflex.await_response();
+    return result;
+  }
+
   async send_ww_string(string_command, str, write, scratchpad) {
-    if (this.port) this.vflex.send_ww_string(this.port, string_command, str, write, scratchpad);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.send_ww_string(port, string_command, str, write, scratchpad));
   }
 
   async send_encrypted_message(msg) {
-    if (this.port) this.vflex.send_encrypted_message(this.port, msg);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.send_encrypted_message(port, msg));
   }
 
   async send_bootloader_chunk_encrypted(msg, pg_id, chunk_id) {
-    if (this.port) this.vflex.send_bootloader_chunk_encrypted(this.port, msg, pg_id, chunk_id);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.send_bootloader_chunk_encrypted(port, msg, pg_id, chunk_id));
   }
 
   async verify_bootloader() {
-    if (this.port) this.vflex.verify_bootloader(this.port);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.verify_bootloader(port));
   }
 
   async commit_bootloader_page() {
-    if (this.port) this.vflex.commit_bootloader_page(this.port);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.commit_bootloader_page(port));
   }
 
   async set_ww_string(string_command, str) {
-    if (this.port) this.vflex.set_ww_string(this.port, string_command, str);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.set_ww_string(port, string_command, str));
   }
 
   async set_ww_string_scratchpad(string_command, str) {
-    if (this.port) this.vflex.set_ww_string_scratchpad(this.port, string_command, str);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.set_ww_string_scratchpad(port, string_command, str));
   }
 
   async get_ww_string(string_command) {
-    if (this.port) this.vflex.get_ww_string(this.port, string_command);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.get_ww_string(port, string_command));
   }
 
   async get_ww_string_scratchpad(string_command) {
-    if (this.port) this.vflex.get_ww_string_scratchpad(this.port, string_command);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.get_ww_string_scratchpad(port, string_command));
   }
 
   async get_voltage_mv() {
-    if (this.port) this.vflex.get_voltage_mv(this.port);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.get_voltage_mv(port));
   }
 
   async set_voltage_mv(setting_mv) {
-    if (this.port) this.vflex.set_voltage_mv(this.port, setting_mv);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.set_voltage_mv(port, setting_mv));
   }
 
   async get_max_current_ma() {
-    if (this.port) this.vflex.get_max_current_ma(this.port);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.get_max_current_ma(port));
   }
 
   async set_max_current_ma(setting_ma) {
-    if (this.port) this.vflex.set_max_current_ma(this.port, setting_ma);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.set_max_current_ma(port, setting_ma));
   }
 
   async bootload_prom_function(data_object) {
-    if (this.port) this.vflex.bootload_prom_function(this.port, data_object);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.bootload_prom_function(port, data_object));
   }
 
   async disable_leds_operation(disable, write) {
-    if (this.port) this.vflex.disable_leds_operation(this.port, disable, write);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.disable_leds_operation(port, disable, write));
   }
 
   async clear_pdo_log() {
-    if (this.port) this.vflex.clear_pdo_log(this.port);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.clear_pdo_log(port));
   }
 
   async get_pdo_log() {
-    if (this.port) this.vflex.get_pdo_log(this.port);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.get_pdo_log(port));
   }
 
   async pdo_cmd(pdo_cmd) {
-    if (this.port) this.vflex.pdo_cmd(this.port, pdo_cmd);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.pdo_cmd(port, pdo_cmd));
   }
 
   async jump_to_app() {
-    if (this.port) this.vflex.jump_to_app(this.port);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.jump_to_app(port));
   }
 
   async jump_to_bootloader() {
-    if (this.port) this.vflex.jump_to_bootloader(this.port);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.jump_to_bootloader(port));
   }
 
   async bootload_verify_function(data_object) {
-    if (this.port) this.vflex.bootload_verify_function(this.port, data_object);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.bootload_verify_function(port, data_object));
   }
 
   async bootload_cancel_app_timeout() {
-    if (this.port) this.vflex.bootload_cancel_app_timeout(this.port);
-    await this.await_response();
+    return this.protocol_wrap(port => this.vflex.bootload_cancel_app_timeout(port));
   }
 
   async await_response() {
     return await this.vflex.await_response();
   }
+
 }
 
 (function() {
