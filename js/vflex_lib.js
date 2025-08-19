@@ -211,32 +211,6 @@ export class VFLEX {
     port.send(array);
   }
 
-  bootload_prom_function(port, data_object) {
-    this.ACK = 0;
-    var data = new Uint8Array(data_object);
-    let code_len = data.byteLength;
-    let bootloader_preamble_len = 4;
-    let max_packet_len = 64;
-    let max_packet_code_len = max_packet_len - bootloader_preamble_len;
-    let index = 0;
-    let packet_count = 0;
-    while (index < code_len) {
-      let remaining = code_len - index;
-      let packet_code_len = Math.min(remaining, max_packet_code_len);
-      let packet_len = packet_code_len + bootloader_preamble_len;
-      var boot_arr = new Uint8Array(packet_len);
-      boot_arr[0] = packet_len;
-      boot_arr[1] = command_list.CMD_BOOTLOAD_PROM;
-      for (let i = 0; i < packet_code_len; i++) {
-        boot_arr[i + bootloader_preamble_len] = data[index++];
-      }
-      this.bootloader_packet_queue.push(boot_arr);
-      packet_count++;
-    }
-    let first_packet = this.bootloader_packet_queue.shift();
-    port.send(first_packet);
-  }
-
   disable_leds_operation(port, disable, write) {
     this.ACK = 0;
     let bootloader_preamble_len = 2;
@@ -324,14 +298,6 @@ export class VFLEX {
     port.send(first_packet);
   }
 
-  bootload_cancel_app_timeout(port) {
-    this.ACK = 0;
-    var arr = new Uint8Array(2);
-    arr[0] = 2;
-    arr[1] = command_list.CMD_BOOTLOAD_CANCEL_APP_TIMEOUT;
-    port.send(arr);
-  }
-
   async await_response() {
     return new Promise((resolve) => {
       const interval = setInterval(() => {
@@ -410,45 +376,6 @@ export class VFLEX {
       case command_list.CMD_FLASH_LED_SEQUENCE_ADVANCED:
         break;
       case command_list.CMD_FLASH_LED:
-        break;
-      case command_list.CMD_LOAD_CAL_SCRATCHPAD:
-        break;
-      case command_list.CMD_COMMIT_CAL_SCRATCHPAD:
-        break;
-      case command_list.OK:
-        break;
-      case command_list.ERROR:
-        break;
-      case command_list.CMD_BOOTLOAD_PROM:
-        response = data_u8a[2];
-        if (response == 0) {
-        } else {
-        }
-        next_packet = this.bootloader_packet_queue.shift();
-        if (next_packet) {
-          port.send(next_packet);
-        } else {
-          setTimeout(() => { this.bootload_verify_function(port, app_bin_data['data']); }, 200);
-        }
-        break;
-      //case command_list.CMD_BOOTLOADER_VERIFY:
-      //  response = data_u8a[2];
-      //  if (response) {
-      //    if (this.bootloader_packet_queue.length == 0) {
-      //      setTimeout(() => { this.jump_to_app(port); }, 4000);
-      //    }
-      //  } else {
-      //    this.bootloader_packet_queue = [];
-      //  }
-      //  next_packet = this.bootloader_packet_queue.shift();
-      //  if (next_packet) {
-      //    port.send(next_packet);
-      //  }
-      //  break;
-      case command_list.CMD_BOOTLOAD_CANCEL_APP_TIMEOUT:
-        if (app_bin_data['data']) {
-          setTimeout(() => { this.bootload_prom_function(port, app_bin_data['data']); }, 200);
-        }
         break;
       default:
         console.log("invalid usb incoming message. unexpected command code", command_code);
@@ -854,8 +781,3 @@ export class VFLEX_API {
   }
 
 }
-
-(function() {
-  'use strict';
-  document.addEventListener('DOMContentLoaded', event => {});
-})();
