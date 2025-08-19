@@ -49,7 +49,6 @@ function delay_ms(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-
 export class VFLEX {
   constructor(device_data) {
     this.device_data = device_data;
@@ -58,7 +57,7 @@ export class VFLEX {
     this.preamble_len = 2;
   }
 
-  wrap_command(port, command_code, payload = new Uint8Array(0), write = false, scratchpad = false) {
+  async wrap_command(port, command_code, payload = new Uint8Array(0), write = false, scratchpad = false) {
     this.ACK = 0;
     let command = command_code;
     if (scratchpad) {
@@ -74,34 +73,34 @@ export class VFLEX {
     for (let i = 0; i < payload.length; i++) {
       output_arr[i + this.preamble_len] = payload[i];
     }
-    port.send(output_arr);
+    await port.send(output_arr);
     return true;
   }
 
-  string_wrapper(port, string_command, str, write, scratchpad) {
+  async string_wrapper(port, string_command, str, write, scratchpad) {
     let command = extract_key_from_list(string_command);
     let expected_str_len = command_to_string_length(command);
     if (!write) {
-      return this.wrap_command(port, command_list[command], new Uint8Array(0), false, scratchpad);
+      return await this.wrap_command(port, command_list[command], new Uint8Array(0), false, scratchpad);
     } else if (str.length === expected_str_len) {
       const payload = new Uint8Array(str.length);
       for (let i = 0; i < str.length; i++) {
         payload[i] = str.charCodeAt(i);
       }
-      return this.wrap_command(port, command_list[command], payload, true, scratchpad);
+      return await this.wrap_command(port, command_list[command], payload, true, scratchpad);
     }
     return false;
   }
 
-  send_encrypted_message(port, msg) {
+  async send_encrypted_message(port, msg) {
     const payload = new Uint8Array(msg.length);
     for (let i = 0; i < msg.length; i++) {
       payload[i] = msg.charCodeAt(i);
     }
-    return this.wrap_command(port, command_list.CMD_ENCRYPT_MSG, payload, true);
+    return await this.wrap_command(port, command_list.CMD_ENCRYPT_MSG, payload, true);
   }
 
-  send_bootloader_chunk_encrypted(port, msg, pg_id, chunk_id) {
+  async send_bootloader_chunk_encrypted(port, msg, pg_id, chunk_id) {
     const payload = new Uint8Array(3 + msg.length);
     payload[0] = pg_id >> 8;
     payload[1] = pg_id & 0xff;
@@ -109,82 +108,82 @@ export class VFLEX {
     for (let i = 0; i < msg.length; i++) {
       payload[i + 3] = msg[i];
     }
-    return this.wrap_command(port, command_list.CMD_BOOTLOADER_WRITE_CHUNK, payload, true);
+    return await this.wrap_command(port, command_list.CMD_BOOTLOADER_WRITE_CHUNK, payload, true);
   }
 
-  verify_bootloader(port) {
-    return this.wrap_command(port, command_list.CMD_BOOTLOADER_VERIFY, new Uint8Array(0), true);
+  async verify_bootloader(port) {
+    return await this.wrap_command(port, command_list.CMD_BOOTLOADER_VERIFY, new Uint8Array(0), true);
   }
 
-  commit_bootloader_page(port) {
-    return this.wrap_command(port, command_list.CMD_BOOTLOADER_COMMIT_PAGE, new Uint8Array(0), true);
+  async commit_bootloader_page(port) {
+    return await this.wrap_command(port, command_list.CMD_BOOTLOADER_COMMIT_PAGE, new Uint8Array(0), true);
   }
 
-  set_string(port, string_command, str) {
-    return this.string_wrapper(port, string_command, str, true, false);
+  async set_string(port, string_command, str) {
+    return await this.string_wrapper(port, string_command, str, true, false);
   }
 
-  set_string_scratchpad(port, string_command, str) {
-    return this.string_wrapper(port, string_command, str, true, true);
+  async set_string_scratchpad(port, string_command, str) {
+    return await this.string_wrapper(port, string_command, str, true, true);
   }
 
-  get_string(port, string_command) {
-    return this.string_wrapper(port, string_command, "", false, false);
+  async get_string(port, string_command) {
+    return await this.string_wrapper(port, string_command, "", false, false);
   }
 
-  get_string_scratchpad(port, string_command) {
-    return this.string_wrapper(port, string_command, "", false, true);
+  async get_string_scratchpad(port, string_command) {
+    return await this.string_wrapper(port, string_command, "", false, true);
   }
 
-  get_voltage_mv(port) {
-    return this.wrap_command(port, command_list.CMD_VOLTAGE_MV, new Uint8Array(0), false);
+  async get_voltage_mv(port) {
+    return await this.wrap_command(port, command_list.CMD_VOLTAGE_MV, new Uint8Array(0), false);
   }
 
-  set_voltage_mv(port, setting_mv) {
+  async set_voltage_mv(port, setting_mv) {
     const payload = new Uint8Array(2);
     payload[0] = (setting_mv >> 8) & 0xFF;
     payload[1] = setting_mv & 0xFF;
-    return this.wrap_command(port, command_list.CMD_VOLTAGE_MV, payload, true);
+    return await this.wrap_command(port, command_list.CMD_VOLTAGE_MV, payload, true);
   }
 
-  get_max_current_ma(port) {
-    return this.wrap_command(port, command_list.CMD_CURRENT_LIMIT_MA, new Uint8Array(0), false);
+  async get_max_current_ma(port) {
+    return await this.wrap_command(port, command_list.CMD_CURRENT_LIMIT_MA, new Uint8Array(0), false);
   }
 
-  set_max_current_ma(port, setting_ma) {
+  async set_max_current_ma(port, setting_ma) {
     const payload = new Uint8Array(2);
     payload[0] = (setting_ma >> 8) & 0xFF;
     payload[1] = setting_ma & 0xFF;
-    return this.wrap_command(port, command_list.CMD_CURRENT_LIMIT_MA, payload, true);
+    return await this.wrap_command(port, command_list.CMD_CURRENT_LIMIT_MA, payload, true);
   }
 
-  disable_leds_operation(port, disable, write) {
+  async disable_leds_operation(port, disable, write) {
     const payload = write ? new Uint8Array([disable]) : new Uint8Array(0);
-    return this.wrap_command(port, command_list.CMD_DISABLE_LED_DURING_OPERATION, payload, write);
+    return await this.wrap_command(port, command_list.CMD_DISABLE_LED_DURING_OPERATION, payload, write);
   }
 
-  clear_pdo_log(port) {
-    return this.wrap_command(port, command_list.CMD_PDO_LOG, new Uint8Array(0), true);
+  async clear_pdo_log(port) {
+    return await this.wrap_command(port, command_list.CMD_PDO_LOG, new Uint8Array(0), true);
   }
 
-  get_pdo_log(port) {
-    return this.wrap_command(port, command_list.CMD_PDO_LOG, new Uint8Array(0), false);
+  async get_pdo_log(port) {
+    return await this.wrap_command(port, command_list.CMD_PDO_LOG, new Uint8Array(0), false);
   }
 
-  pdo_cmd(port, pdo_cmd) {
+  async pdo_cmd(port, pdo_cmd) {
     const payload = new Uint8Array([pdo_cmd]);
-    return this.wrap_command(port, command_list.CMD_PDO_LOG, payload, false);
+    return await this.wrap_command(port, command_list.CMD_PDO_LOG, payload, false);
   }
 
-  jump_to_app(port) {
-    return this.wrap_command(port, command_list.CMD_BOOTLOAD_END, new Uint8Array(0), false);
+  async jump_to_app(port) {
+    return await this.wrap_command(port, command_list.CMD_BOOTLOAD_END, new Uint8Array(0), false);
   }
 
-  jump_to_bootloader(port) {
-    return this.wrap_command(port, command_list.CMD_JUMP_APP_TO_BOOTLOADER, new Uint8Array(0), false);
+  async jump_to_bootloader(port) {
+    return await this.wrap_command(port, command_list.CMD_JUMP_APP_TO_BOOTLOADER, new Uint8Array(0), false);
   }
 
-  bootload_verify_function(port, data_object) {
+  async bootload_verify_function(port, data_object) {
     this.ACK = 0;
     const data = new Uint8Array(data_object);
     const bootloader_preamble_len = 4;
@@ -203,7 +202,7 @@ export class VFLEX {
       this.bootloader_packet_queue.push(payload);
     }
     const first_payload = this.bootloader_packet_queue.shift();
-    return this.wrap_command(port, command_list.CMD_BOOTLOADER_VERIFY, first_payload, false);
+    return await this.wrap_command(port, command_list.CMD_BOOTLOADER_VERIFY, first_payload, false);
   }
 
   async await_response() {
@@ -298,11 +297,11 @@ export class VFLEX_MIDI {
     this.on_connection_fail = () => {};
     this.on_disconnect = () => {};
     this.on_connection_change = () => {};
-    this.on_message= () => {};
+    this.on_message = () => {};
     this.connected = false;
     this.port = null;
     this.midi_input = null;
-    this.midi_output= null;
+    this.midi_output = null;
     this.midi_packet_delay_ms = 20;
   }
 
@@ -368,20 +367,31 @@ export class VFLEX_MIDI {
       if (midi_connection_ok) {
         this.port = {
           send: async function(data) {
-            if (this.midi_output == null) {
-              console.error("No MIDI output connected!");
-              return;
-            }
-            this.midi_output.send([0x80, 0, 0]);
-            await delay_ms(this.midi_packet_delay_ms);
-            for (let i = 0; i < data.length; i++) {
-              const byte = data[i];
-              const high_nibble = (byte >> 4) & 0x0F;
-              const low_nibble = byte & 0x0F;
-              this.midi_output.send([0x90, high_nibble, low_nibble]);
-              await delay_ms(this.midi_packet_delay_ms);
-            }
-            this.midi_output.send([0xA0, 0, 0]);
+            return new Promise((resolve, reject) => {
+              if (this.midi_output == null) {
+                reject(new Error("No MIDI output connected!"));
+                return;
+              }
+              try {
+                this.midi_output.send([0x80, 0, 0]);
+                delay_ms(this.midi_packet_delay_ms).then(() => {
+                  const promises = [];
+                  for (let i = 0; i < data.length; i++) {
+                    const byte = data[i];
+                    const high_nibble = (byte >> 4) & 0x0F;
+                    const low_nibble = byte & 0x0F;
+                    this.midi_output.send([0x90, high_nibble, low_nibble]);
+                    promises.push(delay_ms(this.midi_packet_delay_ms));
+                  }
+                  Promise.all(promises).then(() => {
+                    this.midi_output.send([0xA0, 0, 0]);
+                    resolve();
+                  }).catch(reject);
+                }).catch(reject);
+              } catch (err) {
+                reject(err);
+              }
+            });
           }.bind(this),
         };
         this.connected = true;
@@ -466,23 +476,21 @@ export class VFLEX_CDC_SERIAL {
   async serial_manual_connect() {
     if (this.port) {
       try {
-        this.port.disconnect();
-      } catch {}
-      try {
-        delete this.port;
+        await this.port.disconnect();
       } catch {}
       this.port = null;
-    } else {
-      serial.requestPort().then(selected_port => {
-        this.port = selected_port;
-        this.port.connect().then(() => {
-          this.port.onReceive = data => { this.vflex.process_response(data.buffer); };
-          this.port.onReceiveError = error => {
-         };
-          this.connected = true;
-        });
-      }).catch(error => {
-      });
+    }
+    try {
+      const selected_port = await serial.requestPort();
+      this.port = selected_port;
+      await this.port.connect();
+      this.port.onReceive = data => { this.vflex.process_response(data.buffer); };
+      this.port.onReceiveError = error => { console.error("Serial receive error:", error); };
+      this.connected = true;
+      this.on_connect_success();
+    } catch (error) {
+      this.on_connection_fail(error);
+      throw error;
     }
   }
 }
@@ -500,24 +508,24 @@ export class VFLEX_API {
     this.port = null;
     this.connected = false;
     this.midi.set_callbacks(
-      () => { this.connected = true; 
-              this.port = this.midi.port; 
-              this.on_connection_change();
-              this.on_connect_success();
-            },
-      (err) => {
-              this.on_connection_change();
-              },
       () => { 
-              this.on_disconnect = () => {};
-              this.on_connection_change();
-            },
+        this.connected = true; 
+        this.port = this.midi.port; 
+        this.on_connection_change();
+        this.on_connect_success();
+      },
+      (err) => {
+        this.on_connection_change();
+      },
+      () => { 
+        this.on_disconnect = () => {};
+        this.on_connection_change();
+      },
       () => {
-              this.on_connection_change();
-            }
+        this.on_connection_change();
+      }
     );
-    this.midi.register_message_callback( (event) => 
-    {
+    this.midi.register_message_callback((event) => {
       const [status, data1, data2] = event.data;
       if (status === 0x80) {
         this.midi_receive_buffer = [];
@@ -532,12 +540,12 @@ export class VFLEX_API {
         this.vflex.process_response(this.midi_receive_buffer);
       }
     });
-    // callbacks:
     this.on_connect_success = () => {};
     this.on_connection_fail = () => {};
     this.on_disconnect = () => {};
     this.on_connection_change = () => {};
   }
+
   register_connection_callback(succes_callback) { this.on_connect_success = succes_callback || this.on_connect_success; }
   register_fail_connection_callback(fail_callback) { this.on_connection_fail = fail_callback || this.on_connection_fail; }
   register_disconnect_callback(disconnect_callback) { this.on_disconnect = disconnect_callback || this.on_disconnect; }
@@ -553,12 +561,6 @@ export class VFLEX_API {
     this.midi.init();
     await this.midi.await_connected();
     this.port = this.midi.port;
-  }
-
-  app_disconnect() {
-    this.midi.deinit();
-    this.port = null;
-    this.connected = false;
   }
 
   async bootloader_manual_connect() {
@@ -583,101 +585,96 @@ export class VFLEX_API {
 
   async protocol_wrap(fn) {
     if (!this.port) throw new Error("No connection established");
-    const result = await fn(this.port);
-    await this.vflex.await_response();
-    return result;
+    try {
+      const result = await fn(this.port);
+      await this.vflex.await_response();
+      return result;
+    } catch (err) {
+      throw new Error(`Command execution failed: ${err.message}`);
+    }
   }
 
   async string_wrapper(string_command, str, write, scratchpad) {
-    return this.protocol_wrap(port => this.vflex.string_wrapper(port, string_command, str, write, scratchpad));
+    return await this.protocol_wrap(port => this.vflex.string_wrapper(port, string_command, str, write, scratchpad));
   }
 
   async send_encrypted_message(msg) {
-    return this.protocol_wrap(port => this.vflex.send_encrypted_message(port, msg));
+    return await this.protocol_wrap(port => this.vflex.send_encrypted_message(port, msg));
   }
 
   async send_bootloader_chunk_encrypted(msg, pg_id, chunk_id) {
-    return this.protocol_wrap(port => this.vflex.send_bootloader_chunk_encrypted(port, msg, pg_id, chunk_id));
+    return await this.protocol_wrap(port => this.vflex.send_bootloader_chunk_encrypted(port, msg, pg_id, chunk_id));
   }
 
   async verify_bootloader() {
-    return this.protocol_wrap(port => this.vflex.verify_bootloader(port));
+    return await this.protocol_wrap(port => this.vflex.verify_bootloader(port));
   }
 
   async commit_bootloader_page() {
-    return this.protocol_wrap(port => this.vflex.commit_bootloader_page(port));
+    return await this.protocol_wrap(port => this.vflex.commit_bootloader_page(port));
   }
 
   async set_string(string_command, str) {
-    return this.protocol_wrap(port => this.vflex.set_string(port, string_command, str));
+    return await this.protocol_wrap(port => this.vflex.set_string(port, string_command, str));
   }
 
   async set_string_scratchpad(string_command, str) {
-    return this.protocol_wrap(port => this.vflex.set_string_scratchpad(port, string_command, str));
+    return await this.protocol_wrap(port => this.vflex.set_string_scratchpad(port, string_command, str));
   }
 
   async get_string(string_command) {
-    return this.protocol_wrap(port => this.vflex.get_string(port, string_command));
+    return await this.protocol_wrap(port => this.vflex.get_string(port, string_command));
   }
 
   async get_string_scratchpad(string_command) {
-    return this.protocol_wrap(port => this.vflex.get_string_scratchpad(port, string_command));
+    return await this.protocol_wrap(port => this.vflex.get_string_scratchpad(port, string_command));
   }
 
   async get_voltage_mv() {
-    return this.protocol_wrap(port => this.vflex.get_voltage_mv(port));
+    return await this.protocol_wrap(port => this.vflex.get_voltage_mv(port));
   }
 
   async set_voltage_mv(setting_mv) {
-    return this.protocol_wrap(port => this.vflex.set_voltage_mv(port, setting_mv));
+    return await this.protocol_wrap(port => this.vflex.set_voltage_mv(port, setting_mv));
   }
 
   async get_max_current_ma() {
-    return this.protocol_wrap(port => this.vflex.get_max_current_ma(port));
+    return await this.protocol_wrap(port => this.vflex.get_max_current_ma(port));
   }
 
   async set_max_current_ma(setting_ma) {
-    return this.protocol_wrap(port => this.vflex.set_max_current_ma(port, setting_ma));
-  }
-
-  async bootload_prom_function(data_object) {
-    return this.protocol_wrap(port => this.vflex.bootload_prom_function(port, data_object));
-  }
-
-  async disable_leds_operation(disable, write) {
-    return this.protocol_wrap(port => this.vflex.disable_leds_operation(port, disable, write));
-  }
-
-  async clear_pdo_log() {
-    return this.protocol_wrap(port => this.vflex.clear_pdo_log(port));
-  }
-
-  async get_pdo_log() {
-    return this.protocol_wrap(port => this.vflex.get_pdo_log(port));
-  }
-
-  async pdo_cmd(pdo_cmd) {
-    return this.protocol_wrap(port => this.vflex.pdo_cmd(port, pdo_cmd));
-  }
-
-  async jump_to_app() {
-    return this.protocol_wrap(port => this.vflex.jump_to_app(port));
-  }
-
-  async jump_to_bootloader() {
-    return this.protocol_wrap(port => this.vflex.jump_to_bootloader(port));
+    return await this.protocol_wrap(port => this.vflex.set_max_current_ma(port, setting_ma));
   }
 
   async bootload_verify_function(data_object) {
-    return this.protocol_wrap(port => this.vflex.bootload_verify_function(port, data_object));
+    return await this.protocol_wrap(port => this.vflex.bootload_verify_function(port, data_object));
   }
 
-  async bootload_cancel_app_timeout() {
-    return this.protocol_wrap(port => this.vflex.bootload_cancel_app_timeout(port));
+  async disable_leds_operation(disable, write) {
+    return await this.protocol_wrap(port => this.vflex.disable_leds_operation(port, disable, write));
+  }
+
+  async clear_pdo_log() {
+    return await this.protocol_wrap(port => this.vflex.clear_pdo_log(port));
+  }
+
+  async get_pdo_log() {
+    return await this.protocol_wrap(port => this.vflex.get_pdo_log(port));
+  }
+
+  async pdo_cmd(pdo_cmd) {
+    return await this.protocol_wrap(port => this.vflex.pdo_cmd(port, pdo_cmd));
+  }
+
+  async jump_to_app() {
+    return await this.protocol_wrap(port => this.vflex.jump_to_app(port));
+  }
+
+  async jump_to_bootloader() {
+    return await this.protocol_wrap(port => this.vflex.jump_to_bootloader(port));
   }
 
   async await_response() {
     return await this.vflex.await_response();
   }
-
 }
