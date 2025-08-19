@@ -1,5 +1,4 @@
 export const serial = {};
-
 (function() {
   'use strict';
 
@@ -11,13 +10,7 @@ export const serial = {};
 
   serial.requestPort = function() {
     const filters = [
-      { 'vendorId': 0xcafe }, // TinyUSB
-      { 'vendorId': 0x239a }, // Adafruit
       { 'vendorId': 0x37bf }, // tundra
-      { 'vendorId': 0x2e8a }, // Raspberry Pi
-      { 'vendorId': 0x303a }, // Espressif
-      { 'vendorId': 0x2341 }, // Arduino
-      { 'vendorId': 0x1A86 }, // Arduino
     ];
     return navigator.usb.requestDevice({ 'filters': filters }).then(
       device => new serial.Port(device)
@@ -83,19 +76,7 @@ export const serial = {};
     } catch{
       console.log("error closing device");
     }
-
-    //return this.device_.controlTransferOut({
-    //        'requestType': 'class',
-    //        'recipient': 'interface',
-    //        'request': 0x22,
-    //        'value': 0x00,
-    //        'index': this.interfaceNumber})
-    //    .then(() => this.device_.close());
   };
-  serial.Port.prototype.basic_disconnect = function() {
-    this.device_.close()
-  };
-
   serial.Port.prototype.send = function(data) {
     return this.device_.transferOut(this.endpointOut, data);
   };
