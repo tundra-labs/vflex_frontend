@@ -53,7 +53,6 @@ function delay_ms(ms) {
 export class VFLEX {
   constructor(device_data) {
     this.device_data = device_data;
-    this.device = null;
     this.bootloader_packet_queue = [];
     this.ACK = 0;
     this.preamble_len = 2;
