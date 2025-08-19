@@ -62,8 +62,10 @@ export class VFLEX {
   send_ww_string(port, string_command, str, write, scratchpad) {
     this.ACK = 0;
     let command = extract_key_from_list(string_command);
+    console.log('command = ', command);
     let expected_str_len = command_to_string_length(command);
     let command_code = command_list[command];
+    console.log('command = ', command_code);
     if (scratchpad) {
       command_code |= 0x40;
     }
@@ -74,6 +76,7 @@ export class VFLEX {
       output_array[0] = preamble_len;
       output_array[1] = command_code;
       port.send(output_array);
+      console.log('my arr',output_array);
     } else if (str.length == expected_str_len) {
       command_code |= 0x80;
       let preamble_len = 2;
@@ -113,7 +116,7 @@ export class VFLEX {
     let output_array_len = preamble_len + pg_id_sz + chunk_sz + msg.length;
     var output_array = new Uint8Array(output_array_len);
     output_array[0] = output_array_len;
-    output_array[1] = command_list.CMD_SB_WRITE_HALF_PAGE | 0x80;
+    output_array[1] = command_list.CMD_SB_WRITE_CHUNK | 0x80;
     output_array[2] = pg_id >> 8;
     output_array[3] = pg_id & 0xff;
     output_array[4] = chunk_id;
@@ -363,41 +366,43 @@ export class VFLEX {
   process_response(data) {
     let data_u8a = new Uint8Array(data);
     let preamble_len = 2;
-    let command_code = data[1];
+    let command_code = data_u8a[1];
     let next_packet;
     let response;
     this.ACK = 1;
     switch (command_code) {
       case command_list.CMD_DISABLE_LED_DURING_OPERATION:
-        let disabled = data[2];
+        let disabled = data_u8a[2];
         this.device_data.led_disable_during_operation = disabled;
         break;
-      case command_list.CMD_SB_WRITE_HALF_PAGE:
+      case command_list.CMD_SB_WRITE_CHUNK:
         break;
       case command_list.CMD_SB_COMMIT_PAGE:
         break;
       case command_list.CMD_SB_VERIFY:
+        console.log("verify", data_u8a[2]);
+        this.device_data.crc = data_u8a[2];
         break;
       case command_list.CMD_PDO_LOG:
-        if (data.length == 3) {
-          this.device_data.pdo_len = data[2];
+        if (data_u8a.length == 3) {
+          this.device_data.pdo_len = data_u8a[2];
           this.device_data.pdo_payload = [];
-        } else if (data.length == 6) {
+        } else if (data_u8a.length == 6) {
           let new_pdo = [];
-          new_pdo.push(data[2]);
-          new_pdo.push(data[3]);
-          new_pdo.push(data[4]);
-          new_pdo.push(data[5]);
+          new_pdo.push(data_u8a[2]);
+          new_pdo.push(data_u8a[3]);
+          new_pdo.push(data_u8a[4]);
+          new_pdo.push(data_u8a[5]);
           this.device_data.pdo_payload.push(new_pdo);
         }
         this.device_data.pdo_ack = true;
         break;
       case command_list.CMD_ENCRYPT_MSG:
-        const numbers = data.slice(2);
+        const numbers = data_u8a.slice(2); // todo
         this.device_data.secretsecrets = numbers;
         break;
       case command_list.CMD_VOLTAGE:
-        let mv = data[2] << 8 | (data[3]);
+        let mv = data_u8a[2] << 8 | (data_u8a[3]);
         this.device_data.voltage = mv;
         break;
       case command_list.CMD_CURRENT_LIMIT:
@@ -435,7 +440,7 @@ export class VFLEX {
       case command_list.ERROR:
         break;
       case command_list.CMD_BOOTLOAD_PROM:
-        response = data[2];
+        response = data_u8a[2];
         if (response == 0) {
         } else {
         }
@@ -447,7 +452,7 @@ export class VFLEX {
         }
         break;
       case command_list.CMD_BOOTLOAD_VERIFY:
-        response = data[2];
+        response = data_u8a[2];
         if (response) {
           if (this.bootloader_packet_queue.length == 0) {
             setTimeout(() => { this.jump_to_app(port); }, 4000);
@@ -658,14 +663,15 @@ export class VFLEX_CDC_SERIAL {
       this.port = null;
     } else {
       serial.requestPort().then(selected_port => {
+        console.log(selected_port);
         this.port = selected_port;
         this.port.connect().then(() => {
-          this.port.onReceive = data => { this.vflex.process_response(data); };
+          this.port.onReceive = data => { this.vflex.process_response(data.buffer); };
           this.port.onReceiveError = error => {
-          };
-          if (this.cancel_btl_timeout) {
-            setTimeout(() => { this.vflex.bootload_cancel_app_timeout(this.port); }, 100);
-          }
+         };
+        //  if (this.cancel_btl_timeout) {
+        //    setTimeout(() => { this.vflex.bootload_cancel_app_timeout(this.port); }, 100);
+        //  }
           this.connected = true;
         });
       }).catch(error => {
@@ -805,7 +811,6 @@ export class VFLEX_API {
   }
 
   async get_ww_string(string_command) {
-    console.log('call with port', this.midi.midi_output, this.port);
     if (this.port) this.vflex.get_ww_string(this.port, string_command);
     await this.await_response();
   }

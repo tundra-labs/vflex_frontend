@@ -11,8 +11,7 @@
 </head>
 <body>
     <script type="module">
-      //import {VFLEX_COMMANDS,vflex, midi, vflex_cdc} from "./js/vflex_lib.js"
-      import {VFLEX_API} from "./js/vflex_lib.js"
+      import {VFLEX_COMMANDS,VFLEX_API} from "./js/vflex_lib.js"
       let vflex = new VFLEX_API();
 
       async function waitForEncryptedMsg(){
@@ -52,19 +51,20 @@
         });
         connectSerialButton.addEventListener('click', function() {
           //midi.deinit();
-          vflex.app_disconnect();
+          //vflex.app_disconnect();
           vflex.bootloader_manual_connect(); // app connect
         });
 
 
 
         send_encrypted_msg.addEventListener('click', async function(e) {
-            await vflex.get_ww_string(command_list.CMD_WW_SERIAL);
-            try {ws.send(serial_num);} // send serial number to server, server responds with encrypted bootload packets
+            await vflex.get_ww_string(VFLEX_COMMANDS.CMD_WW_SERIAL);
+            try {ws.send(vflex.device_data.serial_num);} // send serial number to server, server responds with encrypted bootload packets
             catch (error) {console.log('err');}
             await waitForEncryptedMsg();
+            console.log(vflex.device_data.serial_num);
 
-            console.log('encrypto?');
+            //console.log('encrypto?');
             let encrypted_app = encrypted_msg.app_bin;
             let app_crc = encrypted_msg.crc;
 
@@ -74,15 +74,16 @@
                 console.log(encrypted_app[i].chunks[j]);
                 await vflex.send_bootloader_chunk_encrypted(encrypted_app[i].chunks[j], encrypted_app[i].pg_id, j)
               }
-              await vflex_cdc.vflex.commit_bootloader_page(vflex_cdc.port);
+              await vflex.commit_bootloader_page();
               //send_bootloader_chunk_encrypted(port, encrypted_msg[i].second_half_encrypted, encrypted_msg[i].pg_id, 1);
               //await waitForACK();
             }
             //verify_bootloader(port);
             //await waitForAck();
-            console.log('done', encrypted_app.length);
+
+            await vflex.verify_bootloader();
+            console.log('done', vflex.device_data.crc, app_crc);
             //verify_bootloader(port,encrypted_msg.length);
-            await vflex_cdc.vflex.verify_bootloader(vflex_cdc.port);
         });
       });
 
