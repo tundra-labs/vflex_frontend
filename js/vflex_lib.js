@@ -45,7 +45,7 @@ function extract_key_from_list(command) {
   return Object.keys(command_list)[command];
 }
 
-function delay(ms) {
+function delay_ms(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
@@ -485,6 +485,7 @@ export class VFLEX_MIDI {
     this.port = null;
     this.midi_input = null;
     this.midi_output= null;
+    this.midi_packet_delay_ms = 20;
   }
 
   register_connection_callback(succes_callback) { this.on_connect_success = succes_callback || this.on_connect_success; }
@@ -554,13 +555,13 @@ export class VFLEX_MIDI {
               return;
             }
             this.midi_output.send([0x80, 0, 0]);
-            await delay(20);
+            await delay_ms(this.midi_packet_delay_ms);
             for (let i = 0; i < data.length; i++) {
               const byte = data[i];
               const high_nibble = (byte >> 4) & 0x0F;
               const low_nibble = byte & 0x0F;
               this.midi_output.send([0x90, high_nibble, low_nibble]);
-              await delay(20);
+              await delay_ms(this.midi_packet_delay_ms);
             }
             this.midi_output.send([0xA0, 0, 0]);
           }.bind(this),
