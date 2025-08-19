@@ -56,7 +56,6 @@ export class VFLEX {
     this.device_data = device_data;// stores reference
     this.device = null;
     this.bootloader_packet_queue = [];
-    this.calibration_values = {};
     this.ACK = 0;
   }
 
@@ -371,7 +370,7 @@ export class VFLEX {
     switch (command_code) {
       case command_list.CMD_DISABLE_LED_DURING_OPERATION:
         let disabled = data[2];
-        this.calibration_values.led_disable_during_operation = disabled;
+        this.device_data.led_disable_during_operation = disabled;
         break;
       case command_list.CMD_SB_WRITE_HALF_PAGE:
         break;
@@ -381,47 +380,47 @@ export class VFLEX {
         break;
       case command_list.CMD_PDO_LOG:
         if (data.length == 3) {
-          this.calibration_values.pdo_len = data[2];
-          this.calibration_values.pdo_payload = [];
+          this.device_data.pdo_len = data[2];
+          this.device_data.pdo_payload = [];
         } else if (data.length == 6) {
           let new_pdo = [];
           new_pdo.push(data[2]);
           new_pdo.push(data[3]);
           new_pdo.push(data[4]);
           new_pdo.push(data[5]);
-          this.calibration_values.pdo_payload.push(new_pdo);
+          this.device_data.pdo_payload.push(new_pdo);
         }
-        this.calibration_values.pdo_ack = true;
+        this.device_data.pdo_ack = true;
         break;
       case command_list.CMD_ENCRYPT_MSG:
         const numbers = data.slice(2);
-        this.calibration_values.secretsecrets = numbers;
+        this.device_data.secretsecrets = numbers;
         break;
       case command_list.CMD_VOLTAGE:
         let mv = data[2] << 8 | (data[3]);
-        this.calibration_values.voltage = mv;
+        this.device_data.voltage = mv;
         break;
       case command_list.CMD_CURRENT_LIMIT:
         break;
       case command_list.CMD_WW_SERIAL:
         var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-        this.calibration_values.serial_num = string;
+        this.device_data.serial_num = string;
         break;
       case command_list.CMD_CHIP_UUID:
         var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-        this.calibration_values.uuid = string;
+        this.device_data.uuid = string;
         break;
       case command_list.CMD_HWID:
         var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-        this.calibration_values.hw_id = string;
+        this.device_data.hw_id = string;
         break;
       case command_list.CMD_FWID:
         var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-        this.calibration_values.fw_id = string;
+        this.device_data.fw_id = string;
         break;
       case command_list.CMD_MFG_DATE:
         var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
-        this.calibration_values.mfg_date = string;
+        this.device_data.mfg_date = string;
         break;
       case command_list.CMD_FLASH_LED_SEQUENCE_ADVANCED:
         break;
@@ -539,9 +538,9 @@ export class VFLEX_MIDI {
         }
       }
       this.midi_input = null;
-      for (let inPort of this.midi_access.inputs.values()) {
-        if (inPort.name.includes("vFlex")) {
-          this.midi_input = inPort;
+      for (let in_port of this.midi_access.inputs.values()) {
+        if (in_port.name.includes("vFlex")) {
+          this.midi_input = in_port;
           this.midi_input.onmidimessage = (event) => this.on_message(event); 
           break;
         }
@@ -657,8 +656,8 @@ export class VFLEX_CDC_SERIAL {
       } catch {}
       this.port = null;
     } else {
-      serial.requestPort().then(selectedPort => {
-        this.port = selectedPort;
+      serial.requestPort().then(selected_port => {
+        this.port = selected_port;
         this.port.connect().then(() => {
           this.port.onReceive = data => { this.vflex.process_response(data); };
           this.port.onReceiveError = error => {
