@@ -100,7 +100,7 @@ let vflex = new VFLEX_API();
         let transitioningtoApp = false;
 
         async function howlegitcanitgit() {
-          await vflex.get_ww_string(VFLEX_COMMANDS.CMD_SERIAL_NUMBER); // query device serial number
+          await vflex.get_string(VFLEX_COMMANDS.CMD_SERIAL_NUMBER); // query device serial number
           let timestamp = String(Date.now());
           await vflex.send_encrypted_message(timestamp); // 
           
@@ -115,7 +115,7 @@ let vflex = new VFLEX_API();
                     if (vflex.connected && window.getComputedStyle(popupBox).display === 'none') {
 
                         document.getElementById('voltage_pps').disabled = true;
-                        await vflex.get_ww_string(VFLEX_COMMANDS.CMD_FIRMWARE_VERSION);
+                        await vflex.get_string(VFLEX_COMMANDS.CMD_FIRMWARE_VERSION);
                         console.log('fwid:', vflex.device_data.fw_id);
 
                         console.log("yes something really happend");

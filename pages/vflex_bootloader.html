@@ -57,7 +57,7 @@
 
 
         send_encrypted_msg.addEventListener('click', async function(e) {
-            await vflex.get_ww_string(VFLEX_COMMANDS.CMD_SERIAL_NUMBER);
+            await vflex.get_string(VFLEX_COMMANDS.CMD_SERIAL_NUMBER);
             try {ws.send(vflex.device_data.serial_num);} // send serial number to server, server responds with encrypted bootload packets
             catch (error) {console.log('err');}
             await waitForEncryptedMsg();

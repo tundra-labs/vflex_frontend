@@ -93,15 +93,15 @@
             return;
           } else {
             //console.log('got a midi', midiOutput);
-            await vflex.get_ww_string(VFLEX_COMMANDS.CMD_WW_SERIAL);
+            await vflex.get_string(VFLEX_COMMANDS.CMD_WW_SERIAL);
             addToLog(`serial_num: ${vflex.device_data['serial_num']}`);
-            await vflex.get_ww_string(VFLEX_COMMANDS.CMD_HWID);
+            await vflex.get_string(VFLEX_COMMANDS.CMD_HWID);
             addToLog(`hw_id: ${vflex.device_data['hw_id']}`);
 
-            await vflex.get_ww_string(VFLEX_COMMANDS.CMD_MFG_DATE);
+            await vflex.get_string(VFLEX_COMMANDS.CMD_MFG_DATE);
             addToLog(`mfg_date: ${vflex.device_data['mfg_date']}`);
 
-            await vflex.get_ww_string(VFLEX_COMMANDS.CMD_FIRMWARE_VERSION);
+            await vflex.get_string(VFLEX_COMMANDS.CMD_FIRMWARE_VERSION);
             addToLog(`fw_id: ${vflex.device_data['fw_id']}`);
 
             ////get_pdo_log(port)

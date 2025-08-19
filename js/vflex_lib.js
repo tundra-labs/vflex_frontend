@@ -50,252 +50,161 @@ function delay_ms(ms) {
 }
 
 
-
 export class VFLEX {
   constructor(device_data) {
-    this.device_data = device_data;// stores reference
+    this.device_data = device_data;
     this.device = null;
     this.bootloader_packet_queue = [];
     this.ACK = 0;
+    this.preamble_len = 2;
   }
 
-  send_ww_string(port, string_command, str, write, scratchpad) {
+  wrap_command(port, command_code, payload = new Uint8Array(0), write = false, scratchpad = false) {
     this.ACK = 0;
+    let command = command_code;
+    if (scratchpad) {
+      command |= 0x40;
+    }
+    if (write) {
+      command |= 0x80;
+    }
+    const output_array_len = this.preamble_len + payload.length;
+    const output_arr = new Uint8Array(output_array_len);
+    output_arr[0] = output_array_len;
+    output_arr[1] = command;
+    for (let i = 0; i < payload.length; i++) {
+      output_arr[i + this.preamble_len] = payload[i];
+    }
+    port.send(output_arr);
+    return true;
+  }
+
+  string_wrapper(port, string_command, str, write, scratchpad) {
     let command = extract_key_from_list(string_command);
     let expected_str_len = command_to_string_length(command);
-    let command_code = command_list[command];
-    if (scratchpad) {
-      command_code |= 0x40;
-    }
     if (!write) {
-      let preamble_len = 2;
-      let output_array_len = preamble_len;
-      var output_array = new Uint8Array(output_array_len);
-      output_array[0] = preamble_len;
-      output_array[1] = command_code;
-      port.send(output_array);
-    } else if (str.length == expected_str_len) {
-      command_code |= 0x80;
-      let preamble_len = 2;
-      let output_array_len = str.length + preamble_len;
-      var output_array = new Uint8Array(output_array_len);
-      output_array[0] = output_array_len;
-      output_array[1] = command_code;
-      for (let i = preamble_len; i < output_array_len; i++) {
-        output_array[i] = str[i - preamble_len].charCodeAt(0);
+      return this.wrap_command(port, command_list[command], new Uint8Array(0), false, scratchpad);
+    } else if (str.length === expected_str_len) {
+      const payload = new Uint8Array(str.length);
+      for (let i = 0; i < str.length; i++) {
+        payload[i] = str.charCodeAt(i);
       }
-      port.send(output_array);
-      return true;
-    } else {
-      return false;
+      return this.wrap_command(port, command_list[command], payload, true, scratchpad);
     }
+    return false;
   }
 
   send_encrypted_message(port, msg) {
-    this.ACK = 0;
-    let preamble_len = 2;
-    let output_array_len = msg.length + preamble_len;
-    var output_array = new Uint8Array(output_array_len);
-    output_array[0] = output_array_len;
-    output_array[1] = command_list.CMD_ENCRYPT_MSG | 0x80;
+    const payload = new Uint8Array(msg.length);
     for (let i = 0; i < msg.length; i++) {
-      output_array[i + preamble_len] = msg.charCodeAt(i);
+      payload[i] = msg.charCodeAt(i);
     }
-    port.send(output_array);
+    return this.wrap_command(port, command_list.CMD_ENCRYPT_MSG, payload, true);
   }
 
   send_bootloader_chunk_encrypted(port, msg, pg_id, chunk_id) {
-    this.ACK = 0;
-    let preamble_len = 2;
-    let data_start_pos = 5;
-    let pg_id_sz = 2;
-    let chunk_sz = 1;
-    let output_array_len = preamble_len + pg_id_sz + chunk_sz + msg.length;
-    var output_array = new Uint8Array(output_array_len);
-    output_array[0] = output_array_len;
-    output_array[1] = command_list.CMD_BOOTLOADER_WRITE_CHUNK | 0x80;
-    output_array[2] = pg_id >> 8;
-    output_array[3] = pg_id & 0xff;
-    output_array[4] = chunk_id;
+    const payload = new Uint8Array(3 + msg.length);
+    payload[0] = pg_id >> 8;
+    payload[1] = pg_id & 0xff;
+    payload[2] = chunk_id;
     for (let i = 0; i < msg.length; i++) {
-      output_array[i + data_start_pos] = msg[i];
+      payload[i + 3] = msg[i];
     }
-    port.send(output_array);
+    return this.wrap_command(port, command_list.CMD_BOOTLOADER_WRITE_CHUNK, payload, true);
   }
 
   verify_bootloader(port) {
-    this.ACK = 0;
-    let preamble_len = 2;
-    let output_array_len = preamble_len;
-    var output_array = new Uint8Array(output_array_len);
-    output_array[0] = output_array_len;
-    output_array[1] = command_list.CMD_BOOTLOADER_VERIFY | 0x80;
-    port.send(output_array);
+    return this.wrap_command(port, command_list.CMD_BOOTLOADER_VERIFY, new Uint8Array(0), true);
   }
 
   commit_bootloader_page(port) {
-    this.ACK = 0;
-    let preamble_len = 2;
-    let output_array_len = preamble_len;
-    var output_array = new Uint8Array(output_array_len);
-    output_array[0] = output_array_len;
-    output_array[1] = command_list.CMD_BOOTLOADER_COMMIT_PAGE | 0x80;
-    port.send(output_array);
+    return this.wrap_command(port, command_list.CMD_BOOTLOADER_COMMIT_PAGE, new Uint8Array(0), true);
   }
 
-  set_ww_string(port, string_command, str) {
-    this.ACK = 0;
-    let write = 1;
-    let scratchpad = 0;
-    this.send_ww_string(port, string_command, str, write, scratchpad);
+  set_string(port, string_command, str) {
+    return this.string_wrapper(port, string_command, str, true, false);
   }
 
-  set_ww_string_scratchpad(port, string_command, str) {
-    this.ACK = 0;
-    let write = 1;
-    let scratchpad = 1;
-    this.send_ww_string(port, string_command, str, write, scratchpad);
+  set_string_scratchpad(port, string_command, str) {
+    return this.string_wrapper(port, string_command, str, true, true);
   }
 
-  get_ww_string(port, string_command) {
-    this.ACK = 0;
-    let write = 0;
-    let scratchpad = 0;
-    this.send_ww_string(port, string_command, "", write, scratchpad);
+  get_string(port, string_command) {
+    return this.string_wrapper(port, string_command, "", false, false);
   }
 
-  get_ww_string_scratchpad(port, string_command) {
-    this.ACK = 0;
-    let write = 0;
-    let scratchpad = 1;
-    this.send_ww_string(port, string_command, "", write, scratchpad);
+  get_string_scratchpad(port, string_command) {
+    return this.string_wrapper(port, string_command, "", false, true);
   }
 
   get_voltage_mv(port) {
-    this.ACK = 0;
-    var array = new Uint8Array(2);
-    array[0] = 2;
-    array[1] = command_list.CMD_VOLTAGE_MV;
-    port.send(array);
+    return this.wrap_command(port, command_list.CMD_VOLTAGE_MV, new Uint8Array(0), false);
   }
 
   set_voltage_mv(port, setting_mv) {
-    this.ACK = 0;
-    var array = new Uint8Array(4);
-    array[0] = 4;
-    array[1] = command_list.CMD_VOLTAGE_MV | 0x80;
-    let setting_mv_msb = (setting_mv >> 8) & 0xFF;
-    let setting_mv_lsb = setting_mv & 0xFF;
-    array[2] = setting_mv_msb;
-    array[3] = setting_mv_lsb;
-    port.send(array);
+    const payload = new Uint8Array(2);
+    payload[0] = (setting_mv >> 8) & 0xFF;
+    payload[1] = setting_mv & 0xFF;
+    return this.wrap_command(port, command_list.CMD_VOLTAGE_MV, payload, true);
   }
 
   get_max_current_ma(port) {
-    this.ACK = 0;
-    var array = new Uint8Array(2);
-    array[0] = 2;
-    array[1] = command_list.CMD_CURRENT;
-    port.send(array);
+    return this.wrap_command(port, command_list.CMD_CURRENT_LIMIT_MA, new Uint8Array(0), false);
   }
 
   set_max_current_ma(port, setting_ma) {
-    this.ACK = 0;
-    var array = new Uint8Array(4);
-    array[0] = 4;
-    array[1] = command_list.CMD_CURRENT | 0x80;
-    let setting_ma_msb = (setting_ma >> 8) & 0xFF;
-    let setting_ma_lsb = setting_ma & 0xFF;
-    array[2] = setting_ma_msb;
-    array[3] = setting_ma_lsb;
-    port.send(array);
+    const payload = new Uint8Array(2);
+    payload[0] = (setting_ma >> 8) & 0xFF;
+    payload[1] = setting_ma & 0xFF;
+    return this.wrap_command(port, command_list.CMD_CURRENT_LIMIT_MA, payload, true);
   }
 
   disable_leds_operation(port, disable, write) {
-    this.ACK = 0;
-    let bootloader_preamble_len = 2;
-    if (write) {
-      var output_arr = new Uint8Array(3);
-      output_arr[0] = 3;
-      output_arr[1] = command_list.CMD_DISABLE_LED_DURING_OPERATION | 0x80;
-      output_arr[2] = disable;
-    } else {
-      var output_arr = new Uint8Array(2);
-      output_arr[0] = 2;
-      output_arr[1] = command_list.CMD_DISABLE_LED_DURING_OPERATION;
-    }
-    port.send(output_arr);
+    const payload = write ? new Uint8Array([disable]) : new Uint8Array(0);
+    return this.wrap_command(port, command_list.CMD_DISABLE_LED_DURING_OPERATION, payload, write);
   }
 
   clear_pdo_log(port) {
-    this.ACK = 0;
-    let arr_len = 2;
-    var output_arr = new Uint8Array(arr_len);
-    output_arr[0] = arr_len;
-    output_arr[1] = command_list.CMD_PDO_LOG | 0x80;
-    port.send(output_arr);
+    return this.wrap_command(port, command_list.CMD_PDO_LOG, new Uint8Array(0), true);
   }
 
   get_pdo_log(port) {
-    this.ACK = 0;
-    let bootloader_preamble_len = 2;
-    let max_packet_len = 64;
-    var output_arr = new Uint8Array(2);
-    output_arr[0] = 2;
-    output_arr[1] = command_list.CMD_PDO_LOG;
-    port.send(output_arr);
+    return this.wrap_command(port, command_list.CMD_PDO_LOG, new Uint8Array(0), false);
   }
 
   pdo_cmd(port, pdo_cmd) {
-    this.ACK = 0;
-    let packet_len = 3;
-    var output_arr = new Uint8Array(packet_len);
-    output_arr[0] = packet_len;
-    output_arr[1] = command_list.CMD_PDO_LOG;
-    output_arr[2] = pdo_cmd;
-    port.send(output_arr);
+    const payload = new Uint8Array([pdo_cmd]);
+    return this.wrap_command(port, command_list.CMD_PDO_LOG, payload, false);
   }
 
   jump_to_app(port) {
-    this.ACK = 0;
-    var arr = new Uint8Array(2);
-    arr[0] = 2;
-    arr[1] = command_list.CMD_BOOTLOAD_END;
-    port.send(arr);
+    return this.wrap_command(port, command_list.CMD_BOOTLOAD_END, new Uint8Array(0), false);
   }
 
   jump_to_bootloader(port) {
-    this.ACK = 0;
-    var arr = new Uint8Array(2);
-    arr[0] = 2;
-    arr[1] = command_list.CMD_JUMP_APP_TO_BOOTLOADER;
-    port.send(arr);
+    return this.wrap_command(port, command_list.CMD_JUMP_APP_TO_BOOTLOADER, new Uint8Array(0), false);
   }
 
   bootload_verify_function(port, data_object) {
     this.ACK = 0;
-    var data = new Uint8Array(data_object);
-    let code_len = data.byteLength;
-    let bootloader_preamble_len = 4;
-    let max_packet_len = 64;
-    let max_packet_code_len = max_packet_len - bootloader_preamble_len;
+    const data = new Uint8Array(data_object);
+    const bootloader_preamble_len = 4;
+    const max_packet_len = 64;
+    const max_packet_code_len = max_packet_len - bootloader_preamble_len;
     let index = 0;
-    let packet_count = 0;
-    while (index < code_len) {
-      let remaining = code_len - index;
-      let packet_code_len = Math.min(remaining, max_packet_code_len);
-      let packet_len = packet_code_len + bootloader_preamble_len;
-      var boot_arr = new Uint8Array(packet_len);
-      boot_arr[0] = packet_len;
-      boot_arr[1] = command_list.CMD_BOOTLOAD_VERIFY;
+    while (index < data.byteLength) {
+      const remaining = data.byteLength - index;
+      const packet_code_len = Math.min(remaining, max_packet_code_len);
+      const payload = new Uint8Array(packet_code_len + 2);
+      payload[0] = index >> 8;
+      payload[1] = index & 0xFF;
       for (let i = 0; i < packet_code_len; i++) {
-        boot_arr[i + bootloader_preamble_len] = data[index++];
+        payload[i + 2] = data[index++];
       }
-      this.bootloader_packet_queue.push(boot_arr);
-      packet_count++;
+      this.bootloader_packet_queue.push(payload);
     }
-    let first_packet = this.bootloader_packet_queue.shift();
-    port.send(first_packet);
+    const first_payload = this.bootloader_packet_queue.shift();
+    return this.wrap_command(port, command_list.CMD_BOOTLOADER_VERIFY, first_payload, false);
   }
 
   async await_response() {
@@ -519,8 +428,6 @@ export class VFLEX_MIDI {
     }, 100);
   }
 
- 
-
   stop_monitoring() {
     clearInterval(this.checkInterval);
     this.disconnect();
@@ -575,9 +482,6 @@ export class VFLEX_CDC_SERIAL {
           this.port.onReceive = data => { this.vflex.process_response(data.buffer); };
           this.port.onReceiveError = error => {
          };
-        //  if (this.cancel_btl_timeout) {
-        //    setTimeout(() => { this.vflex.bootload_cancel_app_timeout(this.port); }, 100);
-        //  }
           this.connected = true;
         });
       }).catch(error => {
@@ -586,7 +490,6 @@ export class VFLEX_CDC_SERIAL {
   }
 }
 
-//export const vflex = new VFLEX();
 export const VFLEX_COMMANDS = command_list;
 
 export class VFLEX_API {
@@ -688,8 +591,8 @@ export class VFLEX_API {
     return result;
   }
 
-  async send_ww_string(string_command, str, write, scratchpad) {
-    return this.protocol_wrap(port => this.vflex.send_ww_string(port, string_command, str, write, scratchpad));
+  async string_wrapper(string_command, str, write, scratchpad) {
+    return this.protocol_wrap(port => this.vflex.string_wrapper(port, string_command, str, write, scratchpad));
   }
 
   async send_encrypted_message(msg) {
@@ -708,20 +611,20 @@ export class VFLEX_API {
     return this.protocol_wrap(port => this.vflex.commit_bootloader_page(port));
   }
 
-  async set_ww_string(string_command, str) {
-    return this.protocol_wrap(port => this.vflex.set_ww_string(port, string_command, str));
+  async set_string(string_command, str) {
+    return this.protocol_wrap(port => this.vflex.set_string(port, string_command, str));
   }
 
-  async set_ww_string_scratchpad(string_command, str) {
-    return this.protocol_wrap(port => this.vflex.set_ww_string_scratchpad(port, string_command, str));
+  async set_string_scratchpad(string_command, str) {
+    return this.protocol_wrap(port => this.vflex.set_string_scratchpad(port, string_command, str));
   }
 
-  async get_ww_string(string_command) {
-    return this.protocol_wrap(port => this.vflex.get_ww_string(port, string_command));
+  async get_string(string_command) {
+    return this.protocol_wrap(port => this.vflex.get_string(port, string_command));
   }
 
-  async get_ww_string_scratchpad(string_command) {
-    return this.protocol_wrap(port => this.vflex.get_ww_string_scratchpad(port, string_command));
+  async get_string_scratchpad(string_command) {
+    return this.protocol_wrap(port => this.vflex.get_string_scratchpad(port, string_command));
   }
 
   async get_voltage_mv() {
