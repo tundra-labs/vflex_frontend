@@ -292,11 +292,7 @@ export class VFLEX_MIDI {
     this.checkInterval = null;
     this.midi_access = null;
     this.is_connecting = false;
-    this.on_connect_success = () => {};
-    this.on_connection_fail = () => {};
-    this.on_disconnect = () => {};
-    this.on_connection_change = () => {};
-    this.on_message = () => {};
+    this.events = {};
     this.connected = false;
     this.port = null;
     this.midi_input = null;
@@ -304,17 +300,18 @@ export class VFLEX_MIDI {
     this.midi_packet_delay_ms = 20;
   }
 
-  register_connection_callback(succes_callback) { this.on_connect_success = succes_callback || this.on_connect_success; }
-  register_fail_connection_callback(fail_callback) { this.on_connection_fail = fail_callback || this.on_connection_fail; }
-  register_disconnect_callback(disconnect_callback) { this.on_disconnect = disconnect_callback || this.on_disconnect; }
-  register_connection_change_callback(change_callback) { this.on_connection_change = change_callback || this.on_connection_change; }
-  set_callbacks(succes_callback, fail_callback, disconnect_callback, change_callback) {
-    this.register_connection_callback(succes_callback);
-    this.register_fail_connection_callback(fail_callback);
-    this.register_disconnect_callback(disconnect_callback);
-    this.register_connection_change_callback(change_callback);
+  on(event, callback) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+    this.events[event].push(callback);
   }
-  register_message_callback(on_message_callback) { this.on_message = on_message_callback || this.on_message; }
+
+  emit(event, ...args) {
+    if (this.events[event]) {
+      this.events[event].forEach(callback => callback(...args));
+    }
+  }
 
   async init() {
     if (!this.midi_access) {
@@ -323,7 +320,7 @@ export class VFLEX_MIDI {
         this.start_monitoring();
       } catch (err) {
         console.error("MIDI Access Failed:", err);
-        this.on_connection_fail(err);
+        this.emit('error', err);
       }
     }
   }
@@ -358,7 +355,7 @@ export class VFLEX_MIDI {
       for (let in_port of this.midi_access.inputs.values()) {
         if (in_port.name.includes("vFlex")) {
           this.midi_input = in_port;
-          this.midi_input.onmidimessage = (event) => this.on_message(event); 
+          this.midi_input.onmidimessage = (event) => this.emit('message', event);
           break;
         }
       }
@@ -394,13 +391,14 @@ export class VFLEX_MIDI {
           }.bind(this),
         };
         this.connected = true;
-        this.on_connection_change();
-        this.on_connect_success();
+        this.emit('connectionchange');
+        this.emit('connect');
       } else {
         throw new Error("No vFlex device found");
       }
     } catch (err) {
-      this.on_connection_fail(err);
+      this.emit('error', err);
+      throw new Error(`Connection failed: ${err.message}`);
     } finally {
       this.is_connecting = false;
     }
@@ -415,8 +413,8 @@ export class VFLEX_MIDI {
     this.midi_input = null;
     this.port = null;
     this.connected = false;
-    this.on_connection_change();
-    this.on_disconnect();
+    this.emit('connectionchange');
+    this.emit('disconnect');
   }
 
   start_monitoring() {
@@ -454,10 +452,7 @@ export class VFLEX_CDC_SERIAL {
     this.port = null;
     this.cancel_btl_timeout = true;
     this.is_connecting = false;
-    this.on_connect_success = () => {};
-    this.on_connection_fail = () => {};
-    this.on_disconnect = () => {};
-    this.on_connection_change = () => {};
+    this.events = {};
     this.connected = false;
     this.serial = {};
     this.serial.get_ports = function() {
@@ -536,6 +531,19 @@ export class VFLEX_CDC_SERIAL {
     };
   }
 
+  on(event, callback) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+    this.events[event].push(callback);
+  }
+
+  emit(event, ...args) {
+    if (this.events[event]) {
+      this.events[event].forEach(callback => callback(...args));
+    }
+  }
+
   async await_connected() {
     return new Promise((resolve) => {
       const interval = setInterval(() => {
@@ -559,13 +567,31 @@ export class VFLEX_CDC_SERIAL {
       this.port = selected_port;
       await this.port.connect();
       this.port.onReceive = data => { this.vflex.process_response(data.buffer); };
-      this.port.onReceiveError = error => { console.error("Serial receive error:", error); };
+      this.port.onReceiveError = error => {
+        console.error("Serial receive error:", error);
+        this.disconnect();
+      };
       this.connected = true;
-      this.on_connect_success();
+      this.emit('connect');
+      this.emit('connectionchange');
     } catch (error) {
-      this.on_connection_fail(error);
+      this.emit('error', error);
       throw error;
     }
+  }
+
+  disconnect() {
+    if (this.port) {
+      try {
+        this.port.disconnect();
+      } catch (err) {
+        console.error("Error closing serial port:", err);
+      }
+      this.port = null;
+    }
+    this.connected = false;
+    this.emit('connectionchange');
+    this.emit('disconnect');
   }
 }
 
@@ -581,25 +607,32 @@ export class VFLEX_API {
     this.serial = new VFLEX_CDC_SERIAL(this.vflex);
     this.port = null;
     this.connected = false;
-    this.midi.set_callbacks(
-      () => { 
-        this.connected = true; 
-        this.port = this.midi.port; 
-        this.on_connection_change();
-        this.on_connect_success();
-      },
-      (err) => {
-        this.on_connection_change();
-      },
-      () => { 
-        this.on_disconnect = () => {};
-        this.on_connection_change();
-      },
-      () => {
-        this.on_connection_change();
-      }
-    );
-    this.midi.register_message_callback((event) => {
+    this.on_connect_success = () => {};
+    this.on_connection_fail = () => {};
+    this.on_disconnect = () => {};
+    this.on_connection_change = () => {};
+
+    // Register event listeners for MIDI
+    this.midi.on('connect', () => {
+      this.connected = true;
+      this.port = this.midi.port;
+      this.on_connect_success();
+      this.on_connection_change();
+    });
+    this.midi.on('error', (err) => {
+      this.on_connection_fail(err);
+      this.on_connection_change();
+    });
+    this.midi.on('disconnect', () => {
+      this.connected = false;
+      this.port = null;
+      this.on_disconnect();
+      this.on_connection_change();
+    });
+    this.midi.on('connectionchange', () => {
+      this.on_connection_change();
+    });
+    this.midi.on('message', (event) => {
       const [status, data1, data2] = event.data;
       if (status === 0x80) {
         this.midi_receive_buffer = [];
@@ -614,10 +647,29 @@ export class VFLEX_API {
         this.vflex.process_response(this.midi_receive_buffer);
       }
     });
-    this.on_connect_success = () => {};
-    this.on_connection_fail = () => {};
-    this.on_disconnect = () => {};
-    this.on_connection_change = () => {};
+
+    // Register event listeners for Serial
+    this.serial.on('connect', () => {
+      this.connected = true;
+      this.port = this.serial.port;
+      this.on_connect_success();
+      this.on_connection_change();
+    });
+    this.serial.on('error', (err) => {
+      this.connected = false;
+      this.port = null;
+      this.on_connection_fail(err);
+      this.on_connection_change();
+    });
+    this.serial.on('disconnect', () => {
+      this.connected = false;
+      this.port = null;
+      this.on_disconnect();
+      this.on_connection_change();
+    });
+    this.serial.on('connectionchange', () => {
+      this.on_connection_change();
+    });
   }
 
   register_connection_callback(succes_callback) { this.on_connect_success = succes_callback || this.on_connect_success; }
