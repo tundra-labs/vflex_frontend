@@ -100,13 +100,11 @@ let vflex = new VFLEX_API();
         let transitioningtoApp = false;
 
         async function howlegitcanitgit() {
-          vflex.get_ww_string(VFLEX_COMMANDS.CMD_WW_SERIAL); // query device serial number
-          await vflex.await_response();
+          await vflex.get_ww_string(VFLEX_COMMANDS.CMD_WW_SERIAL); // query device serial number
           console.log(vflex.vflex.calibration_values.serial_num);
           //let timestamp = "018APR25"; // todo
           let timestamp = String(Date.now());
-          vflex.send_encrypted_message(timestamp); // 
-          await vflex.await_response();
+          await vflex.send_encrypted_message(timestamp); // 
           
           // send certificate of authenticity
           let certificate_of_authenticity =JSON.stringify({ serial_num: vflex.vflex.calibration_values.serial_num, timestamp: timestamp, secret: Array.from(vflex.vflex.calibration_values.secretsecrets) });
@@ -127,8 +125,7 @@ let vflex = new VFLEX_API();
 
                         document.getElementById('voltage_pps').disabled = true;
                         //await vflex.midi.
-                        vflex.get_ww_string(VFLEX_COMMANDS.CMD_FWID);
-                        await vflex.await_response();
+                        await vflex.get_ww_string(VFLEX_COMMANDS.CMD_FWID);
                         console.log('fwid:', vflex.vflex.calibration_values.fw_id);
 
                         console.log("yes something really happend");
@@ -152,8 +149,8 @@ let vflex = new VFLEX_API();
                         }
 
                         vflex.vflex.calibration_values.voltage = ''; // clear
-                        vflex.get_voltage();
-                        await waitForValue('voltage');
+                        await vflex.get_voltage();
+                        //await waitForValue('voltage');
                         let fInput = vflex.vflex.calibration_values.voltage/1000;
                         voltage_pps.value = fInput.toFixed(2);
                         howlegitcanitgit();
@@ -222,14 +219,12 @@ let vflex = new VFLEX_API();
             console.log(setting_mv);
             
             //await vflex.set_voltage(midi.port, setting_mv);
-            vflex.set_voltage(setting_mv);
-            await vflex.await_response();
+            await vflex.set_voltage(setting_mv);
             pps_message.textContent = "";
             
             
             voltageStatus.textContent = "";
-            vflex.get_voltage();
-            await vflex.await_response();
+            await vflex.get_voltage();
         
             let fInput = vflex.vflex.calibration_values.voltage/1000;
             voltage_pps.value = fInput.toFixed(2);

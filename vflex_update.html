@@ -59,12 +59,9 @@
 
 
         send_encrypted_msg.addEventListener('click', async function(e) {
-            vflex.get_ww_string(command_list.CMD_WW_SERIAL);
-            //await waitForSerial();
-            await vflex.await_response();
+            await vflex.get_ww_string(command_list.CMD_WW_SERIAL);
             try {ws.send(serial_num);} // send serial number to server, server responds with encrypted bootload packets
             catch (error) {console.log('err');}
-            //await vflex.await_response(); // todo: hoops
             await waitForEncryptedMsg();
 
             console.log('encrypto?');
@@ -75,11 +72,9 @@
             for (let i = 0; i < encrypted_app.length; i++) {
               for (let j = 0; j < 8; j++) {
                 console.log(encrypted_app[i].chunks[j]);
-                vflex.send_bootloader_chunk_encrypted(encrypted_app[i].chunks[j], encrypted_app[i].pg_id, j)
-                await vflex.await_response();
+                await vflex.send_bootloader_chunk_encrypted(encrypted_app[i].chunks[j], encrypted_app[i].pg_id, j)
               }
-              vflex_cdc.vflex.commit_bootloader_page(vflex_cdc.port);
-              await vflex.await_response();
+              await vflex_cdc.vflex.commit_bootloader_page(vflex_cdc.port);
               //send_bootloader_chunk_encrypted(port, encrypted_msg[i].second_half_encrypted, encrypted_msg[i].pg_id, 1);
               //await waitForACK();
             }
@@ -87,8 +82,7 @@
             //await waitForAck();
             console.log('done', encrypted_app.length);
             //verify_bootloader(port,encrypted_msg.length);
-            vflex_cdc.vflex.verify_bootloader(vflex_cdc.port);
-            await vflex.await_response();
+            await vflex_cdc.vflex.verify_bootloader(vflex_cdc.port);
         });
       });
 
