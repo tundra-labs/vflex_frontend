@@ -42,12 +42,12 @@ let vflex = new VFLEX_API();
         
 
         vflex.device_data.voltage_mv = programmed_voltage; // points to voltage elem
-        vflex.device_data.serial_num = serial_num;
-        vflex.device_data.uuid = uuid;
-        vflex.device_data.hw_id = "vflex   ";
-        vflex.device_data.fw_id = fw_id;
-        vflex.device_data.mfg_date = mfg_date;
-        vflex.device_data.bootload_enable = bootload_enable;
+        //vflex.device_data.serial_num = serial_num;
+        //vflex.device_data.uuid = uuid;
+        //vflex.device_data.hw_id = "vflex   ";
+        //vflex.device_data.fw_id = fw_id;
+        //vflex.device_data.mfg_date = mfg_date;
+        //vflex.device_data.bootload_enable = bootload_enable;
         //bootload_prom.addEventListener('click', function(e) {
         //  bootload_prom_function(midi.port, app_bin_data["data"]);
         //});
@@ -100,15 +100,12 @@ let vflex = new VFLEX_API();
         let transitioningtoApp = false;
 
         async function howlegitcanitgit() {
-          await vflex.get_ww_string(VFLEX_COMMANDS.CMD_WW_SERIAL); // query device serial number
-          console.log(vflex.device_data.serial_num);
-          //let timestamp = "018APR25"; // todo
+          await vflex.get_ww_string(VFLEX_COMMANDS.CMD_SERIAL_NUMBER); // query device serial number
           let timestamp = String(Date.now());
           await vflex.send_encrypted_message(timestamp); // 
           
           // send certificate of authenticity
           let certificate_of_authenticity =JSON.stringify({ serial_num: vflex.device_data.serial_num, timestamp: timestamp, secret: Array.from(vflex.device_data.secretsecrets) });
-          console.log(certificate_of_authenticity);
           try {legit_ws.send(certificate_of_authenticity);}
           catch (error) {console.log('err on legit server send', error);}
         }

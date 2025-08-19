@@ -62,10 +62,8 @@ export class VFLEX {
   send_ww_string(port, string_command, str, write, scratchpad) {
     this.ACK = 0;
     let command = extract_key_from_list(string_command);
-    console.log('command = ', command);
     let expected_str_len = command_to_string_length(command);
     let command_code = command_list[command];
-    console.log('command = ', command_code);
     if (scratchpad) {
       command_code |= 0x40;
     }
@@ -76,7 +74,6 @@ export class VFLEX {
       output_array[0] = preamble_len;
       output_array[1] = command_code;
       port.send(output_array);
-      console.log('my arr',output_array);
     } else if (str.length == expected_str_len) {
       command_code |= 0x80;
       let preamble_len = 2;
@@ -364,7 +361,6 @@ export class VFLEX {
       case command_list.CMD_BOOTLOADER_COMMIT_PAGE:
         break;
       case command_list.CMD_BOOTLOADER_VERIFY:
-        console.log("verify", data_u8a[2]);
         this.device_data.crc = data_u8a[2];
         break;
       case command_list.CMD_PDO_LOG:
@@ -382,7 +378,7 @@ export class VFLEX {
         this.device_data.pdo_ack = true;
         break;
       case command_list.CMD_ENCRYPT_MSG:
-        const numbers = data_u8a.slice(2);
+        const numbers = data.slice(2);
         this.device_data.secretsecrets = numbers;
         break;
       case command_list.CMD_VOLTAGE_MV:
@@ -647,7 +643,6 @@ export class VFLEX_CDC_SERIAL {
       this.port = null;
     } else {
       serial.requestPort().then(selected_port => {
-        console.log(selected_port);
         this.port = selected_port;
         this.port.connect().then(() => {
           this.port.onReceive = data => { this.vflex.process_response(data.buffer); };
@@ -683,14 +678,14 @@ export class VFLEX_API {
               this.on_connection_change();
               this.on_connect_success();
             },
-      (err) => { console.error("MIDI connection failed:", err); 
+      (err) => {
               this.on_connection_change();
               },
-      () => { console.log("MIDI device disconnected"); 
+      () => { 
               this.on_disconnect = () => {};
               this.on_connection_change();
             },
-      () => { console.log("MIDI device connection status changed"); 
+      () => {
               this.on_connection_change();
             }
     );
