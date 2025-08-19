@@ -1,33 +1,33 @@
 import {serial} from "./serial.js";
 export const command_list = Object.freeze({
-  CMD_SB_WRITE_CHUNK: 0,
-  CMD_SB_COMMIT_PAGE: 1,
-  CMD_SB_VERIFY: 2,
+  CMD_BOOTLOADER_WRITE_CHUNK: 0,
+  CMD_BOOTLOADER_COMMIT_PAGE: 1,
+  CMD_BOOTLOADER_VERIFY: 2,
   CMD_BOOTLOAD_END: 3,
-  OK: 4,
-  ERROR: 5,
-  CMD_LOAD_CAL_SCRATCHPAD: 6,
-  CMD_COMMIT_CAL_SCRATCHPAD: 7,
-  CMD_WW_SERIAL: 8,
+  CMD_RESERVED0: 4,
+  CMD_RESERVED1: 5,
+  CMD_RESERVED2: 6,
+  CMD_RESERVED3: 7,
+  CMD_SERIAL_NUMBER: 8,
   CMD_CHIP_UUID: 9,
-  CMD_HWID: 10,
-  CMD_FWID: 11,
+  CMD_HARDWARE_ID: 10,
+  CMD_FIRMWARE_VERSION: 11,
   CMD_MFG_DATE: 12,
   CMD_FLASH_LED_SEQUENCE_ADVANCED: 13,
   CMD_FLASH_LED: 14,
-  CMD_LED_DISABLE: 15,
+  CMD_DISABLE_LED_DURING_OPERATION: 15,
   CMD_ENCRYPT_MSG: 16,
   CMD_PDO_LOG: 17,
-  CMD_VOLTAGE: 18,
-  CMD_CURRENT_LIMIT: 19,
-  CMD_JUMP_TO_BOOTLOAD: 20
+  CMD_VOLTAGE_MV: 18,
+  CMD_CURRENT_LIMIT_MA: 19,
+  CMD_JUMP_APP_TO_BOOTLOADER: 20
 });
 
 const command_list_string_sizes = Object.freeze({
-  CMD_WW_SERIAL: 8,
+  CMD_SERIAL_NUMBER: 8,
   CMD_CHIP_UUID: 8,
-  CMD_HWID: 8,
-  CMD_FWID: 12,
+  CMD_HARDWARE_ID: 8,
+  CMD_FIRMWARE_VERSION: 12,
   CMD_MFG_DATE: 8,
 });
 
@@ -116,7 +116,7 @@ export class VFLEX {
     let output_array_len = preamble_len + pg_id_sz + chunk_sz + msg.length;
     var output_array = new Uint8Array(output_array_len);
     output_array[0] = output_array_len;
-    output_array[1] = command_list.CMD_SB_WRITE_CHUNK | 0x80;
+    output_array[1] = command_list.CMD_BOOTLOADER_WRITE_CHUNK | 0x80;
     output_array[2] = pg_id >> 8;
     output_array[3] = pg_id & 0xff;
     output_array[4] = chunk_id;
@@ -132,7 +132,7 @@ export class VFLEX {
     let output_array_len = preamble_len;
     var output_array = new Uint8Array(output_array_len);
     output_array[0] = output_array_len;
-    output_array[1] = command_list.CMD_SB_VERIFY | 0x80;
+    output_array[1] = command_list.CMD_BOOTLOADER_VERIFY | 0x80;
     port.send(output_array);
   }
 
@@ -142,7 +142,7 @@ export class VFLEX {
     let output_array_len = preamble_len;
     var output_array = new Uint8Array(output_array_len);
     output_array[0] = output_array_len;
-    output_array[1] = command_list.CMD_SB_COMMIT_PAGE | 0x80;
+    output_array[1] = command_list.CMD_BOOTLOADER_COMMIT_PAGE | 0x80;
     port.send(output_array);
   }
 
@@ -174,19 +174,19 @@ export class VFLEX {
     this.send_ww_string(port, string_command, "", write, scratchpad);
   }
 
-  get_voltage(port) {
+  get_voltage_mv(port) {
     this.ACK = 0;
     var array = new Uint8Array(2);
     array[0] = 2;
-    array[1] = command_list.CMD_VOLTAGE;
+    array[1] = command_list.CMD_VOLTAGE_MV;
     port.send(array);
   }
 
-  set_voltage(port, setting_mv) {
+  set_voltage_mv(port, setting_mv) {
     this.ACK = 0;
     var array = new Uint8Array(4);
     array[0] = 4;
-    array[1] = command_list.CMD_VOLTAGE | 0x80;
+    array[1] = command_list.CMD_VOLTAGE_MV | 0x80;
     let setting_mv_msb = (setting_mv >> 8) & 0xFF;
     let setting_mv_lsb = setting_mv & 0xFF;
     array[2] = setting_mv_msb;
@@ -194,7 +194,7 @@ export class VFLEX {
     port.send(array);
   }
 
-  get_max_current(port) {
+  get_max_current_ma(port) {
     this.ACK = 0;
     var array = new Uint8Array(2);
     array[0] = 2;
@@ -212,22 +212,6 @@ export class VFLEX {
     array[2] = setting_ma_msb;
     array[3] = setting_ma_lsb;
     port.send(array);
-  }
-
-  load_flash(port) {
-    this.ACK = 0;
-    var arr = new Uint8Array(2);
-    arr[0] = 2;
-    arr[1] = command_list.CMD_LOAD_CAL_SCRATCHPAD | 0x40;
-    port.send(arr);
-  }
-
-  commit_flash(port) {
-    this.ACK = 0;
-    var arr = new Uint8Array(2);
-    arr[0] = 2;
-    arr[1] = command_list.CMD_COMMIT_CAL_SCRATCHPAD | 0x40;
-    port.send(arr);
   }
 
   bootload_prom_function(port, data_object) {
@@ -313,7 +297,7 @@ export class VFLEX {
     this.ACK = 0;
     var arr = new Uint8Array(2);
     arr[0] = 2;
-    arr[1] = command_list.CMD_JUMP_TO_BOOTLOAD;
+    arr[1] = command_list.CMD_JUMP_APP_TO_BOOTLOADER;
     port.send(arr);
   }
 
@@ -375,11 +359,11 @@ export class VFLEX {
         let disabled = data_u8a[2];
         this.device_data.led_disable_during_operation = disabled;
         break;
-      case command_list.CMD_SB_WRITE_CHUNK:
+      case command_list.CMD_BOOTLOADER_WRITE_CHUNK:
         break;
-      case command_list.CMD_SB_COMMIT_PAGE:
+      case command_list.CMD_BOOTLOADER_COMMIT_PAGE:
         break;
-      case command_list.CMD_SB_VERIFY:
+      case command_list.CMD_BOOTLOADER_VERIFY:
         console.log("verify", data_u8a[2]);
         this.device_data.crc = data_u8a[2];
         break;
@@ -398,16 +382,16 @@ export class VFLEX {
         this.device_data.pdo_ack = true;
         break;
       case command_list.CMD_ENCRYPT_MSG:
-        const numbers = data_u8a.slice(2); // todo
+        const numbers = data_u8a.slice(2);
         this.device_data.secretsecrets = numbers;
         break;
-      case command_list.CMD_VOLTAGE:
+      case command_list.CMD_VOLTAGE_MV:
         let mv = data_u8a[2] << 8 | (data_u8a[3]);
-        this.device_data.voltage = mv;
+        this.device_data.voltage_mv = mv;
         break;
-      case command_list.CMD_CURRENT_LIMIT:
+      case command_list.CMD_CURRENT_LIMIT_MA:
         break;
-      case command_list.CMD_WW_SERIAL:
+      case command_list.CMD_SERIAL_NUMBER:
         var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
         this.device_data.serial_num = string;
         break;
@@ -415,11 +399,11 @@ export class VFLEX {
         var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
         this.device_data.uuid = string;
         break;
-      case command_list.CMD_HWID:
+      case command_list.CMD_HARDWARE_ID:
         var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
         this.device_data.hw_id = string;
         break;
-      case command_list.CMD_FWID:
+      case command_list.CMD_FIRMWARE_VERSION:
         var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
         this.device_data.fw_id = string;
         break;
@@ -451,20 +435,20 @@ export class VFLEX {
           setTimeout(() => { this.bootload_verify_function(port, app_bin_data['data']); }, 200);
         }
         break;
-      case command_list.CMD_BOOTLOAD_VERIFY:
-        response = data_u8a[2];
-        if (response) {
-          if (this.bootloader_packet_queue.length == 0) {
-            setTimeout(() => { this.jump_to_app(port); }, 4000);
-          }
-        } else {
-          this.bootloader_packet_queue = [];
-        }
-        next_packet = this.bootloader_packet_queue.shift();
-        if (next_packet) {
-          port.send(next_packet);
-        }
-        break;
+      //case command_list.CMD_BOOTLOADER_VERIFY:
+      //  response = data_u8a[2];
+      //  if (response) {
+      //    if (this.bootloader_packet_queue.length == 0) {
+      //      setTimeout(() => { this.jump_to_app(port); }, 4000);
+      //    }
+      //  } else {
+      //    this.bootloader_packet_queue = [];
+      //  }
+      //  next_packet = this.bootloader_packet_queue.shift();
+      //  if (next_packet) {
+      //    port.send(next_packet);
+      //  }
+      //  break;
       case command_list.CMD_BOOTLOAD_CANCEL_APP_TIMEOUT:
         if (app_bin_data['data']) {
           setTimeout(() => { this.bootload_prom_function(port, app_bin_data['data']); }, 200);
@@ -820,33 +804,23 @@ export class VFLEX_API {
     await this.await_response();
   }
 
-  async get_voltage() {
-    if (this.port) this.vflex.get_voltage(this.port);
+  async get_voltage_mv() {
+    if (this.port) this.vflex.get_voltage_mv(this.port);
     await this.await_response();
   }
 
-  async set_voltage(setting_mv) {
-    if (this.port) this.vflex.set_voltage(this.port, setting_mv);
+  async set_voltage_mv(setting_mv) {
+    if (this.port) this.vflex.set_voltage_mv(this.port, setting_mv);
     await this.await_response();
   }
 
-  async get_max_current() {
-    if (this.port) this.vflex.get_max_current(this.port);
+  async get_max_current_ma() {
+    if (this.port) this.vflex.get_max_current_ma(this.port);
     await this.await_response();
   }
 
   async set_max_current_ma(setting_ma) {
     if (this.port) this.vflex.set_max_current_ma(this.port, setting_ma);
-    await this.await_response();
-  }
-
-  async load_flash() {
-    if (this.port) this.vflex.load_flash(this.port);
-    await this.await_response();
-  }
-
-  async commit_flash() {
-    if (this.port) this.vflex.commit_flash(this.port);
     await this.await_response();
   }
 

@@ -41,7 +41,7 @@ let vflex = new VFLEX_API();
         const toggleStatus = document.getElementById('toggle-status');
         
 
-        vflex.device_data.voltage = programmed_voltage; // points to voltage elem
+        vflex.device_data.voltage_mv = programmed_voltage; // points to voltage elem
         vflex.device_data.serial_num = serial_num;
         vflex.device_data.uuid = uuid;
         vflex.device_data.hw_id = "vflex   ";
@@ -115,17 +115,10 @@ let vflex = new VFLEX_API();
 
         vflex.register_connection_change_callback(
                   async () => {
-                        console.log('vflex main connect', vflex.midi.connected, vflex.connected);
-                    // at this point, port isnt set up correctly?
                     if (vflex.connected && window.getComputedStyle(popupBox).display === 'none') {
-                        console.log('vflex main connect');
-                        console.log('port = ', vflex.port);
-                        //console.log(calibration_values.fw_id.value);
-                        //console.log(calibration_values.voltage.value);
 
                         document.getElementById('voltage_pps').disabled = true;
-                        //await vflex.midi.
-                        await vflex.get_ww_string(VFLEX_COMMANDS.CMD_FWID);
+                        await vflex.get_ww_string(VFLEX_COMMANDS.CMD_FIRMWARE_VERSION);
                         console.log('fwid:', vflex.device_data.fw_id);
 
                         console.log("yes something really happend");
@@ -148,10 +141,9 @@ let vflex = new VFLEX_API();
                           console.log('something bad happend');
                         }
 
-                        vflex.device_data.voltage = ''; // clear
-                        await vflex.get_voltage();
-                        //await waitForValue('voltage');
-                        let fInput = vflex.device_data.voltage/1000;
+                        vflex.device_data.voltage_mv = ''; // clear
+                        await vflex.get_voltage_mv();
+                        let fInput = vflex.device_data.voltage_mv/1000;
                         voltage_pps.value = fInput.toFixed(2);
                         howlegitcanitgit();
 
@@ -167,6 +159,7 @@ let vflex = new VFLEX_API();
                         //voltage_pps.value = fInput.toFixed(2);
 
                         //disable_leds_operation_fn(midi.port, 1, 0);
+                        //vflex.disable_leds_operation(1,0);
                         //setTimeout(() => {
                         //    if(calibration_values.led_disable_during_operation === 0){
                         //        toggleButton.checked = true;
@@ -219,14 +212,14 @@ let vflex = new VFLEX_API();
             console.log(setting_mv);
             
             //await vflex.set_voltage(midi.port, setting_mv);
-            await vflex.set_voltage(setting_mv);
+            await vflex.set_voltage_mv(setting_mv);
             pps_message.textContent = "";
             
             
             voltageStatus.textContent = "";
-            await vflex.get_voltage();
+            await vflex.get_voltage_mv();
         
-            let fInput = vflex.device_data.voltage/1000;
+            let fInput = vflex.device_data.voltage_mv/1000;
             voltage_pps.value = fInput.toFixed(2);
 
             edit_voltage.style.display = 'block';
@@ -372,7 +365,7 @@ let vflex = new VFLEX_API();
             return new Promise((resolve) => {
                 const interval = setInterval(() => {
                     //if (vflex.device_data.voltage.value !== null && calibration_values.voltage.value !== '') { // Change condition based on your use case
-                    if (vflex.device_data.voltage !== null && vflex.device_data.voltage !== '') { // Change condition based on your use case
+                    if (vflex.device_data.voltage_mv !== null && vflex.device_data.voltage_mv !== '') { // Change condition based on your use case
                         clearInterval(interval);  // Stop the interval when the value is updated
                         resolve();  // Resolve the promise
                     }

@@ -39,8 +39,7 @@
           console.log('jump?');
         });
         jump_bootloader.addEventListener('click', async function(e) {
-          vflex.jump_to_bootloader(vflex.port);
-          //await vflex.await_response();
+          vflex.jump_to_bootloader();
           setTimeout(() => {
             vflex.bootloader_manual_connect();
           }, 10);
@@ -58,7 +57,7 @@
 
 
         send_encrypted_msg.addEventListener('click', async function(e) {
-            await vflex.get_ww_string(VFLEX_COMMANDS.CMD_WW_SERIAL);
+            await vflex.get_ww_string(VFLEX_COMMANDS.CMD_SERIAL_NUMBER);
             try {ws.send(vflex.device_data.serial_num);} // send serial number to server, server responds with encrypted bootload packets
             catch (error) {console.log('err');}
             await waitForEncryptedMsg();
