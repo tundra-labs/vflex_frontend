@@ -588,7 +588,7 @@ export class VFLEX_MIDI {
         this.connected = true;
         this.onConnectionChange();
         console.log("Connected to:", this.midiInput.name, midiOutput.name);
-        console.log(this.port);
+        //console.log(this.port);
         this.onConnectSuccess();
       } else {
         throw new Error("No vFlex device found");
@@ -618,7 +618,7 @@ export class VFLEX_MIDI {
 
   startMonitoring() {
     this.midiAccess.onstatechange = (e) => {
-      console.log("MIDI state change:", e.port.state, e.port.name);
+      //console.log("MIDI state change:", e.port.state, e.port.name);
       if (e.port.name.includes("vFlex")) {
         if (e.port.state === "disconnected" && this.connected) {
           this.disconnect();
@@ -684,7 +684,7 @@ export class VFLEX_CDC_SERIAL {
     } else {
       serial.requestPort().then(selectedPort => {
         this.port = selectedPort;
-        console.log(this.port);
+        //console.log(this.port);
         this.port.connect().then(() => {
           this.port.onReceive = data => { this.vflex.process_response(data); };
           this.port.onReceiveError = error => {
@@ -711,31 +711,64 @@ export class VFLEX_API {
     this.midi = new VFLEX_MIDI();
     this.serial = new VFLEX_CDC_SERIAL(this.vflex);
     this.port = null;
+    this.connected = false;
     this.midi.setCallbacks(
-      () => { console.log("MIDI device ready!"); },
-      (err) => { console.error("MIDI connection failed:", err); },
-      () => { console.log("MIDI device disconnected"); },
-      () => { console.log("MIDI device connection status changed"); }
+      () => { this.connected = true; 
+              this.port = this.midi.port; 
+              console.log(this.port); 
+              console.log("MIDI device ready!"); 
+              this.onConnectionChange();
+              this.onConnectSuccess();
+            },
+      (err) => { console.error("MIDI connection failed:", err); 
+              this.onConnectionChange();
+              },
+      () => { console.log("MIDI device disconnected"); 
+              this.onDisconnect = () => {};
+              this.onConnectionChange();
+            },
+      () => { console.log("MIDI device connection status changed"); 
+              this.onConnectionChange();
+            }
     );
+    // callbacks:
+    this.onConnectSuccess = () => {};
+    this.onConnectFail = () => {};
+    this.onDisconnect = () => {};
+    this.onConnectionChange = () => {};
   }
+  register_connection_callback(successCb) { this.onConnectSuccess = successCb || this.onConnectSuccess; }
+  register_fail_connection_callback(failCb) { this.onConnectFail = failCb || this.onConnectFail; }
+  register_disconnect_callback(disconnectCb) { this.onDisconnect = disconnectCb || this.onDisconnect; }
+  register_connection_change_callback(changeCb) { this.onConnectionChange = changeCb || this.onConnectionChange; }
+  setCallbacks(successCb, failCb, disconnectCb, changeCb) {
+    this.register_connection_callback(successCb);
+    this.register_fail_connection_callback(failCb);
+    this.register_disconnect_callback(disconnectCb);
+    this.register_connection_change_callback(changeCb);
+  }
+
+
 
   async app_autoconnect() {
     //this.midi.init().then(() => {
     this.midi.init();
     await this.midi.await_connected();
     this.port = this.midi.port;
-    console.log(this.port);
+    //console.log(this.port);
   }
 
   app_disconnect() {
     this.midi.deinit();
     this.port = null;
+    this.connected = false;
   }
 
   async bootloader_manual_connect() {
     await this.serial.serial_manual_connect();
     await this.serial.await_connected();
     this.port = this.serial.port;
+    //this.connected = true; // todo, should already be ok?
   }
 
   async bootloader_disconnect() {
@@ -749,6 +782,7 @@ export class VFLEX_API {
       this.serial.port = null;
       this.port = null;
     }
+    this.connected = false;
   }
 
   send_ww_string(string_command, str, write, scratchpad) {
@@ -780,7 +814,7 @@ export class VFLEX_API {
   }
 
   get_ww_string(string_command) {
-    if (this.port) this.vflex.get_ww_string(this.port, string_command);
+    this.vflex.get_ww_string(this.port, string_command);
   }
 
   get_ww_string_scratchpad(string_command) {
@@ -788,7 +822,8 @@ export class VFLEX_API {
   }
 
   get_voltage() {
-    if (this.port) this.vflex.get_voltage(this.port);
+    console.log('getting voltahge');
+    this.vflex.get_voltage(this.port);
   }
 
   set_voltage(setting_mv) {

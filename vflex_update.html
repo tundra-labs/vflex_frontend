@@ -11,8 +11,20 @@
 </head>
 <body>
     <script type="module">
-      import {VFLEX_COMMANDS,vflex, midi, vflex_cdc} from "./js/vflex_lib.js"
+      //import {VFLEX_COMMANDS,vflex, midi, vflex_cdc} from "./js/vflex_lib.js"
+      import {VFLEX_API} from "./js/vflex_lib.js"
+      let vflex = new VFLEX_API();
 
+      async function waitForEncryptedMsg(){
+          return new Promise((resolve) => {
+              const interval = setInterval(() => {
+                  if(encrypted_msg) {
+                      clearInterval(interval);
+                      resolve();
+                  }
+              }, 25);
+          });
+      }
       var encrypted_msg = 0;
       document.addEventListener('DOMContentLoaded', event => {
         window.WS_SECURE_BOOT_APP = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/bootloader`;
@@ -24,33 +36,37 @@
           console.log("data:", encrypted_msg);
         };
         jump_app.addEventListener('click', async function(e) {
-          vflex_cdc.vflex.jump_to_app(vflex_cdc.port);
+          vflex.jump_to_app();
+          console.log('jump?');
         });
         jump_bootloader.addEventListener('click', async function(e) {
-          vflex.jump_to_bootloader(midi.port);
-          await vflex.await_response();
+          vflex.jump_to_bootloader(vflex.port);
+          //await vflex.await_response();
           setTimeout(() => {
-            vflex_cdc.serial_manual_connect();
+            vflex.bootloader_manual_connect();
           }, 10);
         });
 
         connectButton.addEventListener('click', function() {
-          midi.init();
+          vflex.app_autoconnect();
         });
         connectSerialButton.addEventListener('click', function() {
-          midi.deinit();
-          vflex_cdc.serial_manual_connect(); // app connect
+          //midi.deinit();
+          vflex.app_disconnect();
+          vflex.bootloader_manual_connect(); // app connect
         });
 
 
 
         send_encrypted_msg.addEventListener('click', async function(e) {
-            vflex.get_ww_string(vflex_cdc.port, command_list.CMD_WW_SERIAL);
+            vflex.get_ww_string(command_list.CMD_WW_SERIAL);
             //await waitForSerial();
             await vflex.await_response();
             try {ws.send(serial_num);} // send serial number to server, server responds with encrypted bootload packets
             catch (error) {console.log('err');}
-            await vflex.await_response();
+            //await vflex.await_response(); // todo: hoops
+            await waitForEncryptedMsg();
+
             console.log('encrypto?');
             let encrypted_app = encrypted_msg.app_bin;
             let app_crc = encrypted_msg.crc;
@@ -59,7 +75,7 @@
             for (let i = 0; i < encrypted_app.length; i++) {
               for (let j = 0; j < 8; j++) {
                 console.log(encrypted_app[i].chunks[j]);
-                vflex_cdc.vflex.send_bootloader_chunk_encrypted(vflex_cdc.port, encrypted_app[i].chunks[j], encrypted_app[i].pg_id, j)
+                vflex.send_bootloader_chunk_encrypted(encrypted_app[i].chunks[j], encrypted_app[i].pg_id, j)
                 await vflex.await_response();
               }
               vflex_cdc.vflex.commit_bootloader_page(vflex_cdc.port);
