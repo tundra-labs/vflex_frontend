@@ -49,28 +49,11 @@ function delay(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-let midiOutput = null;
-let receiveBuffer = [];
-let receiveComplete = false;
 
-export function vflex_midi_packet_handler(event) {
-  const [status, data1, data2] = event.data;
-  if (status === 0x80) {
-    receiveBuffer = [];
-    receiveComplete = false;
-  } else if (status === 0x90) {
-    if (receiveBuffer.length < 64) {
-      const byte = (data1 << 4) | data2;
-      receiveBuffer.push(byte);
-    }
-  } else if (status === 0xA0) {
-    receiveComplete = true;
-    vflex.process_response(receiveBuffer);
-  }
-}
 
 export class VFLEX {
-  constructor() {
+  constructor(device_data) {
+    this.device_data = device_data;// stores reference
     this.device = null;
     this.bootloader_packet_queue = [];
     this.calibration_values = {};
@@ -492,15 +475,17 @@ export class VFLEX {
 export class VFLEX_MIDI {
   constructor() {
     this.checkInterval = null;
-    this.midiAccess = null;
+    this.midi_access = null;
     this.is_connecting = false;
     this.on_connect_success = () => {};
     this.on_connection_fail = () => {};
     this.on_disconnect = () => {};
     this.on_connection_change = () => {};
+    this.on_message= () => {};
     this.connected = false;
     this.port = null;
-    this.midiInput = null;
+    this.midi_input = null;
+    this.midi_output= null;
   }
 
   register_connection_callback(succes_callback) { this.on_connect_success = succes_callback || this.on_connect_success; }
@@ -513,12 +498,13 @@ export class VFLEX_MIDI {
     this.register_disconnect_callback(disconnect_callback);
     this.register_connection_change_callback(change_callback);
   }
+  register_message_callback(on_message_callback) { this.on_message = on_message_callback || this.on_message; }
 
   async init() {
-    if (!this.midiAccess) {
+    if (!this.midi_access) {
       try {
-        this.midiAccess = await navigator.requestMIDIAccess();
-        this.startMonitoring();
+        this.midi_access = await navigator.requestMIDIAccess();
+        this.start_monitoring();
       } catch (err) {
         console.error("MIDI Access Failed:", err);
         this.on_connection_fail(err);
@@ -527,7 +513,7 @@ export class VFLEX_MIDI {
   }
 
   async deinit() {
-    this.stopMonitoring();
+    this.stop_monitoring();
   }
 
   async await_connected() {
@@ -541,43 +527,44 @@ export class VFLEX_MIDI {
     });
   }
 
-  async tryConnect() {
-    if (this.is_connecting || this.connected || !this.midiAccess) return;
+  async try_connect() {
+    if (this.is_connecting || this.connected || !this.midi_access) return;
     this.is_connecting = true;
     try {
-      midiOutput = null;
-      for (let out of this.midiAccess.outputs.values()) {
+      this.midi_output = null;
+      for (let out of this.midi_access.outputs.values()) {
         if (out.name.includes("vFlex")) {
-          midiOutput = out;
+          this.midi_output = out;
           break;
         }
       }
-      this.midiInput = null;
-      for (let inPort of this.midiAccess.inputs.values()) {
+      this.midi_input = null;
+      for (let inPort of this.midi_access.inputs.values()) {
         if (inPort.name.includes("vFlex")) {
-          this.midiInput = inPort;
-          this.midiInput.onmidimessage = vflex_midi_packet_handler;
+          this.midi_input = inPort;
+          this.midi_input.onmidimessage = (event) => this.on_message(event); 
           break;
         }
       }
-      if (this.midiInput && midiOutput) {
+      let midi_connection_ok = this.midi_input != null && this.midi_output != null;
+      if (midi_connection_ok) {
         this.port = {
           send: async function(data) {
-            if (!midiOutput) {
+            if (this.midi_output == null) {
               console.error("No MIDI output connected!");
               return;
             }
-            midiOutput.send([0x80, 0, 0]);
+            this.midi_output.send([0x80, 0, 0]);
             await delay(20);
             for (let i = 0; i < data.length; i++) {
               const byte = data[i];
-              const highNibble = (byte >> 4) & 0x0F;
-              const lowNibble = byte & 0x0F;
-              midiOutput.send([0x90, highNibble, lowNibble]);
+              const high_nibble = (byte >> 4) & 0x0F;
+              const low_nibble = byte & 0x0F;
+              this.midi_output.send([0x90, high_nibble, low_nibble]);
               await delay(20);
             }
-            midiOutput.send([0xA0, 0, 0]);
-          }
+            this.midi_output.send([0xA0, 0, 0]);
+          }.bind(this),
         };
         this.connected = true;
         this.on_connection_change();
@@ -594,19 +581,19 @@ export class VFLEX_MIDI {
 
   disconnect() {
     if (!this.connected) return;
-    if (this.midiInput) {
-      this.midiInput.onmidimessage = null;
+    if (this.midi_input) {
+      this.midi_input.onmidimessage = null;
     }
-    midiOutput = null;
-    this.midiInput = null;
+    this.midi_output = null;
+    this.midi_input = null;
     this.port = null;
     this.connected = false;
     this.on_connection_change();
     this.on_disconnect();
   }
 
-  startMonitoring() {
-    this.midiAccess.onstatechange = (e) => {
+  start_monitoring() {
+    this.midi_access.onstatechange = (e) => {
       if (e.port.name.includes("vFlex")) {
         if (e.port.state === "disconnected" && this.connected) {
           this.disconnect();
@@ -615,14 +602,14 @@ export class VFLEX_MIDI {
     };
     this.checkInterval = setInterval(() => {
       if (!this.connected) {
-        this.tryConnect();
+        this.try_connect();
       }
     }, 100);
   }
 
  
 
-  stopMonitoring() {
+  stop_monitoring() {
     clearInterval(this.checkInterval);
     this.disconnect();
   }
@@ -632,7 +619,7 @@ export class VFLEX_MIDI {
       clearInterval(this.checkInterval);
     }
     this.disconnect();
-    this.midiAccess.onstatechange = null;
+    this.midi_access.onstatechange = null;
   }
 }
 
@@ -687,13 +674,16 @@ export class VFLEX_CDC_SERIAL {
   }
 }
 
-export const vflex = new VFLEX();
+//export const vflex = new VFLEX();
 export const VFLEX_COMMANDS = command_list;
 
 export class VFLEX_API {
   constructor() {
-    this.vflex = vflex;
+    this.device_data = {};
+    this.vflex = new VFLEX(this.device_data);
     this.midi = new VFLEX_MIDI();
+    this.midi_receive_buffer = [];
+    this.midi_receive_complete = false;
     this.serial = new VFLEX_CDC_SERIAL(this.vflex);
     this.port = null;
     this.connected = false;
@@ -714,6 +704,22 @@ export class VFLEX_API {
               this.on_connection_change();
             }
     );
+    this.midi.register_message_callback( (event) => 
+    {
+      const [status, data1, data2] = event.data;
+      if (status === 0x80) {
+        this.midi_receive_buffer = [];
+        this.midi_receive_complete = false;
+      } else if (status === 0x90) {
+        if (this.midi_receive_buffer.length < 64) {
+          const byte = (data1 << 4) | data2;
+          this.midi_receive_buffer.push(byte);
+        }
+      } else if (status === 0xA0) {
+        this.midi_receive_complete = true;
+        this.vflex.process_response(this.midi_receive_buffer);
+      }
+    });
     // callbacks:
     this.on_connect_success = () => {};
     this.on_connection_fail = () => {};
@@ -799,6 +805,7 @@ export class VFLEX_API {
   }
 
   async get_ww_string(string_command) {
+    console.log('call with port', this.midi.midi_output, this.port);
     if (this.port) this.vflex.get_ww_string(this.port, string_command);
     await this.await_response();
   }
