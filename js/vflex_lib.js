@@ -220,9 +220,7 @@ export class VFLEX {
 
   process_response(data) {
     let data_u8a = new Uint8Array(data);
-    let preamble_len = 2;
     let command_code = data_u8a[1];
-    let next_packet;
     let response;
     this.ACK = 1;
     switch (command_code) {
@@ -262,23 +260,23 @@ export class VFLEX {
       case command_list.CMD_CURRENT_LIMIT_MA:
         break;
       case command_list.CMD_SERIAL_NUMBER:
-        var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
+        var string = new TextDecoder().decode(data_u8a).slice(this.preamble_len);
         this.device_data.serial_num = string;
         break;
       case command_list.CMD_CHIP_UUID:
-        var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
+        var string = new TextDecoder().decode(data_u8a).slice(this.preamble_len);
         this.device_data.uuid = string;
         break;
       case command_list.CMD_HARDWARE_ID:
-        var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
+        var string = new TextDecoder().decode(data_u8a).slice(this.preamble_len);
         this.device_data.hw_id = string;
         break;
       case command_list.CMD_FIRMWARE_VERSION:
-        var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
+        var string = new TextDecoder().decode(data_u8a).slice(this.preamble_len);
         this.device_data.fw_id = string;
         break;
       case command_list.CMD_MFG_DATE:
-        var string = new TextDecoder().decode(data_u8a).slice(preamble_len);
+        var string = new TextDecoder().decode(data_u8a).slice(this.preamble_len);
         this.device_data.mfg_date = string;
         break;
       case command_list.CMD_FLASH_LED_SEQUENCE_ADVANCED:
