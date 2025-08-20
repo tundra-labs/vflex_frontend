@@ -163,21 +163,11 @@
             //try {pdos_ws.send(JSON.stringify({N: 2, V_MV : 9000}));}
             //catch (error) {console.log(error);}
 
-            connectButton.addEventListener('click', function() {
-              vflex.set_callbacks(
-                  () => {
-                    console.log('ready!');
-                      // Handle successful connection
-                      vflex_status();
+            vflex.on('connect', async () => {
+              vflex_status();
+            });
 
-                  },
-                  (err) => {
-                      // Handle connection failure
-                  },
-                  () => {
-                      // Handle disconnection
-                  }
-              );
+            connectButton.addEventListener('click', function() {
               vflex.app_autoconnect();
             });
             clear_pdo_log_btn.addEventListener('click', function() {

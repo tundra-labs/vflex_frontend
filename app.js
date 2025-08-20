@@ -110,7 +110,8 @@ let vflex = new VFLEX_API();
           catch (error) {console.log('err on legit server send', error);}
         }
 
-        vflex.register_connection_change_callback(
+        //vflex.register_connection_change_callback(
+            vflex.on('connectionchange', 
                   async () => {
                     if (vflex.connected && window.getComputedStyle(popupBox).display === 'none') {
 

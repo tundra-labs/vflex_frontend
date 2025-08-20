@@ -607,30 +607,30 @@ export class VFLEX_API {
     this.serial = new VFLEX_CDC_SERIAL(this.vflex);
     this.port = null;
     this.connected = false;
-    this.on_connect_success = () => {};
-    this.on_connection_fail = () => {};
-    this.on_disconnect = () => {};
-    this.on_connection_change = () => {};
+    this.events = {};
 
     // Register event listeners for MIDI
     this.midi.on('connect', () => {
       this.connected = true;
       this.port = this.midi.port;
-      this.on_connect_success();
-      this.on_connection_change();
+      console.log('midi connect');
+      this.emit('connect');
+      this.emit('connectionchange');
     });
     this.midi.on('error', (err) => {
-      this.on_connection_fail(err);
-      this.on_connection_change();
+      this.connected = false;
+      this.port = null;
+      this.emit('error', err);
+      this.emit('connectionchange');
     });
     this.midi.on('disconnect', () => {
       this.connected = false;
       this.port = null;
-      this.on_disconnect();
-      this.on_connection_change();
+      this.emit('disconnect');
+      this.emit('connectionchange');
     });
     this.midi.on('connectionchange', () => {
-      this.on_connection_change();
+      this.emit('connectionchange');
     });
     this.midi.on('message', (event) => {
       const [status, data1, data2] = event.data;
@@ -650,49 +650,62 @@ export class VFLEX_API {
 
     // Register event listeners for Serial
     this.serial.on('connect', () => {
+      console.log('midi connect');
       this.connected = true;
       this.port = this.serial.port;
-      this.on_connect_success();
-      this.on_connection_change();
+      this.emit('connect');
+      this.emit('connectionchange');
     });
     this.serial.on('error', (err) => {
       this.connected = false;
       this.port = null;
-      this.on_connection_fail(err);
-      this.on_connection_change();
+      this.emit('error', err);
+      this.emit('connectionchange');
     });
     this.serial.on('disconnect', () => {
       this.connected = false;
       this.port = null;
-      this.on_disconnect();
-      this.on_connection_change();
+      this.emit('disconnect');
+      this.emit('connectionchange');
     });
     this.serial.on('connectionchange', () => {
-      this.on_connection_change();
+      this.emit('connectionchange');
     });
   }
 
-  register_connection_callback(succes_callback) { this.on_connect_success = succes_callback || this.on_connect_success; }
-  register_fail_connection_callback(fail_callback) { this.on_connection_fail = fail_callback || this.on_connection_fail; }
-  register_disconnect_callback(disconnect_callback) { this.on_disconnect = disconnect_callback || this.on_disconnect; }
-  register_connection_change_callback(change_callback) { this.on_connection_change = change_callback || this.on_connection_change; }
-  set_callbacks(succes_callback, fail_callback, disconnect_callback, change_callback) {
-    this.register_connection_callback(succes_callback);
-    this.register_fail_connection_callback(fail_callback);
-    this.register_disconnect_callback(disconnect_callback);
-    this.register_connection_change_callback(change_callback);
+  on(event, callback) {
+    if (!this.events[event]) {
+      this.events[event] = [];
+    }
+    this.events[event].push(callback);
+  }
+
+  emit(event, ...args) {
+    if (this.events[event]) {
+      this.events[event].forEach(callback => callback(...args));
+    }
   }
 
   async app_autoconnect() {
-    this.midi.init();
-    await this.midi.await_connected();
-    this.port = this.midi.port;
+    try {
+      await this.midi.init();
+      await this.midi.await_connected();
+      this.port = this.midi.port;
+    } catch (err) {
+      this.emit('error', err);
+      throw err;
+    }
   }
 
   async bootloader_manual_connect() {
-    await this.serial.serial_manual_connect();
-    await this.serial.await_connected();
-    this.port = this.serial.port;
+    try {
+      await this.serial.serial_manual_connect();
+      await this.serial.await_connected();
+      this.port = this.serial.port;
+    } catch (err) {
+      this.emit('error', err);
+      throw err;
+    }
   }
 
   async bootloader_disconnect() {
@@ -700,13 +713,12 @@ export class VFLEX_API {
       try {
         await this.serial.port.disconnect();
       } catch {}
-      try {
-        delete this.serial.port;
-      } catch {}
       this.serial.port = null;
       this.port = null;
     }
     this.connected = false;
+    this.emit('disconnect');
+    this.emit('connectionchange');
   }
 
   async protocol_wrap(fn) {
@@ -716,6 +728,7 @@ export class VFLEX_API {
       await this.vflex.await_response();
       return result;
     } catch (err) {
+      this.emit('error', err);
       throw new Error(`Command execution failed: ${err.message}`);
     }
   }
