@@ -48,7 +48,7 @@ function delay_ms(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-export class VFLEX {
+export class VFLEX_PROTOCOL {
   constructor(device_data) {
     this.device_data = device_data;
     this.bootloader_packet_queue = [];
@@ -204,17 +204,23 @@ export class VFLEX {
     return await this.wrap_command(port, command_list.CMD_BOOTLOADER_VERIFY, first_payload, false);
   }
 
-  async await_response() {
-    return new Promise((resolve) => {
+  async await_response(timeoutMs = 5000) {
+    return new Promise((resolve, reject) => {
       const interval = setInterval(() => {
         if (this.ACK == 1) {
           this.ACK = 0;
           clearInterval(interval);
+          clearTimeout(timeout);
           resolve();
         }
       }, 25);
+      const timeout = setTimeout(() => {
+        clearInterval(interval);
+        reject(new Error('Response timeout exceeded'));
+      }, timeoutMs);
     });
   }
+
 
   process_response(data) {
     let data_u8a = new Uint8Array(data);
@@ -600,7 +606,7 @@ export const VFLEX_COMMANDS = command_list;
 export class VFLEX_API {
   constructor() {
     this.device_data = {};
-    this.vflex = new VFLEX(this.device_data);
+    this.vflex = new VFLEX_PROTOCOL(this.device_data);
     this.midi = new VFLEX_MIDI();
     this.midi_receive_buffer = [];
     this.midi_receive_complete = false;
