@@ -21,6 +21,7 @@ const command_list = Object.freeze({
   CMD_CURRENT_LIMIT_MA: 19,
   CMD_JUMP_APP_TO_BOOTLOADER: 20
 });
+export const VFLEX_COMMANDS = command_list;
 
 const command_list_string_sizes = Object.freeze({
   CMD_SERIAL_NUMBER: 8,
@@ -601,7 +602,6 @@ export class VFLEX_CDC_SERIAL {
   }
 }
 
-export const VFLEX_COMMANDS = command_list;
 
 export class VFLEX_API {
   constructor() {
