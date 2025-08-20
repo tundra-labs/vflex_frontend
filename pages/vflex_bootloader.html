@@ -8,10 +8,10 @@
         import { VFLEX_API, VFLEX_COMMANDS } from '../js/vflex_lib.js';
 
         const vflex = new VFLEX_API();
-        const latestVersion = '00.00.01'; // todo Hardcoded; in production, fetch from server
         let currentVersion = '';
         let isBootloading = false;
         let encryptedMsg = null;
+        let latestVersion = '00.00.01'; // todo Hardcoded; in production, fetch from server
         let ws = null;
 
         // UI Elements
@@ -34,6 +34,7 @@
                 ws.onmessage = (event) => {
                     try {
                         encryptedMsg = JSON.parse(event.data);
+                        latestVersion = encryptedMsg.app_version;
                         resolve();
                     } catch (error) {
                         reject(new Error('Invalid firmware data received'));
@@ -178,6 +179,7 @@
               }
             }, 4000);
             vflex.midi.on('connect', async () => {
+                await connectWebSocket("");
                 clearTimeout(attempt_bootloader_connection_after);
                 try {
                     await vflex.get_string(VFLEX_COMMANDS.CMD_FIRMWARE_VERSION);
