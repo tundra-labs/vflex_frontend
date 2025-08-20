@@ -28,14 +28,12 @@
                 ws.binaryType = 'arraybuffer';
 
                 ws.onopen = () => {
-                    console.log('WebSocket connected to', secureBootWsPath);
                     ws.send(serialNumber); // Send serial number to server
                 };
 
                 ws.onmessage = (event) => {
                     try {
                         encryptedMsg = JSON.parse(event.data);
-                        console.log('Received encrypted message:', encryptedMsg);
                         resolve();
                     } catch (error) {
                         reject(new Error('Invalid firmware data received'));
@@ -48,7 +46,6 @@
                 };
 
                 ws.onclose = () => {
-                    console.log('WebSocket closed');
                     ws = null;
                 };
             });
@@ -103,9 +100,7 @@
             // Fetch serial number and encrypted firmware
             await vflex.get_string(VFLEX_COMMANDS.CMD_SERIAL_NUMBER);
             const serialNumber = vflex.device_data.serial_num;
-            console.log(serialNumber);
             await connectWebSocket(serialNumber);
-            console.log(serialNumber);
 
             // Process encrypted application binary
             const encryptedApp = encryptedMsg.app_bin;
@@ -125,13 +120,13 @@
                 await vflex.commit_bootloader_page();
             }
 
-            console.log('should be done?');
             // Verify
             await vflex.verify_bootloader();
-            console.log(vflex.device_data.crc , appCrc);
-            //if (vflex.device_data.crc !== appCrc) {
-            //    throw new Error('Verification failed: CRC mismatch');
-            //}
+            if (vflex.device_data.crc !== appCrc) {
+                updateStatus( 'Verification failed: CRC mismatch got %{vflex.device_data.crc} but exepected ${appCrc}');
+            } else {
+                updateStatus( 'Bootloader succesful, please reconnect the device, then refresh this page');
+            }
         }
 
         // Handle bootloader process
@@ -142,33 +137,14 @@
             setProgressVisibility(true);
             updateStatus('vFlex attempting bootloader connection, please select "werewolf vflex" from device list');
             try {
-                // Disconnect from app mode if connected
-                //if (vflex.midi.connected) {
-                //    vflex.jump_to_bootloader();
-                //    await delay_ms(1000); // Wait for mode switch
-                //    //vflex.midi.disconnect();
-                //}
-
                 // Connect in serial mode
                 vflex.bootloader_manual_connect();
                 await vflex.serial.await_connected();
-                console.log('connected manual');
-                updateStatus('vFlex bootloader in progress:');
+                updateStatus('vFlex bootloader in progress, please do not disconnect the device:');
                 await delay_ms(4000); // Wait for mode switch, wait out error of jump_to_bootloader
                 await performBootload();
 
-                // Jump back to app and verify
-                //await vflex.jump_to_app();
-                //await vflex.bootloader_disconnect();
-                //await vflex.app_autoconnect();
-                //await vflex.get_string('CMD_FIRMWARE_VERSION');
-
-                //if (vflex.device_data.fw_id.trim() === latestVersion) {
-                //    updateStatus('vFlex bootload complete, everything ok');
-                //} else {
-                //    updateStatus('vFlex failed during bootload - application corrupt. please retry bootloader, or contact x@gmail.com');
-                //    setProgressVisibility(false);
-                //}
+                setProgressVisibility(false);
             } catch (err) {
                 console.error('Bootload error:', err);
                 if (err.message.includes('timeout')) {
@@ -193,23 +169,18 @@
             const attempt_bootloader_connection_after= setTimeout(() => 
             {
               vflex.midi.disconnect();
-              console.log('app connect timeout');
-              updateStatus('Failed connecting to application, attempt bootloader connection');
+              updateStatus('Failed connecting to application. Click "Recover" to attempt bootloader connection. Select vFlex device from webUSB drop down to proceed');
               // enable button
               if (executeButton) {
+                  executeButton.innerHTML= "Recover";
                   executeButton.disabled = false;
                   setButtonVisibility(true);
               }
             }, 4000);
-            vflex.midi.on('disconnect', async () => {
-              console.log('midi disconnect');
-            });
             vflex.midi.on('connect', async () => {
                 clearTimeout(attempt_bootloader_connection_after);
-                console.log('wtf');
                 try {
                     await vflex.get_string(VFLEX_COMMANDS.CMD_FIRMWARE_VERSION);
-                    console.log(`serial_num: ${vflex.device_data['fw_id']}`);
                     currentVersion = vflex.device_data.fw_id.trim();
                     if (currentVersion === latestVersion) {
                         updateStatus(`vFlex connected in application mode: version ${currentVersion} is up to date`);
@@ -222,28 +193,13 @@
                         }
                     }
                 } catch (err) {
-                //    console.error('Error fetching version:', err);
-                //    updateStatus('No vFlex detected');
                 }
                 await vflex.jump_to_bootloader();
                 vflex.midi.disconnect();
             });
 
-            //vflex.on('error', async (err) => {
-            //    console.error('Connection error:', err);
-            //    updateStatus('Failed connecting to application, attempt bootloader connection');
-            //    await delay_ms(1000); // Show message for 1 second
-            //    handleBootload();
-            //});
-
             // Start autoconnect with timeout
             vflex.app_autoconnect().catch(async () => {
-                //await delay_ms(4000); // 4-second timeout
-                //if (!vflex.connected) {
-                //    updateStatus('Failed connecting to application, attempt bootloader connection');
-                //    await delay_ms(1000);
-                //    handleBootload();
-                //}
             });
         }
 
@@ -282,7 +238,6 @@
     <div id="progress-bar-container" class="progress-bar-container">
         <div id="progress-bar" class="progress-bar"></div>
     </div>
-    <button id="executeBoot" class="modify-btn" disabled>Execute boot</button>
-    <p id="note">Refresh page to restart the bootloader process. Please do not disconnect the device or refresh the page during bootload</p>
+    <button id="executeBoot" class="modify-btn" disabled>Begin</button>
 </body>
 </html>
