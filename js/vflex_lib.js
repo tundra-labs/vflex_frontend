@@ -334,6 +334,7 @@ export class VFLEX_MIDI {
 
   async deinit() {
     this.stop_monitoring();
+    this.events = [];
   }
 
   async await_connected() {
@@ -412,7 +413,6 @@ export class VFLEX_MIDI {
   }
 
   disconnect() {
-    if (!this.connected) return;
     if (this.midi_input) {
       this.midi_input.onmidimessage = null;
     }
@@ -420,6 +420,7 @@ export class VFLEX_MIDI {
     this.midi_input = null;
     this.port = null;
     this.connected = false;
+    this.stop_monitoring();
     this.emit('connectionchange');
     this.emit('disconnect');
   }
@@ -441,7 +442,6 @@ export class VFLEX_MIDI {
 
   stop_monitoring() {
     clearInterval(this.checkInterval);
-    this.disconnect();
   }
 
   destroy() {

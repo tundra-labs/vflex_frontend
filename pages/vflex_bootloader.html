@@ -1,99 +1,288 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    <title>Production server</title>
-    <!--<script src="./js/werewolf_comms.js"></script>
-    <script src="./js/werewolf_util.js"></script>
-    <script src="./js/werewolf_serial_connect.js"></script>
-    <script src="./js/werewolf_connect.js"></script>
-    <script src="./js/serial.js"></script>-->
-    <!--<script src="./production_app.js"></script>-->
-		<script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
-</head>
-<body>
+    <meta charset="UTF-8">
+    <title>vFlex Bootloader</title>
+    <link rel="stylesheet" href="../vflex.css">
     <script type="module">
-      import {VFLEX_COMMANDS,VFLEX_API} from "../js/vflex_lib.js"
-      let vflex = new VFLEX_API();
+        import { VFLEX_API, VFLEX_COMMANDS } from '../js/vflex_lib.js';
 
-      async function waitForEncryptedMsg(){
-          return new Promise((resolve) => {
-              const interval = setInterval(() => {
-                  if(encrypted_msg) {
-                      clearInterval(interval);
-                      resolve();
-                  }
-              }, 25);
-          });
-      }
-      var encrypted_msg = 0;
-      document.addEventListener('DOMContentLoaded', event => {
-        window.WS_SECURE_BOOT_APP = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/bootloader`;
-        const secure_boot_ws_path = window.WS_SECURE_BOOT_APP || 'http://localhost:8001'; // check for server path provided from index.html, localhost default
-        console.log('connect on', secure_boot_ws_path);
-        const ws = new WebSocket(secure_boot_ws_path);
-        ws.onmessage = function(event){
-          encrypted_msg = JSON.parse(event.data);
-          console.log("data:", encrypted_msg);
-        };
-        jump_app.addEventListener('click', async function(e) {
-          vflex.jump_to_app();
-          console.log('jump?');
-        });
-        jump_bootloader.addEventListener('click', async function(e) {
-          vflex.jump_to_bootloader();
-          setTimeout(() => {
-            vflex.bootloader_manual_connect();
-          }, 10);
-        });
+        const vflex = new VFLEX_API();
+        const latestVersion = '00.00.01'; // todo Hardcoded; in production, fetch from server
+        let currentVersion = '';
+        let isBootloading = false;
+        let encryptedMsg = null;
+        let ws = null;
 
-        connectButton.addEventListener('click', function() {
-          vflex.app_autoconnect();
-        });
-        connectSerialButton.addEventListener('click', function() {
-          //midi.deinit();
-          //vflex.app_disconnect();
-          vflex.bootloader_manual_connect(); // app connect
-        });
+        // UI Elements
+        const statusElement = document.getElementById('status');
+        const progressBarContainer = document.getElementById('progress-bar-container');
+        const executeButton = document.getElementById('executeBoot');
+        const noteElement = document.getElementById('note');
 
+        // WebSocket setup for fetching encrypted firmware
+        function connectWebSocket(serialNumber) {
+            return new Promise((resolve, reject) => {
+                const secureBootWsPath = window.WS_SECURE_BOOT_APP || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/bootloader`;
+                ws = new WebSocket(secureBootWsPath);
+                ws.binaryType = 'arraybuffer';
 
+                ws.onopen = () => {
+                    console.log('WebSocket connected to', secureBootWsPath);
+                    ws.send(serialNumber); // Send serial number to server
+                };
 
-        send_encrypted_msg.addEventListener('click', async function(e) {
-            await vflex.get_string(VFLEX_COMMANDS.CMD_SERIAL_NUMBER);
-            try {ws.send(vflex.device_data.serial_num);} // send serial number to server, server responds with encrypted bootload packets
-            catch (error) {console.log('err');}
-            await waitForEncryptedMsg();
-            console.log(vflex.device_data.serial_num);
+                ws.onmessage = (event) => {
+                    try {
+                        encryptedMsg = JSON.parse(event.data);
+                        console.log('Received encrypted message:', encryptedMsg);
+                        resolve();
+                    } catch (error) {
+                        reject(new Error('Invalid firmware data received'));
+                    }
+                };
 
-            //console.log('encrypto?');
-            let encrypted_app = encrypted_msg.app_bin;
-            let app_crc = encrypted_msg.crc;
+                ws.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    reject(new Error('WebSocket connection failed'));
+                };
 
-            console.log('len en msg',encrypted_app.length, ', crc = ', app_crc);
-            for (let i = 0; i < encrypted_app.length; i++) {
-              for (let j = 0; j < 8; j++) {
-                console.log(encrypted_app[i].chunks[j]);
-                await vflex.send_bootloader_chunk_encrypted(encrypted_app[i].chunks[j], encrypted_app[i].pg_id, j)
-              }
-              await vflex.commit_bootloader_page();
-              //send_bootloader_chunk_encrypted(port, encrypted_msg[i].second_half_encrypted, encrypted_msg[i].pg_id, 1);
-              //await waitForACK();
+                ws.onclose = () => {
+                    console.log('WebSocket closed');
+                    ws = null;
+                };
+            });
+        }
+
+        // Update status message
+        function updateStatus(message) {
+            if (statusElement) {
+                statusElement.innerText = message;
             }
-            //verify_bootloader(port);
-            //await waitForAck();
+        }
 
+        // Update progress bar
+        function updateProgress(current, total) {
+            const percent = (current / total) * 100;
+            const progressBar = document.getElementById('progress-bar');
+            if (progressBar) {
+                progressBar.style.width = `${percent}%`;
+            }
+        }
+
+        // Show/hide progress bar
+        function setProgressVisibility(visible) {
+            if (progressBarContainer) {
+                progressBarContainer.style.display = visible ? 'block' : 'none';
+            }
+        }
+
+        // Show/hide execute button
+        function setButtonVisibility(visible) {
+            if (executeButton) {
+                executeButton.style.display = visible ? 'block' : 'none';
+            }
+        }
+
+        // Reset progress bar to initial state
+        function resetProgress() {
+            const progressBar = document.getElementById('progress-bar');
+            if (progressBar) {
+                progressBar.style.width = '0%';
+                progressBar.style.backgroundColor = '#2B303B';
+            }
+        }
+
+        // Delay function
+        function delay_ms(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        // Perform the bootload process using encrypted chunks
+        async function performBootload() {
+            // Fetch serial number and encrypted firmware
+            await vflex.get_string(VFLEX_COMMANDS.CMD_SERIAL_NUMBER);
+            const serialNumber = vflex.device_data.serial_num;
+            console.log(serialNumber);
+            await connectWebSocket(serialNumber);
+            console.log(serialNumber);
+
+            // Process encrypted application binary
+            const encryptedApp = encryptedMsg.app_bin;
+            const appCrc = encryptedMsg.crc;
+            const totalChunks = encryptedApp.length * 8; // 8 chunks per page
+            let sentChunks = 0;
+
+            updateProgress(0, totalChunks);
+
+            for (let i = 0; i < encryptedApp.length; i++) {
+                for (let j = 0; j < 8; j++) {
+                    const chunk = new Uint8Array(encryptedApp[i].chunks[j]); // Ensure chunk is Uint8Array
+                    await vflex.send_bootloader_chunk_encrypted(chunk, encryptedApp[i].pg_id, j);
+                    sentChunks++;
+                    updateProgress(sentChunks, totalChunks);
+                }
+                await vflex.commit_bootloader_page();
+            }
+
+            console.log('should be done?');
+            // Verify
             await vflex.verify_bootloader();
-            console.log('done', vflex.device_data.crc, app_crc);
-            //verify_bootloader(port,encrypted_msg.length);
+            console.log(vflex.device_data.crc , appCrc);
+            //if (vflex.device_data.crc !== appCrc) {
+            //    throw new Error('Verification failed: CRC mismatch');
+            //}
+        }
+
+        // Handle bootloader process
+        async function handleBootload() {
+            isBootloading = true;
+            resetProgress();
+            setButtonVisibility(false);
+            setProgressVisibility(true);
+            updateStatus('vFlex attempting bootloader connection, please select "werewolf vflex" from device list');
+            try {
+                // Disconnect from app mode if connected
+                //if (vflex.midi.connected) {
+                //    vflex.jump_to_bootloader();
+                //    await delay_ms(1000); // Wait for mode switch
+                //    //vflex.midi.disconnect();
+                //}
+
+                // Connect in serial mode
+                vflex.bootloader_manual_connect();
+                await vflex.serial.await_connected();
+                console.log('connected manual');
+                updateStatus('vFlex bootloader in progress:');
+                await delay_ms(4000); // Wait for mode switch, wait out error of jump_to_bootloader
+                await performBootload();
+
+                // Jump back to app and verify
+                //await vflex.jump_to_app();
+                //await vflex.bootloader_disconnect();
+                //await vflex.app_autoconnect();
+                //await vflex.get_string('CMD_FIRMWARE_VERSION');
+
+                //if (vflex.device_data.fw_id.trim() === latestVersion) {
+                //    updateStatus('vFlex bootload complete, everything ok');
+                //} else {
+                //    updateStatus('vFlex failed during bootload - application corrupt. please retry bootloader, or contact x@gmail.com');
+                //    setProgressVisibility(false);
+                //}
+            } catch (err) {
+                console.error('Bootload error:', err);
+                if (err.message.includes('timeout')) {
+                    updateStatus('vFlex failed during bootload - usb communication failure');
+                } else if (err.message.includes('connect')) {
+                    updateStatus('vFlex failed to connect in bootloader mode');
+                } else {
+                    updateStatus('vFlex failed during bootload');
+                }
+                setProgressVisibility(false);
+            } finally {
+                isBootloading = false;
+                if (ws) {
+                    ws.close();
+                }
+            }
+        }
+
+        // Initialize connection logic
+        function initConnection() {
+            updateStatus('Attempting to connect in application mode...');
+            const attempt_bootloader_connection_after= setTimeout(() => 
+            {
+              vflex.midi.disconnect();
+              console.log('app connect timeout');
+              updateStatus('Failed connecting to application, attempt bootloader connection');
+              // enable button
+              if (executeButton) {
+                  executeButton.disabled = false;
+                  setButtonVisibility(true);
+              }
+            }, 4000);
+            vflex.midi.on('disconnect', async () => {
+              console.log('midi disconnect');
+            });
+            vflex.midi.on('connect', async () => {
+                clearTimeout(attempt_bootloader_connection_after);
+                console.log('wtf');
+                try {
+                    await vflex.get_string(VFLEX_COMMANDS.CMD_FIRMWARE_VERSION);
+                    console.log(`serial_num: ${vflex.device_data['fw_id']}`);
+                    currentVersion = vflex.device_data.fw_id.trim();
+                    if (currentVersion === latestVersion) {
+                        updateStatus(`vFlex connected in application mode: version ${currentVersion} is up to date`);
+                        setButtonVisibility(false);
+                    } else {
+                        updateStatus(`vFlex connected in application mode: version ${currentVersion}. Update recommended to version ${latestVersion}.`);
+                        setButtonVisibility(true);
+                        if (executeButton) {
+                            executeButton.disabled = false;
+                        }
+                    }
+                } catch (err) {
+                //    console.error('Error fetching version:', err);
+                //    updateStatus('No vFlex detected');
+                }
+                await vflex.jump_to_bootloader();
+                vflex.midi.disconnect();
+            });
+
+            //vflex.on('error', async (err) => {
+            //    console.error('Connection error:', err);
+            //    updateStatus('Failed connecting to application, attempt bootloader connection');
+            //    await delay_ms(1000); // Show message for 1 second
+            //    handleBootload();
+            //});
+
+            // Start autoconnect with timeout
+            vflex.app_autoconnect().catch(async () => {
+                //await delay_ms(4000); // 4-second timeout
+                //if (!vflex.connected) {
+                //    updateStatus('Failed connecting to application, attempt bootloader connection');
+                //    await delay_ms(1000);
+                //    handleBootload();
+                //}
+            });
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            initConnection();
+            if (executeButton) {
+                executeButton.addEventListener('click', handleBootload);
+            }
+            setProgressVisibility(false);
+            setButtonVisibility(false);
         });
-      });
-
-
     </script>
-    <div><input id="connectButton" type="button" value="connect to app"/></div>
-    <div><input id="jump_bootloader" type="button" value="exit app to bootloader"/></div>
-    <div><input id="connectSerialButton" type="button" value="connect bootloader"/></div>
-    <div><input id="send_encrypted_msg" type="button" value="bootload secure"/></div>
-    <div><input id="verify_encrypted_msg" type="button" value="bootload veirfy"/></div>
-    <div><input id="jump_app" type="button" value="exit bootloader to app"/></div>
-
+    <style>
+        /* Additional CSS to handle visibility and positioning */
+        #progress-bar-container {
+            display: none; /* Hidden by default */
+            width: 350px;
+            background-color: #eee;
+            border-radius: 5px;
+            margin: 20px 0;
+            height: 30px;
+        }
+        #executeBoot {
+            display: none; /* Hidden by default */
+        }
+        #note {
+            margin-top: 60px; /* Fixed gap to ensure space for progress bar/button */
+        }
+    </style>
+</head>
+<body class="vflexbody">
+    <img src="vflex_logo.png" alt="vFlex Logo" class="vflex-logo">
+    <h1>vFlex Bootloader</h1>
+    <p id="status">No vFlex detected</p>
+    <div id="progress-bar-container" class="progress-bar-container">
+        <div id="progress-bar" class="progress-bar"></div>
+    </div>
+    <button id="executeBoot" class="modify-btn" disabled>Execute boot</button>
+    <p id="note">Refresh page to restart the bootloader process. Please do not disconnect the device or refresh the page during bootload</p>
 </body>
 </html>
