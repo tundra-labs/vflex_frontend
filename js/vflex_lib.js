@@ -227,7 +227,6 @@ export class VFLEX_PROTOCOL {
     let data_u8a = new Uint8Array(data);
     let command_code = data_u8a[1];
     let response;
-    this.ACK = 1;
     switch (command_code) {
       case command_list.CMD_DISABLE_LED_DURING_OPERATION:
         let disabled = data_u8a[2];
@@ -291,6 +290,7 @@ export class VFLEX_PROTOCOL {
       default:
         console.log("invalid usb incoming message. unexpected command code", command_code);
     }
+    this.ACK = 1;
   }
 }
 
