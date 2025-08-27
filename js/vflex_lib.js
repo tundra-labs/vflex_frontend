@@ -240,7 +240,6 @@ export class VFLEX_PROTOCOL {
         this.device_data.crc = data_u8a[2];
         break;
       case command_list.CMD_PDO_LOG:
-        console.log(data);
         let tmp_len = data_u8a[0];
         let chunkid= data_u8a[2];
         let payload_offset = 3;
@@ -620,8 +619,6 @@ export class VFLEX_CDC_SERIAL {
 
 
 function parseAndPrintPdoLog(bytes) {
-  //let bytes = new Uint8Array(data_raw);
-  console.log(bytes);
   if (bytes.length !== 88) {
     throw new Error(`Invalid PDO log length: expected 88 bytes, got ${bytes.length}`);
   }
@@ -736,69 +733,70 @@ function parseAndPrintPdoLog(bytes) {
     parsed_pdos,
   };
 
-  // Print to console in a readable format (similar to print_pdo and other embedded diagnostics)
-  console.log('--- VFLEX PDO Log ---');
-  console.log(`Target Voltage: ${target_voltage_mv} mV`);
-  console.log(`Measured Voltage: ${measured_voltage_mv} mV`);
-  console.log(`Number of PDOs Received: ${n_pdos_received}`);
-  console.log(`Selected PDO ID: ${id_selected_pdo}`);
-  console.log(`PS Negotiation Data Finalized: ${ps_negotiation_data_finalized}`);
-  console.log(`PDOs Finalized: ${pdos_finalized}`);
-  console.log(`PD Request Accepted: ${pd_request_accepted}`);
-  console.log(`PD Request Rejected: ${pd_request_rejected}`);
-  console.log(`Voltage Within Tolerance: ${voltage_within_tolerance}`);
-  console.log(`WebUSB Connection: ${webusb_connection}`);
-  console.log(`Reserved Flags: ${reserved_flags}`);
-  console.log('PDOs:');
+  // Build output string in the same format as previous console logs
+  let output = '--- VFLEX PDO Log ---\n';
+  output += `Target Voltage: ${target_voltage_mv} mV\n`;
+  output += `Measured Voltage: ${measured_voltage_mv} mV\n`;
+  output += `Number of PDOs Received: ${n_pdos_received}\n`;
+  output += `Selected PDO ID: ${id_selected_pdo}\n`;
+  //output += `PS Negotiation Data Finalized: ${ps_negotiation_data_finalized}\n`;
+  //output += `PDOs Finalized: ${pdos_finalized}\n`;
+  output += `PD Request Accepted: ${pd_request_accepted}\n`;
+  output += `PD Request Rejected: ${pd_request_rejected}\n`;
+  output += `Voltage Within Tolerance: ${voltage_within_tolerance}\n`;
+  output += `WebUSB Connection: ${webusb_connection}\n`;
+  //output += `Reserved Flags: ${reserved_flags}\n`;
+  output += 'PDOs:\n';
 
   for (let i = 0; i < n_pdos_received; i++) {
     const pdo = parsed_pdos[i];
-    console.log(`  PDO ${i + 1} (Raw: ${pdo.raw})`);
-    console.log(`    Type: ${pdo.subtype}`);
+    output += `  PDO ${i + 1} (Raw: ${pdo.raw})\n`;
+    output += `    Type: ${pdo.subtype}\n`;
     if (pdo.type === 0) { // Fixed
-      console.log(`    Voltage: ${pdo.voltage_mv} mV`);
-      console.log(`    Max Current: ${pdo.max_current_ma} mA`);
-      console.log(`    Peak Current: ${pdo.peak_current}`);
-      console.log(`    EPR Capable: ${pdo.epr_capable}`);
-      console.log(`    Unchunked Extended Messages Supported: ${pdo.unchunked_extended_messages_supported}`);
-      console.log(`    Dual Role Data: ${pdo.dual_role_data}`);
-      console.log(`    USB Communications Capable: ${pdo.usb_communications_capable}`);
-      console.log(`    Unconstrained Power: ${pdo.unconstrained_power}`);
-      console.log(`    USB Suspend Supported: ${pdo.usb_suspend_supported}`);
-      console.log(`    Dual Role Power: ${pdo.dual_role_power}`);
+      output += `    Voltage: ${pdo.voltage_mv} mV\n`;
+      output += `    Max Current: ${pdo.max_current_ma} mA\n`;
+      output += `    Peak Current: ${pdo.peak_current}\n`;
+      output += `    EPR Capable: ${pdo.epr_capable}\n`;
+      output += `    Unchunked Extended Messages Supported: ${pdo.unchunked_extended_messages_supported}\n`;
+      output += `    Dual Role Data: ${pdo.dual_role_data}\n`;
+      output += `    USB Communications Capable: ${pdo.usb_communications_capable}\n`;
+      output += `    Unconstrained Power: ${pdo.unconstrained_power}\n`;
+      output += `    USB Suspend Supported: ${pdo.usb_suspend_supported}\n`;
+      output += `    Dual Role Power: ${pdo.dual_role_power}\n`;
     } else if (pdo.type === 1) { // Battery
-      console.log(`    Min Voltage: ${pdo.min_voltage_mv} mV`);
-      console.log(`    Max Voltage: ${pdo.max_voltage_mv} mV`);
-      console.log(`    Max Power: ${pdo.max_power_mw} mW`);
+      output += `    Min Voltage: ${pdo.min_voltage_mv} mV\n`;
+      output += `    Max Voltage: ${pdo.max_voltage_mv} mV\n`;
+      output += `    Max Power: ${pdo.max_power_mw} mW\n`;
     } else if (pdo.type === 2) { // Variable
-      console.log(`    Min Voltage: ${pdo.min_voltage_mv} mV`);
-      console.log(`    Max Voltage: ${pdo.max_voltage_mv} mV`);
-      console.log(`    Max Current: ${pdo.max_current_ma} mA`);
+      output += `    Min Voltage: ${pdo.min_voltage_mv} mV\n`;
+      output += `    Max Voltage: ${pdo.max_voltage_mv} mV\n`;
+      output += `    Max Current: ${pdo.max_current_ma} mA\n`;
     } else if (pdo.type === 3) { // Augmented
       if (pdo.apdo_subtype === 0) { // SPR PPS
-        console.log(`    Min Voltage: ${pdo.min_voltage_mv} mV`);
-        console.log(`    Max Voltage: ${pdo.max_voltage_mv} mV`);
-        console.log(`    Max Current: ${pdo.max_current_ma} mA`);
-        console.log(`    PPS Power Limited: ${pdo.pps_power_limited}`);
+        output += `    Min Voltage: ${pdo.min_voltage_mv} mV\n`;
+        output += `    Max Voltage: ${pdo.max_voltage_mv} mV\n`;
+        output += `    Max Current: ${pdo.max_current_ma} mA\n`;
+        output += `    PPS Power Limited: ${pdo.pps_power_limited}\n`;
       } else if (pdo.apdo_subtype === 1) { // EPR AVS
-        console.log(`    Min Voltage: ${pdo.min_voltage_mv} mV`);
-        console.log(`    Max Voltage: ${pdo.max_voltage_mv} mV`);
-        console.log(`    PDP: ${pdo.pdp_watts} W`);
-        console.log(`    Peak Current: ${pdo.peak_current}`);
+        output += `    Min Voltage: ${pdo.min_voltage_mv} mV\n`;
+        output += `    Max Voltage: ${pdo.max_voltage_mv} mV\n`;
+        output += `    PDP: ${pdo.pdp_watts} W\n`;
+        output += `    Peak Current: ${pdo.peak_current}\n`;
       } else if (pdo.apdo_subtype === 2) { // SPR AVS
-        console.log(`    Max Current (20V): ${pdo.max_current_20v_ma} mA`);
-        console.log(`    Max Current (15V): ${pdo.max_current_15v_ma} mA`);
-        console.log(`    Peak Current: ${pdo.peak_current}`);
+        output += `    Max Current (20V): ${pdo.max_current_20v_ma} mA\n`;
+        output += `    Max Current (15V): ${pdo.max_current_15v_ma} mA\n`;
+        output += `    Peak Current: ${pdo.peak_current}\n`;
       } else if (pdo.apdo_subtype === 3) { // Reserved
-        console.log(`    (No specific fields)`);
+        output += `    (No specific fields)\n`;
       }
     }
   }
-  console.log('--- End PDO Log ---');
+  output += '--- End PDO Log ---\n';
 
-  // Return the structured data for saving (e.g., to JSON)
-  return logData;
+  // Return both the structured data and the formatted string
+  return { logData, output };
 }
+
 export class VFLEX_API {
   constructor() {
     this.device_data = {};
@@ -1023,7 +1021,6 @@ export class VFLEX_API {
       await this.pdo_cmd(i); // query number of pdos, result to vflex.device_data.pdo_len
       //await this.pdo_cmd(1); // query number of pdos, result to vflex.device_data.pdo_len
     }
-    console.log(this.device_data.pdo_payload);
-    parseAndPrintPdoLog(this.device_data.pdo_payload);
+    return parseAndPrintPdoLog(this.device_data.pdo_payload);
   }
 }

@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>vFlex PDO Log</title>
+    <link rel="stylesheet" href="../vflex.css">
+    <script type="module">
+        import { VFLEX_API, VFLEX_COMMANDS } from '../js/vflex_lib.js';
+
+        const vflex = new VFLEX_API();
+        let currentVersion = '';
+        let isBootloading = false;
+        let encryptedMsg = null;
+        let latestVersion = '00.00.01'; // todo Hardcoded; in production, fetch from server
+        let ws = null;
+
+        // UI Elements
+        const statusElement = document.getElementById('status');
+        const progressBarContainer = document.getElementById('progress-bar-container');
+        const clear_log_button= document.getElementById('clear_pdo_log');
+        const noteElement = document.getElementById('note');
+        const pdoLogOutput = document.getElementById('pdoLogOutput');
+        function dont_show_log() {
+          const pdoLogContainer = document.getElementById('pdoLogContainer');
+          if (pdoLogContainer) {
+            //pdoLogContainer.style.display = pdoLogContainer.style.display === 'none' ? 'block' : 'none';
+            pdoLogContainer.style.display = 'none';
+          }
+        }
+
+        // Delay function
+        function delay_ms(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function updateStatus(message) {
+            if (statusElement) {
+                statusElement.innerText = message;
+            }
+        }
+
+        function setButtonVisibility(visible) {
+              clear_log_button.style.display = visible ? 'block' : 'none';
+        }
+
+        // Perform the bootload process using encrypted chunks
+        // Initialize connection logic
+        function initConnection() {
+            updateStatus('Waiting for vFlex...');
+            // get pdo log. display not much if it's "
+            //const attempt_bootloader_connection_after= setTimeout(() => 
+            //{
+            //  vflex.midi.disconnect();
+            //  updateStatus('Failed connecting to application. Click "Recover" to attempt bootloader connection. Select vFlex device from webUSB drop down to proceed');
+            //  // enable button
+            //}, 4000);
+            //vflex.midi.on('connect', async () => {
+            //    try {
+            //        await vflex.get_string(VFLEX_COMMANDS.CMD_FIRMWARE_VERSION);
+            //        currentVersion = vflex.device_data.fw_id.trim();
+            //        //if (currentVersion === latestVersion) {
+            //        //    updateStatus(`vFlex connected in application mode: version ${currentVersion} is up to date`);
+            //        //    setButtonVisibility(false);
+            //        //} else {
+            //        //    updateStatus(`vFlex connected in application mode: version ${currentVersion}. Update recommended to version ${latestVersion}.`);
+            //        //    setButtonVisibility(true);
+            //        //    if (executeButton) {
+            //        //        executeButton.disabled = false;
+            //        //    }
+            //        //}
+            //    } catch (err) {
+            //    }
+            //    //vflex.midi.disconnect();
+            //});
+            vflex.on('connect', async () => {
+              setButtonVisibility(true);
+              updateStatus('vFlex Connected');
+              let {x, output} = await vflex.get_full_pdo_log();
+              pdoLogOutput.textContent = output;
+              //await vflex.clear_log_button
+              //updateStatus('vFlex Connected');
+              //vflex.clear_pdo_log();
+            });
+
+            // Start autoconnect with timeout
+            setButtonVisibility(false);
+            vflex.app_autoconnect();
+        }
+
+        // Initialize on load
+        window.addEventListener('load', () => {
+            clear_log_button.addEventListener('click', async () => {
+              await vflex.clear_pdo_log();
+              pdoLogOutput.textContent = "";
+              updateStatus('PDO log cleared. Connect vFlex to power supply to recapture log, then refresh this page and connet vFlex');
+              dont_show_log();
+              setButtonVisibility(false);
+            });
+            initConnection();
+            //setButtonVisibility(false);
+        });
+    </script>
+    <style>
+        #note {
+            margin-top: 60px; /* Fixed gap to ensure space for progress bar/button */
+        }
+    </style>
+</head>
+<body class="vflexbody">
+    <h1>vFlex PDO Log</h1>
+    <p id="status">No vFlex detected</p>
+    <h1></h1>
+    <div id="pdoLogContainer" style="width: 350px; max-height: 400px; overflow-y: auto; background-color: #F6F6F9; padding: 10px; border-radius: 8px; font-family: 'Nunito Sans', sans-serif; font-size: 14px; white-space: pre-wrap;">
+      <pre id="pdoLogOutput">Waiting for PDO log data...</pre>
+    </div>
+    <button id="clear_pdo_log" class="modify-btn" >Clear PDO Log</button>
+
+</body>
+</html>
