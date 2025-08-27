@@ -108,19 +108,20 @@
             await vflex.get_voltage_mv();
             addToLog(`voltage: ${vflex.device_data['voltage_mv']}`);
 
-            await vflex.pdo_cmd(0); // query number of pdos, result to vflex.device_data.pdo_len
-            delete vflex.device_data.pdo_ack
-            for (let i = 1; i <= vflex.device_data.pdo_len ; i++){ 
-              await vflex.pdo_cmd(i);
-              delete vflex.device_data.pdo_ack
-            }
+            //await vflex.pdo_cmd(0); // query number of pdos, result to vflex.device_data.pdo_len
+            await vflex.get_full_pdo_log();
+            //delete vflex.device_data.pdo_ack
+            //for (let i = 1; i <= vflex.device_data.pdo_len ; i++){ 
+            //  await vflex.pdo_cmd(i);
+            //  delete vflex.device_data.pdo_ack
+            //}
             console.log(vflex.device_data.pdo_payload);
             //try {pdos_ws.send(JSON.stringify({N: 2, V_MV : 9000}));}
-            let pdo_json_result = {serial_num : vflex.device_data.serial_num, pdos: vflex.device_data.pdo_payload};
-            try {pdos_ws.send(JSON.stringify(pdo_json_result));}
-            catch (error) {console.log(error);}
-            console.log(JSON.stringify(pdo_json_result));
-            console.log('ok?');
+            //let pdo_json_result = {serial_num : vflex.device_data.serial_num, pdos: vflex.device_data.pdo_payload};
+            //try {pdos_ws.send(JSON.stringify(pdo_json_result));}
+            //catch (error) {console.log(error);}
+            //console.log(JSON.stringify(pdo_json_result));
+            //console.log('ok?');
 
             //pdos_ws_path = window.pdos_ws_path || 'http://localhost:8005'; // check for server path provided from index.html, localhost default
             //pdos_ws  = new WebSocket(pdos_ws_path);

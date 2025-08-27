@@ -162,7 +162,7 @@ export class VFLEX_PROTOCOL {
     return await this.wrap_command(port, command_list.CMD_DISABLE_LED_DURING_OPERATION, payload, write);
   }
 
-  async clear_pdo_log(port) {
+  async clear_pdo_log(port) { // writing pdo log clears it
     return await this.wrap_command(port, command_list.CMD_PDO_LOG, new Uint8Array(0), true);
   }
 
@@ -240,18 +240,34 @@ export class VFLEX_PROTOCOL {
         this.device_data.crc = data_u8a[2];
         break;
       case command_list.CMD_PDO_LOG:
-        if (data_u8a.length == 3) {
-          this.device_data.pdo_len = data_u8a[2];
+        console.log(data);
+        let tmp_len = data_u8a[0];
+        let chunkid= data_u8a[2];
+        let payload_offset = 3;
+        if(chunkid == 0) {
           this.device_data.pdo_payload = [];
-        } else if (data_u8a.length == 6) {
-          let new_pdo = [];
-          new_pdo.push(data_u8a[2]);
-          new_pdo.push(data_u8a[3]);
-          new_pdo.push(data_u8a[4]);
-          new_pdo.push(data_u8a[5]);
-          this.device_data.pdo_payload.push(new_pdo);
-        }
-        this.device_data.pdo_ack = true;
+        } 
+        this.device_data.pdo_payload.push(data_u8a[payload_offset + 0]);
+        this.device_data.pdo_payload.push(data_u8a[payload_offset + 1]);
+        this.device_data.pdo_payload.push(data_u8a[payload_offset + 2]);
+        this.device_data.pdo_payload.push(data_u8a[payload_offset + 3]);
+        this.device_data.pdo_payload.push(data_u8a[payload_offset + 4]);
+        this.device_data.pdo_payload.push(data_u8a[payload_offset + 5]);
+        this.device_data.pdo_payload.push(data_u8a[payload_offset + 6]);
+        this.device_data.pdo_payload.push(data_u8a[payload_offset + 7]);
+        //console.log("pdo cmd rx", chunkid, this.device_data.pdo_payload);
+        //if (data_u8a.length == 3) {
+        //  this.device_data.pdo_len = data_u8a[2];
+        //  this.device_data.pdo_payload = [];
+        //} else if (data_u8a.length == 6) {
+        //  let new_pdo = [];
+        //  new_pdo.push(data_u8a[2]);
+        //  new_pdo.push(data_u8a[3]);
+        //  new_pdo.push(data_u8a[4]);
+        //  new_pdo.push(data_u8a[5]);
+        //  this.device_data.pdo_payload.push(new_pdo);
+        //}
+        //this.device_data.pdo_ack = true;
         break;
       case command_list.CMD_ENCRYPT_MSG:
         const numbers = data.slice(2);
@@ -603,6 +619,186 @@ export class VFLEX_CDC_SERIAL {
 }
 
 
+function parseAndPrintPdoLog(bytes) {
+  //let bytes = new Uint8Array(data_raw);
+  console.log(bytes);
+  if (bytes.length !== 88) {
+    throw new Error(`Invalid PDO log length: expected 88 bytes, got ${bytes.length}`);
+  }
+
+  // Create ArrayBuffer and DataView for little-endian parsing (matches embedded device)
+  const buffer = new ArrayBuffer(88);
+  const u8 = new Uint8Array(buffer);
+  u8.set(bytes); // Copy input bytes into buffer
+  const dv = new DataView(buffer);
+
+  let offset = 0;
+
+  // Parse scalar fields
+  const target_voltage_mv = dv.getUint16(offset, true); offset += 2;
+  const measured_voltage_mv = dv.getUint16(offset, true); offset += 2;
+  const n_pdos_received = dv.getUint8(offset); offset += 1;
+  const id_selected_pdo = dv.getUint8(offset); offset += 1;
+
+  // Parse bit-packed flags (uint16_t)
+  const flags = dv.getUint16(offset, true); offset += 2;
+  const ps_negotiation_data_finalized = (flags & 0x0001) >>> 0;
+  const pdos_finalized = (flags & 0x0002) >>> 1;
+  const pd_request_accepted = (flags & 0x0004) >>> 2;
+  const pd_request_rejected = (flags & 0x0008) >>> 3;
+  const voltage_within_tolerance = (flags & 0x0010) >>> 4;
+  const webusb_connection = (flags & 0x0020) >>> 5;
+  const reserved_flags = (flags & 0xFFC0) >>> 6;
+
+  // Parse PDO array (20 x uint32_t)
+  const pdos = [];
+  for (let i = 0; i < 20; i++) {
+    pdos.push(dv.getUint32(offset, true));
+    offset += 4;
+  }
+
+  // Parse PDOs into structured objects (similar to PDOUnion and print_pdo in embedded code)
+  const parsed_pdos = pdos.map((raw, index) => {
+    if (index >= n_pdos_received) {
+      return { raw, type: 'INVALID', note: 'Beyond received PDO count' };
+    }
+
+    const type = (raw >>> 30) & 0x3;
+    const obj = { raw: `0x${raw.toString(16).padStart(8, '0').toUpperCase()}`, type };
+
+    if (type === 0) { // PDO_TYPE_FIXED
+      obj.subtype = 'Fixed';
+      obj.voltage_mv = ((raw >>> 10) & 0x3FF) * 50;
+      obj.max_current_ma = (raw & 0x3FF) * 10;
+      obj.peak_current = (raw >>> 20) & 0x3;
+      obj.epr_capable = (raw >>> 23) & 0x1;
+      obj.unchunked_extended_messages_supported = (raw >>> 24) & 0x1;
+      obj.dual_role_data = (raw >>> 25) & 0x1;
+      obj.usb_communications_capable = (raw >>> 26) & 0x1;
+      obj.unconstrained_power = (raw >>> 27) & 0x1;
+      obj.usb_suspend_supported = (raw >>> 28) & 0x1;
+      obj.dual_role_power = (raw >>> 29) & 0x1;
+    } else if (type === 1) { // PDO_TYPE_BATTERY
+      obj.subtype = 'Battery';
+      obj.min_voltage_mv = ((raw >>> 10) & 0x3FF) * 50;
+      obj.max_voltage_mv = ((raw >>> 20) & 0x3FF) * 50;
+      obj.max_power_mw = (raw & 0x3FF) * 250;
+    } else if (type === 2) { // PDO_TYPE_VARIABLE
+      obj.subtype = 'Variable';
+      obj.min_voltage_mv = ((raw >>> 10) & 0x3FF) * 50;
+      obj.max_voltage_mv = ((raw >>> 20) & 0x3FF) * 50;
+      obj.max_current_ma = (raw & 0x3FF) * 10;
+    } else if (type === 3) { // PDO_TYPE_AUGMENTED
+      const subtype = (raw >>> 28) & 0x3;
+      obj.apdo_subtype = subtype;
+
+      if (subtype === 0) { // APDO_SPR_PPS
+        obj.subtype = 'Augmented (SPR PPS)';
+        obj.min_voltage_mv = ((raw >>> 8) & 0xFF) * 100;
+        obj.max_voltage_mv = ((raw >>> 17) & 0xFF) * 100;
+        obj.max_current_ma = (raw & 0x7F) * 50;
+        obj.pps_power_limited = (raw >>> 27) & 0x1;
+      } else if (subtype === 1) { // APDO_EPR_AVS
+        obj.subtype = 'Augmented (EPR AVS)';
+        obj.min_voltage_mv = ((raw >>> 8) & 0xFF) * 100;
+        obj.max_voltage_mv = ((raw >>> 17) & 0x1FF) * 100;
+        obj.pdp_watts = raw & 0xFF;
+        obj.peak_current = (raw >>> 26) & 0x3;
+      } else if (subtype === 2) { // APDO_SPR_AVS
+        obj.subtype = 'Augmented (SPR AVS)';
+        obj.max_current_20v_ma = ((raw) & 0x3FF) * 50; // Units: 50mA per USB PD spec
+        obj.max_current_15v_ma = ((raw >>> 10) & 0x3FF) * 50; // Units: 50mA per USB PD spec
+        obj.peak_current = (raw >>> 26) & 0x3;
+      } else if (subtype === 3) { // APDO_RESERVED
+        obj.subtype = 'Augmented (Reserved)';
+      }
+    } else {
+      obj.subtype = 'Unknown';
+    }
+
+    return obj;
+  });
+
+  // Create structured object similar to vflex_logger_t
+  const logData = {
+    target_voltage_mv,
+    measured_voltage_mv,
+    n_pdos_received,
+    id_selected_pdo,
+    ps_negotiation_data_finalized,
+    pdos_finalized,
+    pd_request_accepted,
+    pd_request_rejected,
+    voltage_within_tolerance,
+    webusb_connection,
+    reserved_flags,
+    raw_pdos: pdos,
+    parsed_pdos,
+  };
+
+  // Print to console in a readable format (similar to print_pdo and other embedded diagnostics)
+  console.log('--- VFLEX PDO Log ---');
+  console.log(`Target Voltage: ${target_voltage_mv} mV`);
+  console.log(`Measured Voltage: ${measured_voltage_mv} mV`);
+  console.log(`Number of PDOs Received: ${n_pdos_received}`);
+  console.log(`Selected PDO ID: ${id_selected_pdo}`);
+  console.log(`PS Negotiation Data Finalized: ${ps_negotiation_data_finalized}`);
+  console.log(`PDOs Finalized: ${pdos_finalized}`);
+  console.log(`PD Request Accepted: ${pd_request_accepted}`);
+  console.log(`PD Request Rejected: ${pd_request_rejected}`);
+  console.log(`Voltage Within Tolerance: ${voltage_within_tolerance}`);
+  console.log(`WebUSB Connection: ${webusb_connection}`);
+  console.log(`Reserved Flags: ${reserved_flags}`);
+  console.log('PDOs:');
+
+  for (let i = 0; i < n_pdos_received; i++) {
+    const pdo = parsed_pdos[i];
+    console.log(`  PDO ${i + 1} (Raw: ${pdo.raw})`);
+    console.log(`    Type: ${pdo.subtype}`);
+    if (pdo.type === 0) { // Fixed
+      console.log(`    Voltage: ${pdo.voltage_mv} mV`);
+      console.log(`    Max Current: ${pdo.max_current_ma} mA`);
+      console.log(`    Peak Current: ${pdo.peak_current}`);
+      console.log(`    EPR Capable: ${pdo.epr_capable}`);
+      console.log(`    Unchunked Extended Messages Supported: ${pdo.unchunked_extended_messages_supported}`);
+      console.log(`    Dual Role Data: ${pdo.dual_role_data}`);
+      console.log(`    USB Communications Capable: ${pdo.usb_communications_capable}`);
+      console.log(`    Unconstrained Power: ${pdo.unconstrained_power}`);
+      console.log(`    USB Suspend Supported: ${pdo.usb_suspend_supported}`);
+      console.log(`    Dual Role Power: ${pdo.dual_role_power}`);
+    } else if (pdo.type === 1) { // Battery
+      console.log(`    Min Voltage: ${pdo.min_voltage_mv} mV`);
+      console.log(`    Max Voltage: ${pdo.max_voltage_mv} mV`);
+      console.log(`    Max Power: ${pdo.max_power_mw} mW`);
+    } else if (pdo.type === 2) { // Variable
+      console.log(`    Min Voltage: ${pdo.min_voltage_mv} mV`);
+      console.log(`    Max Voltage: ${pdo.max_voltage_mv} mV`);
+      console.log(`    Max Current: ${pdo.max_current_ma} mA`);
+    } else if (pdo.type === 3) { // Augmented
+      if (pdo.apdo_subtype === 0) { // SPR PPS
+        console.log(`    Min Voltage: ${pdo.min_voltage_mv} mV`);
+        console.log(`    Max Voltage: ${pdo.max_voltage_mv} mV`);
+        console.log(`    Max Current: ${pdo.max_current_ma} mA`);
+        console.log(`    PPS Power Limited: ${pdo.pps_power_limited}`);
+      } else if (pdo.apdo_subtype === 1) { // EPR AVS
+        console.log(`    Min Voltage: ${pdo.min_voltage_mv} mV`);
+        console.log(`    Max Voltage: ${pdo.max_voltage_mv} mV`);
+        console.log(`    PDP: ${pdo.pdp_watts} W`);
+        console.log(`    Peak Current: ${pdo.peak_current}`);
+      } else if (pdo.apdo_subtype === 2) { // SPR AVS
+        console.log(`    Max Current (20V): ${pdo.max_current_20v_ma} mA`);
+        console.log(`    Max Current (15V): ${pdo.max_current_15v_ma} mA`);
+        console.log(`    Peak Current: ${pdo.peak_current}`);
+      } else if (pdo.apdo_subtype === 3) { // Reserved
+        console.log(`    (No specific fields)`);
+      }
+    }
+  }
+  console.log('--- End PDO Log ---');
+
+  // Return the structured data for saving (e.g., to JSON)
+  return logData;
+}
 export class VFLEX_API {
   constructor() {
     this.device_data = {};
@@ -821,5 +1017,13 @@ export class VFLEX_API {
 
   async await_response() {
     return await this.vflex.await_response();
+  }
+  async get_full_pdo_log() {
+    for (let i = 0; i < 11; i++) {
+      await this.pdo_cmd(i); // query number of pdos, result to vflex.device_data.pdo_len
+      //await this.pdo_cmd(1); // query number of pdos, result to vflex.device_data.pdo_len
+    }
+    console.log(this.device_data.pdo_payload);
+    parseAndPrintPdoLog(this.device_data.pdo_payload);
   }
 }
