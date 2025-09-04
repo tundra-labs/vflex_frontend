@@ -142,11 +142,11 @@
                 pps_message.textContent = 'Must be in 0.05 Volt increments!';
                 disabledSave();
                 break;
-              case(fValue < 3.30 || fValue > 48):
-                pps_message.textContent = 'Must be between 3.30 Volts and 48.00 Volts';
+              case(fValue < 3.35 || fValue > 48):
+                pps_message.textContent = 'Must be between 3.35 Volts and 48.00 Volts';
                 disabledSave();
                 break;
-              case(value >= '3.30' && value <= '4.95' || (value > '16.00' && value <= '48.00' && fValue !==20)):
+              case(value >= '3.35' && value <= '4.95' || (value > '16.00' && value <= '48.00' && fValue !==20)):
                 pps_message.innerHTML = 'May be outside of normal operation <a href="https://app.werewolf.com/pps-info">(learn more)</a>';
                 set_voltage.style.display = 'block';
                 set_voltage.style.visibility = 'visible';
