@@ -92,48 +92,9 @@
             console.log('no');
             return;
           } else {
-            //console.log('got a midi', midiOutput);
-            await vflex.get_string(VFLEX_COMMANDS.CMD_SERIAL_NUMBER);
-            addToLog(`serial_num: ${vflex.device_data['serial_num']}`);
-            await vflex.get_string(VFLEX_COMMANDS.CMD_HARDWARE_ID);
-            addToLog(`hw_id: ${vflex.device_data['hw_id']}`);
-
-            await vflex.get_string(VFLEX_COMMANDS.CMD_MFG_DATE);
-            addToLog(`mfg_date: ${vflex.device_data['mfg_date']}`);
-
-            await vflex.get_string(VFLEX_COMMANDS.CMD_FIRMWARE_VERSION);
-            addToLog(`fw_id: ${vflex.device_data['fw_id']}`);
-
-            ////get_pdo_log(port)
             await vflex.get_voltage_mv();
             addToLog(`voltage: ${vflex.device_data['voltage_mv']}`);
 
-            //await vflex.pdo_cmd(0); // query number of pdos, result to vflex.device_data.pdo_len
-            await vflex.get_full_pdo_log();
-            //delete vflex.device_data.pdo_ack
-            //for (let i = 1; i <= vflex.device_data.pdo_len ; i++){ 
-            //  await vflex.pdo_cmd(i);
-            //  delete vflex.device_data.pdo_ack
-            //}
-            console.log(vflex.device_data.pdo_payload);
-            //try {pdos_ws.send(JSON.stringify({N: 2, V_MV : 9000}));}
-            //let pdo_json_result = {serial_num : vflex.device_data.serial_num, pdos: vflex.device_data.pdo_payload};
-            //try {pdos_ws.send(JSON.stringify(pdo_json_result));}
-            //catch (error) {console.log(error);}
-            //console.log(JSON.stringify(pdo_json_result));
-            //console.log('ok?');
-
-            //pdos_ws_path = window.pdos_ws_path || 'http://localhost:8005'; // check for server path provided from index.html, localhost default
-            //pdos_ws  = new WebSocket(pdos_ws_path);
-            //try {pdos_ws.send(JSON.stringify({N: 2, V_MV : 9000}));}
-            //catch (error) {console.log(error);}
-
-
-
-            //get_pdo_log(port);
-            //await waitForValue('pdo_log');
-            //addToLog(`pdo_log: ${vflex.device_data['pdo_log']}`);
-            //console.log(vflex.device_data);
           }
         }
         async function waitForConnected(timeoutMs = 5000) {
