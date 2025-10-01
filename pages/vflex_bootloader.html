@@ -126,8 +126,9 @@
             if (vflex.device_data.crc !== appCrc) {
                 updateStatus( 'Verification failed: CRC mismatch got %{vflex.device_data.crc} but exepected ${appCrc}');
             } else {
-                updateStatus( 'Bootloader succesful, please reconnect the device, then refresh this page');
+                updateStatus( 'Bootloader succesful, please refresh this page');
             }
+            await vflex.jump_to_app();
         }
 
         // Handle bootloader process
@@ -177,7 +178,7 @@
                   executeButton.disabled = false;
                   setButtonVisibility(true);
               }
-            }, 4000);
+            }, 15000);
             vflex.midi.on('connect', async () => {
                 await connectWebSocket("");
                 clearTimeout(attempt_bootloader_connection_after);
