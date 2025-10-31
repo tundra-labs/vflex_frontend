@@ -178,7 +178,7 @@
                   executeButton.disabled = false;
                   setButtonVisibility(true);
               }
-            }, 15000);
+            }, 2000);
             vflex.midi.on('connect', async () => {
                 await connectWebSocket("");
                 clearTimeout(attempt_bootloader_connection_after);
