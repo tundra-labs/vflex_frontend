@@ -19,9 +19,14 @@ const command_list = Object.freeze({
   CMD_PDO_LOG: 17,
   CMD_VOLTAGE_MV: 18,
   CMD_CURRENT_LIMIT_MA: 19,
-  CMD_JUMP_APP_TO_BOOTLOADER: 20
+  CMD_JUMP_APP_TO_BOOTLOADER: 20,
+  CMD_IOS_HOST_MODE_FLAG : 21
 });
 export const VFLEX_COMMANDS = command_list;
+
+export function isIOS() {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
 
 const command_list_string_sizes = Object.freeze({
   CMD_SERIAL_NUMBER: 8,
@@ -45,7 +50,7 @@ function extract_key_from_list(command) {
   return Object.keys(command_list)[command];
 }
 
-function delay_ms(ms) {
+export function delay_ms(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
@@ -54,10 +59,12 @@ export class VFLEX_PROTOCOL {
     this.device_data = device_data;
     this.bootloader_packet_queue = [];
     this.ACK = 0;
+    this.ACK_CMD = null;
     this.preamble_len = 2;
   }
 
   async wrap_command(port, command_code, payload = new Uint8Array(0), write = false, scratchpad = false) {
+    this.ACK_CMD = command_code;
     this.ACK = 0;
     let command = command_code;
     if (scratchpad) {
@@ -75,6 +82,7 @@ export class VFLEX_PROTOCOL {
     }
     await port.send(output_arr);
     return true;
+
   }
 
   async string_wrapper(port, string_command, str, write, scratchpad) {
@@ -150,6 +158,10 @@ export class VFLEX_PROTOCOL {
     return await this.wrap_command(port, command_list.CMD_CURRENT_LIMIT_MA, new Uint8Array(0), false);
   }
 
+  async set_ios_host_mode(port) {
+    return await this.wrap_command(port, command_list.CMD_IOS_HOST_MODE_FLAG, new Uint8Array(0), false);
+  }
+
   async set_max_current_ma(port, setting_ma) {
     const payload = new Uint8Array(2);
     payload[0] = (setting_ma >> 8) & 0xFF;
@@ -205,7 +217,7 @@ export class VFLEX_PROTOCOL {
     return await this.wrap_command(port, command_list.CMD_BOOTLOADER_VERIFY, first_payload, false);
   }
 
-  async await_response(timeoutMs = 5000) {
+  async await_response(timeoutMs = 500) {
     return new Promise((resolve, reject) => {
       const interval = setInterval(() => {
         if (this.ACK == 1) {
@@ -227,6 +239,7 @@ export class VFLEX_PROTOCOL {
     let data_u8a = new Uint8Array(data);
     let command_code = data_u8a[1];
     let response;
+    let logs_plz = true;
     switch (command_code) {
       case command_list.CMD_DISABLE_LED_DURING_OPERATION:
         let disabled = data_u8a[2];
@@ -275,12 +288,23 @@ export class VFLEX_PROTOCOL {
       case command_list.CMD_VOLTAGE_MV:
         let mv = data_u8a[2] << 8 | (data_u8a[3]);
         this.device_data.voltage_mv = mv;
+        if(logs_plz)  {
+          console.log(this.device_data.voltage_mv);
+        }
         break;
       case command_list.CMD_CURRENT_LIMIT_MA:
+        break;
+      case command_list.CMD_IOS_HOST_MODE_FLAG:
+        if(logs_plz)  {
+          console.log("ios host mode confirmed");
+        }
         break;
       case command_list.CMD_SERIAL_NUMBER:
         var string = new TextDecoder().decode(data_u8a).slice(this.preamble_len);
         this.device_data.serial_num = string;
+        if(logs_plz)  {
+          console.log(this.device_data.serial_num);
+        }
         break;
       case command_list.CMD_CHIP_UUID:
         var string = new TextDecoder().decode(data_u8a).slice(this.preamble_len);
@@ -289,14 +313,24 @@ export class VFLEX_PROTOCOL {
       case command_list.CMD_HARDWARE_ID:
         var string = new TextDecoder().decode(data_u8a).slice(this.preamble_len);
         this.device_data.hw_id = string;
+        if(logs_plz)  {
+          console.log(this.device_data.hw_id);
+        }
         break;
       case command_list.CMD_FIRMWARE_VERSION:
         var string = new TextDecoder().decode(data_u8a).slice(this.preamble_len);
         this.device_data.fw_id = string;
+        if(logs_plz)  {
+          console.log(this.device_data.fw_id);
+        }
+
         break;
       case command_list.CMD_MFG_DATE:
         var string = new TextDecoder().decode(data_u8a).slice(this.preamble_len);
         this.device_data.mfg_date = string;
+        if(logs_plz)  {
+          console.log(this.device_data.mfg_date);
+        }
         break;
       case command_list.CMD_FLASH_LED_SEQUENCE_ADVANCED:
         break;
@@ -305,7 +339,11 @@ export class VFLEX_PROTOCOL {
       default:
         console.log("invalid usb incoming message. unexpected command code", command_code);
     }
-    this.ACK = 1;
+    if(this.ACK_CMD == command_code) {
+      this.ACK = 1;
+    } else {
+      console.log('misfire');
+    }
   }
 }
 
@@ -392,6 +430,7 @@ export class VFLEX_MIDI {
                 return;
               }
               try {
+                this.midi_receive_buffer = [];
                 this.midi_output.send([0x80, 0, 0]);
                 delay_ms(this.midi_packet_delay_ms).then(() => {
                   const promises = [];
@@ -845,6 +884,7 @@ export class VFLEX_API {
       } else if (status === 0xA0) {
         this.midi_receive_complete = true;
         this.vflex.process_response(this.midi_receive_buffer);
+        this.midi_receive_buffer = [];
       }
     });
 
@@ -923,13 +963,15 @@ export class VFLEX_API {
 
   async protocol_wrap(fn) {
     if (!this.port) throw new Error("No connection established");
-    try {
-      const result = await fn(this.port);
-      await this.vflex.await_response();
-      return result;
-    } catch (err) {
-      this.emit('error', err);
-      throw new Error(`Command execution failed: ${err.message}`);
+    for(let i = 0; i < 5; i++) {
+      try {
+        await fn(this.port);
+        const result = await this.vflex.await_response();
+        return result;
+      } catch (err) {
+        //this.emit('error', err);
+        //throw new Error(`Command execution failed: ${err.message}`);
+      }
     }
   }
 
@@ -981,6 +1023,10 @@ export class VFLEX_API {
     return await this.protocol_wrap(port => this.vflex.get_max_current_ma(port));
   }
 
+  async set_ios_host_mode() {
+    return await this.protocol_wrap(port => this.vflex.set_ios_host_mode(port));
+  }
+
   async set_max_current_ma(setting_ma) {
     return await this.protocol_wrap(port => this.vflex.set_max_current_ma(port, setting_ma));
   }
@@ -1024,3 +1070,5 @@ export class VFLEX_API {
     return parseAndPrintPdoLog(this.device_data.pdo_payload);
   }
 }
+
+
