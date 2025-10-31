@@ -21,7 +21,7 @@
 <body>
 
     <script type="module">
-        import {VFLEX_COMMANDS,VFLEX_API} from "../js/vflex_lib.js"
+        import {VFLEX_COMMANDS,VFLEX_API,isIOS} from "../js/vflex_lib.js"
         let vflex = new VFLEX_API();
         let pdos_ws;
         window.pdos_ws_path = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/pdos`;
@@ -50,6 +50,10 @@
             return;
           } else {
             //console.log('got a midi', midiOutput);
+            if(isIOS()) {
+              console.log("ios!");
+              await vflex.set_ios_host_mode();
+            }
             await vflex.get_string(VFLEX_COMMANDS.CMD_SERIAL_NUMBER);
             addToLog(`serial_num: ${vflex.device_data['serial_num']}`);
             await vflex.get_string(VFLEX_COMMANDS.CMD_HARDWARE_ID);
