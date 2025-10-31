@@ -1,5 +1,5 @@
 //import {VFLEX_COMMANDS,vflex, midi} from "./js/vflex_lib.js"
-import {VFLEX_COMMANDS,VFLEX_API} from "./js/vflex_lib.js"
+import {VFLEX_COMMANDS,VFLEX_API, isIOS} from "./js/vflex_lib.js"
 let vflex = new VFLEX_API();
 (function() {
     'use strict';
@@ -128,6 +128,12 @@ let vflex = new VFLEX_API();
                           //jump_to_app(midi.port);
 
                         } else if (vflex.device_data.fw_id.match("APP*")) {
+
+                          if(isIOS()) {
+                            console.log("ios host mode!");
+                            await vflex.set_ios_host_mode();
+                          }
+
                           document.getElementById('connectMessage').textContent = "Please connect device...";
                           console.log('app connected!');
                           controls.style.display = 'block';
