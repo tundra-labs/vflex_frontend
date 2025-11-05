@@ -8,239 +8,108 @@
         import { VFLEX_API, VFLEX_COMMANDS } from '../js/vflex_lib.js';
 
         const vflex = new VFLEX_API();
-        let currentVersion = '';
-        let isBootloading = false;
         let encryptedMsg = null;
-        let latestVersion = '00.00.01'; // todo Hardcoded; in production, fetch from server
         let ws = null;
 
-        // UI Elements
-        const statusElement = document.getElementById('status');
-        const progressBarContainer = document.getElementById('progress-bar-container');
-        const executeButton = document.getElementById('executeBoot');
-        const noteElement = document.getElementById('note');
+        const status = document.getElementById('status');
+        const progressBar = document.getElementById('progress-bar');
+        const progressContainer = document.getElementById('progress-bar-container');
+        const executeBtn = document.getElementById('executeBoot');
+        const finishBtn = document.getElementById('finishBtn');
 
-        // WebSocket setup for fetching encrypted firmware
-        function connectWebSocket(serialNumber) {
+        function updateStatus(msg) { status.innerText = msg; }
+        function updateProgress(cur, tot) {
+            progressBar.style.width = `${(cur/tot)*100}%`;
+        }
+        function show(el) { el.style.display = 'block'; }
+        function hide(el) { el.style.display = 'none'; }
+
+        function delay(ms) { return new Promise(r=>setTimeout(r,ms)); }
+
+        function connectWebSocket(serial) {
             return new Promise((resolve, reject) => {
-                const secureBootWsPath = window.WS_SECURE_BOOT_APP || `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/bootloader`;
-                ws = new WebSocket(secureBootWsPath);
+                const path = window.WS_SECURE_BOOT_APP || 
+                    `${location.protocol==='https:'?'wss:':'ws:'}//${location.host}/bootloader`;
+                ws = new WebSocket(path);
                 ws.binaryType = 'arraybuffer';
-
-                ws.onopen = () => {
-                    ws.send(serialNumber); // Send serial number to server
+                ws.onopen = () => ws.send(serial);
+                ws.onmessage = e => {
+                    encryptedMsg = JSON.parse(e.data);
+                    resolve();
                 };
-
-                ws.onmessage = (event) => {
-                    try {
-                        encryptedMsg = JSON.parse(event.data);
-                        latestVersion = encryptedMsg.app_version;
-                        resolve();
-                    } catch (error) {
-                        reject(new Error('Invalid firmware data received'));
-                    }
-                };
-
-                ws.onerror = (error) => {
-                    console.error('WebSocket error:', error);
-                    reject(new Error('WebSocket connection failed'));
-                };
-
-                ws.onclose = () => {
-                    ws = null;
-                };
+                ws.onerror = ws.onclose = () => reject();
             });
         }
 
-        // Update status message
-        function updateStatus(message) {
-            if (statusElement) {
-                statusElement.innerText = message;
-            }
-        }
-
-        // Update progress bar
-        function updateProgress(current, total) {
-            const percent = (current / total) * 100;
-            const progressBar = document.getElementById('progress-bar');
-            if (progressBar) {
-                progressBar.style.width = `${percent}%`;
-            }
-        }
-
-        // Show/hide progress bar
-        function setProgressVisibility(visible) {
-            if (progressBarContainer) {
-                progressBarContainer.style.display = visible ? 'block' : 'none';
-            }
-        }
-
-        // Show/hide execute button
-        function setButtonVisibility(visible) {
-            if (executeButton) {
-                executeButton.style.display = visible ? 'block' : 'none';
-            }
-        }
-
-        // Reset progress bar to initial state
-        function resetProgress() {
-            const progressBar = document.getElementById('progress-bar');
-            if (progressBar) {
-                progressBar.style.width = '0%';
-                progressBar.style.backgroundColor = '#2B303B';
-            }
-        }
-
-        // Delay function
-        function delay_ms(ms) {
-            return new Promise(resolve => setTimeout(resolve, ms));
-        }
-
-        // Perform the bootload process using encrypted chunks
         async function performBootload() {
-            // Fetch serial number and encrypted firmware
+            hide(executeBtn); show(progressContainer);
+            updateStatus('Reading serial…');
             await vflex.get_string(VFLEX_COMMANDS.CMD_SERIAL_NUMBER);
-            const serialNumber = vflex.device_data.serial_num;
-            await connectWebSocket(serialNumber);
+            await connectWebSocket(vflex.device_data.serial_num);
 
-            // Process encrypted application binary
-            const encryptedApp = encryptedMsg.app_bin;
-            const appCrc = encryptedMsg.crc;
-            const totalChunks = encryptedApp.length * 8; // 8 chunks per page
-            let sentChunks = 0;
+            const app = encryptedMsg.app_bin;
+            const expectedCrc = encryptedMsg.crc;
+            const total = app.length * 8;
+            let sent = 0;
 
-            updateProgress(0, totalChunks);
-
-            for (let i = 0; i < encryptedApp.length; i++) {
+            for (let i = 0; i < app.length; i++) {
                 for (let j = 0; j < 8; j++) {
-                    const chunk = new Uint8Array(encryptedApp[i].chunks[j]); // Ensure chunk is Uint8Array
-                    await vflex.send_bootloader_chunk_encrypted(chunk, encryptedApp[i].pg_id, j);
-                    sentChunks++;
-                    updateProgress(sentChunks, totalChunks);
+                    const chunk = new Uint8Array(app[i].chunks[j]);
+                    await vflex.send_bootloader_chunk_encrypted(chunk, app[i].pg_id, j);
+                    updateProgress(++sent, total);
                 }
                 await vflex.commit_bootloader_page();
             }
 
-            // Verify
             await vflex.verify_bootloader();
-            if (vflex.device_data.crc !== appCrc) {
-                updateStatus( 'Verification failed: CRC mismatch got %{vflex.device_data.crc} but exepected ${appCrc}');
-            } else {
-                updateStatus( 'Bootloader succesful, please refresh this page');
+            if (vflex.device_data.crc !== expectedCrc) {
+                updateStatus(`CRC mismatch: got ${vflex.device_data.crc}`);
+                return;
             }
+
+            updateStatus('Bootload successful! Jump to app…');
             await vflex.jump_to_app();
+            show(finishBtn);
         }
 
-        // Handle bootloader process
-        async function handleBootload() {
-            isBootloading = true;
-            resetProgress();
-            setButtonVisibility(false);
-            setProgressVisibility(true);
-            updateStatus('vFlex attempting bootloader connection, please select "werewolf vflex" from device list');
+        async function start() {
+            updateStatus('Click “Connect” and select “werewolf vflex”');
             try {
-                // Connect in serial mode
                 vflex.bootloader_manual_connect();
                 await vflex.serial.await_connected();
-                updateStatus('vFlex bootloader in progress, please do not disconnect the device:');
-                await delay_ms(4000); // Wait for mode switch, wait out error of jump_to_bootloader
+                await delay(4000);
                 await performBootload();
-
-                setProgressVisibility(false);
-            } catch (err) {
-                console.error('Bootload error:', err);
-                if (err.message.includes('timeout')) {
-                    updateStatus('vFlex failed during bootload - usb communication failure');
-                } else if (err.message.includes('connect')) {
-                    updateStatus('vFlex failed to connect in bootloader mode');
-                } else {
-                    updateStatus('vFlex failed during bootload');
-                }
-                setProgressVisibility(false);
+            } catch (e) {
+                updateStatus('Bootload failed – check USB');
+                console.error(e);
             } finally {
-                isBootloading = false;
-                if (ws) {
-                    ws.close();
-                }
+                hide(progressContainer);
+                if (ws) ws.close();
             }
         }
 
-        // Initialize connection logic
-        function initConnection() {
-            updateStatus('Attempting to connect in application mode...');
-            const attempt_bootloader_connection_after= setTimeout(() => 
-            {
-              vflex.midi.disconnect();
-              updateStatus('Failed connecting to application. Click "Recover" to attempt bootloader connection. Select vFlex device from webUSB drop down to proceed');
-              // enable button
-              if (executeButton) {
-                  executeButton.innerHTML= "Recover";
-                  executeButton.disabled = false;
-                  setButtonVisibility(true);
-              }
-            }, 2000);
-            vflex.midi.on('connect', async () => {
-                await connectWebSocket("");
-                clearTimeout(attempt_bootloader_connection_after);
-                try {
-                    await vflex.get_string(VFLEX_COMMANDS.CMD_FIRMWARE_VERSION);
-                    currentVersion = vflex.device_data.fw_id.trim();
-                    if (currentVersion === latestVersion) {
-                        updateStatus(`vFlex connected in application mode: version ${currentVersion} is up to date`);
-                        setButtonVisibility(false);
-                    } else {
-                        updateStatus(`vFlex connected in application mode: version ${currentVersion}. Update recommended to version ${latestVersion}.`);
-                        setButtonVisibility(true);
-                        if (executeButton) {
-                            executeButton.disabled = false;
-                        }
-                    }
-                } catch (err) {
-                }
-                await vflex.jump_to_bootloader();
-                vflex.midi.disconnect();
-            });
-
-            // Start autoconnect with timeout
-            vflex.app_autoconnect().catch(async () => {
-            });
-        }
-
-        // Initialize on load
         window.addEventListener('load', () => {
-            initConnection();
-            if (executeButton) {
-                executeButton.addEventListener('click', handleBootload);
-            }
-            setProgressVisibility(false);
-            setButtonVisibility(false);
+            executeBtn.onclick = start;
+            finishBtn.onclick = () => location.href = 'test_vflex_protocol.html';
+            hide(progressContainer);
+            hide(finishBtn);
         });
     </script>
     <style>
-        /* Additional CSS to handle visibility and positioning */
-        #progress-bar-container {
-            display: none; /* Hidden by default */
-            width: 350px;
-            background-color: #eee;
-            border-radius: 5px;
-            margin: 20px 0;
-            height: 30px;
-        }
-        #executeBoot {
-            display: none; /* Hidden by default */
-        }
-        #note {
-            margin-top: 60px; /* Fixed gap to ensure space for progress bar/button */
-        }
+        #progress-bar-container, #finishBtn { display:none; }
+        #progress-bar { width:0%; height:30px; background:#2B303B; transition:width .2s; }
     </style>
 </head>
 <body class="vflexbody">
     <img src="vflex_logo.png" alt="vFlex Logo" class="vflex-logo">
     <h1>vFlex Bootloader</h1>
-    <p id="status">No vFlex detected</p>
-    <div id="progress-bar-container" class="progress-bar-container">
-        <div id="progress-bar" class="progress-bar"></div>
+    <p id="status">Ready – click Connect</p>
+
+    <div id="progress-bar-container">
+        <div id="progress-bar"></div>
     </div>
-    <button id="executeBoot" class="modify-btn" disabled>Begin</button>
+
+    <button id="executeBoot" class="modify-btn">Connect & Update</button>
+    <button id="finishBtn" class="modify-btn">Finish → App</button>
 </body>
 </html>

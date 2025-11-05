@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>vFlex – Connect</title>
+    <link rel="stylesheet" href="../vflex.css">
+    <script type="module">
+        import { VFLEX_API, VFLEX_COMMANDS } from '../js/vflex_lib.js';
+
+        const vflex = new VFLEX_API();
+        let latestVersion = '00.00.01'; // todo fetch from server
+        let ws = null;
+
+        const status = document.getElementById('status');
+        const recoverBtn = document.getElementById('recoverBtn');
+
+        function updateStatus(msg) { status.innerText = msg; }
+
+        function connectWebSocket() {
+            return new Promise((resolve, reject) => {
+                const path = window.WS_SECURE_BOOT_APP || 
+                    `${window.location.protocol==='https:'?'wss:':'ws:'}//${window.location.host}/bootloader`;
+                ws = new WebSocket(path);
+                ws.onopen = () => ws.send('');
+                ws.onmessage = e => {
+                    const data = JSON.parse(e.data);
+                    latestVersion = data.app_version;
+                    resolve();
+                };
+                ws.onerror = () => reject();
+            });
+        }
+
+        async function init() {
+            updateStatus('Awaiting connection to VFLEX application (look for a blue led)\n  Flashing white led indicates device is already in bootloader mode, follow link below:');
+            //const timeout = setTimeout(() => {
+            //    updateStatus('No app found. Put device in bootloader (hold BOOT + plug USB) then click Recover.');
+            //    recoverBtn.style.display = 'block';
+            //}, 2500);
+
+            vflex.midi.on('connect', async () => {
+                //clearTimeout(timeout);
+                try {
+                    await vflex.get_string(VFLEX_COMMANDS.CMD_FIRMWARE_VERSION);
+                    const cur = vflex.device_data.fw_id.trim();
+                    await connectWebSocket();
+
+                    if (cur === latestVersion) {
+                        updateStatus(`vFlex v${cur} – up to date`);
+                    } else {
+                        updateStatus(`vFlex v${cur} → update to ${latestVersion} available`);
+                        recoverBtn.textContent = 'Put VFLEX in bootloader mode';
+                        recoverBtn.style.display = 'block';
+                    }
+                } catch (e) {
+                    updateStatus('App mode failed – click Recover');
+                    recoverBtn.style.display = 'block';
+                }
+                recoverBtn.onclick = () => {
+                    vflex.jump_to_bootloader();
+                    setTimeout(() => location.href = 'vflex_bootloader.html', 800);
+                };
+            });
+
+            vflex.app_autoconnect().catch(() => {});
+        }
+
+        window.addEventListener('load', init);
+    </script>
+    <style>
+        #recoverBtn { display:none; margin-top:20px; }
+    </style>
+</head>
+<body class="vflexbody">
+    <h1>VFLEX bootloader initialization</h1>
+    <p id="status">Connecting…</p>
+    <button id="recoverBtn" class="modify-btn">Recover</button>
+
+    <p> <a href="vflex_bootloader.html">click here</a> to continue bootloader procedure.  </p>
+</body>
+</html>
