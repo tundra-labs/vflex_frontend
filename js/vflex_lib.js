@@ -293,6 +293,13 @@ export class VFLEX_PROTOCOL {
         }
         break;
       case command_list.CMD_CURRENT_LIMIT_MA:
+        let ma = data_u8a[2] << 8 | (data_u8a[3]);
+        this.device_data.max_current_ma = ma;
+        if(logs_plz)  {
+          console.log(this.device_data.max_current_ma);
+          console.log(data_u8a[2], data_u8a[3]);
+        }
+
         break;
       case command_list.CMD_IOS_HOST_MODE_FLAG:
         if(logs_plz)  {

@@ -67,7 +67,10 @@
 
             ////get_pdo_log(port)
             await vflex.get_voltage_mv();
-            addToLog(`voltage: ${vflex.device_data['voltage_mv']}`);
+            addToLog(`voltage(mv): ${vflex.device_data['voltage_mv']}`);
+
+            await vflex.get_max_current_ma();
+            addToLog(`max current(ma): ${vflex.device_data['max_current_ma']}`);
 
             //await vflex.pdo_cmd(0); // query number of pdos, result to vflex.device_data.pdo_len
             await vflex.get_full_pdo_log();
