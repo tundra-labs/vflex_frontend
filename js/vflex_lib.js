@@ -665,12 +665,12 @@ export class VFLEX_CDC_SERIAL {
 
 
 function parseAndPrintPdoLog(bytes) {
-  if (bytes.length !== 88) {
+  if (bytes.length !== 90) {
     throw new Error(`Invalid PDO log length: expected 88 bytes, got ${bytes.length}`);
   }
 
   // Create ArrayBuffer and DataView for little-endian parsing (matches embedded device)
-  const buffer = new ArrayBuffer(88);
+  const buffer = new ArrayBuffer(90);
   const u8 = new Uint8Array(buffer);
   u8.set(bytes); // Copy input bytes into buffer
   const dv = new DataView(buffer);
@@ -692,6 +692,23 @@ function parseAndPrintPdoLog(bytes) {
   const voltage_within_tolerance = (flags & 0x0010) >>> 4;
   const webusb_connection = (flags & 0x0020) >>> 5;
   const reserved_flags = (flags & 0xFFC0) >>> 6;
+
+  const flags2 = dv.getUint16(offset, true); offset += 2;
+  const spr_init_pdos_received = (flags2 & 0x0001) >> 0;
+  const spr_ps_rdy = (flags2 & 0x0002) >> 1;
+  const non_epr_ps = (flags2 & 0x0004) >> 2;
+  const epr_cable_fail = (flags2 & 0x0008) >> 3;
+  const non_epr_ps_rdy = (flags2 & 0x0010) >> 4;
+  const non_epr_ps_reject = (flags2 & 0x0020) >> 5;
+  const epr_available = (flags2 & 0x0040) >> 6;
+  const epr_enter_request = (flags2 & 0x0080) >> 7;
+  const epr_enter_request_ack = (flags2 & 0x0100) >> 8;
+  const epr_entered = (flags2 & 0x0200) >> 9;
+  const epr_rejected = (flags2 & 0x0400) >> 10;
+  const epr_first_pdos_chunk_received = (flags2 & 0x0800) >> 11;
+  const epr_second_pdos_chunk_received = (flags2 & 0x1000) >> 12;
+  const epr_ps_rdy = (flags2 & 0x2000) >> 13;
+  const reserved2 = (flags2 & 0xC000) >> 14;
 
   // Parse PDO array (20 x uint32_t)
   const pdos = [];
@@ -775,6 +792,21 @@ function parseAndPrintPdoLog(bytes) {
     voltage_within_tolerance,
     webusb_connection,
     reserved_flags,
+    spr_init_pdos_received,
+    spr_ps_rdy,
+    non_epr_ps,
+    epr_cable_fail,
+    non_epr_ps_rdy,
+    non_epr_ps_reject,
+    epr_available,
+    epr_enter_request,
+    epr_enter_request_ack,
+    epr_entered,
+    epr_rejected,
+    epr_first_pdos_chunk_received,
+    epr_second_pdos_chunk_received,
+    epr_ps_rdy,
+    reserved2,
     raw_pdos: pdos,
     parsed_pdos,
   };
@@ -791,6 +823,22 @@ function parseAndPrintPdoLog(bytes) {
   output += `PD Request Rejected: ${pd_request_rejected}\n`;
   output += `Voltage Within Tolerance: ${voltage_within_tolerance}\n`;
   output += `WebUSB Connection: ${webusb_connection}\n`;
+
+  output += `SPR Init PDOs Received: ${spr_init_pdos_received}\n`;
+  output += `SPR PS Ready: ${spr_ps_rdy}\n`;
+  output += `Non-EPR PS: ${non_epr_ps}\n`;
+  output += `EPR Cable Fail: ${epr_cable_fail}\n`;
+  output += `Non-EPR PS Ready: ${non_epr_ps_rdy}\n`;
+  output += `Non-EPR PS Reject: ${non_epr_ps_reject}\n`;
+  output += `EPR Available: ${epr_available}\n`;
+  output += `EPR Enter Request: ${epr_enter_request}\n`;
+  output += `EPR Enter Request Ack: ${epr_enter_request_ack}\n`;
+  output += `EPR Entered: ${epr_entered}\n`;
+  output += `EPR Rejected: ${epr_rejected}\n`;
+  output += `EPR First PDOs Chunk Received: ${epr_first_pdos_chunk_received}\n`;
+  output += `EPR Second PDOs Chunk Received: ${epr_second_pdos_chunk_received}\n`;
+  output += `EPR PS Ready: ${epr_ps_rdy}\n`;
+  //output += `Reserved2: ${reserved2}\n`;
   //output += `Reserved Flags: ${reserved_flags}\n`;
   output += 'PDOs:\n';
 
@@ -1070,11 +1118,13 @@ export class VFLEX_API {
     return await this.vflex.await_response();
   }
   async get_full_pdo_log() {
-    for (let i = 0; i < 11; i++) {
-      await this.pdo_cmd(i); // query number of pdos, result to vflex.device_data.pdo_len
+    for (let i = 0; i < 12; i++) {
+      await this.pdo_cmd(i);
       //await this.pdo_cmd(1); // query number of pdos, result to vflex.device_data.pdo_len
     }
-    return parseAndPrintPdoLog(this.device_data.pdo_payload);
+
+    if (this.device_data.pdo_payload.length < 90) { throw new Error(`PDO log too short: got ${fullReceived.length} bytes, expected at least 90`);}
+    return parseAndPrintPdoLog(this.device_data.pdo_payload.slice(0,90));
   }
 }
 
